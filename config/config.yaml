@@ -1,0 +1,64 @@
+# Configuration for the Audio Transcription and Diarisation Pipeline
+
+# Section for all file and directory paths.
+# It's recommended to use absolute paths or paths relative to a clear base directory.
+paths:
+  # Base directory for the project. Use '.' for the current directory where the script is run.
+  # Using an absolute path is often safer, e.g., "D:/Projects/Diarizer"
+  base_dir: "."
+  # Subdirectories relative to the base_dir.
+  recordings_dir: "recordings"      # Where your source audio/video files are stored.
+  input_dir: "input"               # Where preprocessed audio is temporarily saved.
+  output_dir: "output"             # Where final transcripts are saved.
+  temp_dir: "temp"                 # For any other temporary files.
+  logs_dir: "logs"                 # Where log files are stored.
+  prompts_dir: "prompts"           # Directory for prompt files (if used).
+
+# Section for Hugging Face authentication.
+auth:
+  # Absolute path to the text file containing your Hugging Face authentication token.
+  # This is required for downloading pyannote models.
+  # e.g., "D:/tokens/hf_token.txt"
+  token_path: "D:/Projects/Tokens/kc_diariser.txt"
+
+# Section for audio capture and preprocessing settings.
+audio:
+  capture:
+    chunk_size: 1024
+    format: "float32" # Use float32 for better compatibility with audio libraries.
+    channels: 1       # Mono is standard for speech processing.
+    rate: 16000       # 16kHz is the standard for Whisper and most speech models.
+  preprocessing:
+    noise_reduction:
+      stationary: true
+      prop_decrease: 0.6
+      freq_mask_smooth_hz: 500
+    normalization:
+      target_peak: 0.7
+
+# Section for display and progress visualisation settings.
+display:
+  progress_type: "TQDM"
+
+# Section for core AI model and processing parameters.
+processing:
+  whisper:
+    # CHANGED: Switched to a smaller model for faster testing and iteration.
+    # Options: tiny, base, small, medium, large-v3
+    model_size: "base"
+    device: "cuda"
+  diarisation:
+    min_speakers: 1
+    max_speakers: 5
+    use_prompts: false
+
+# Section for output file settings.
+output:
+  default_format: "txt"
+  timestamp_format: "%Y%m%d_%H%M%S"
+
+# Section for logging configuration.
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_prefix: "diarisation_log"
