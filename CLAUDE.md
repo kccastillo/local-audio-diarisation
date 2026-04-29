@@ -40,6 +40,7 @@ Skills live in `.claude/skills/<name>/SKILL.md`. Invoked via `Skill("<name>")`. 
 | `write-bus-plan` | Transcribe plans to `Bus/` files; manage monthly LOG and status tables |
 | `write-bus-input` | Write RESEARCH/ADVICE files to `Bus/`; unblock plans waiting on input |
 | `execute-plan` | Execute PLAN steps in order; populate Executor Notes; update LOG; commit + push |
+| `maintain-claude-md` | Audit CLAUDE.md and CONTEXT_CONSTITUTION.md against camelCase + rot principles; propose adds/prunes; output as Bus PLANs |
 | `retire` | Move files to gitignored `Retired/` folder when no longer needed |
 
 ## Architecture & Core Design
