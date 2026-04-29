@@ -22,19 +22,25 @@ parent_plan_of_plans: ""
 ---
 
 ## Objective
-Trim and re-fit the 5 skills imported from `seqwater-app-control-2026` (`create-agent-skills`, `write-bus-plan`, `write-bus-input`, `execute-plan`, `retire`) so they match this project's coding workflow rather than BA/Wiki/State conventions, and import `debug-like-expert` from `gsd-build/gsd-2`. This is the dogfooding run of the bus — first PLAN through the new harness implements the harness fixes.
+Trim and re-fit the 5 skills imported from `seqwater-app-control-2026` (`create-agent-skills`, `write-bus-plan`, `write-bus-input`, `execute-plan`, `retire`) so they match this project's coding workflow rather than BA/Wiki/State conventions, and import `debug-like-expert` from `gsd-build/gsd-2`. Also optimise each SKILL.md for token efficiency — lean descriptions, minimal essential_principles, inline content moved to sub-files. This is the dogfooding run of the bus — first PLAN through the new harness implements the harness fixes.
 
 ## Context
-Source audit: `.claude/SKILLS_AUDIT.md` (5 sections — rename proposal, per-skill BA-isms, cross-cutting changes, gap analysis, suggested PLAN structure). The audit's Section 5 is the basis for the Steps below. Closes H01 in HARNESS.md. Step 11 also effectively closes H02 (debug-like-expert import); recorded as `advances_thread: H02` because the conventions cap one closer per PLAN — Haiku should still mark H02 closed in HARNESS.md when step 11 lands.
+Source audit: `.claude/SKILLS_AUDIT.md` (5 sections — rename proposal, per-skill BA-isms, cross-cutting changes, gap analysis, suggested PLAN structure). The audit's Section 5 is the basis for the Steps below.
+
+Note: HARNESS.md was retired after this plan was created — ignore any HARNESS.md references in steps below; do not attempt to read or write it.
 
 Key BA-isms to remove during execution:
 - `Wiki/`, `[[wikilinks]]`, `_index.md`, `Antigravity`, `atomise`, `librarian`, `pandoc-convert`, `Production/Wiki/`
 - `State/` directory pattern (does not exist here)
 - `linked_decisions` frontmatter field (no decision-tracking system in this project)
 
-Path corrections:
-- ROADMAP.md is at repo root, not `.claude/ROADMAP.md`
-- HARNESS.md is at `.claude/HARNESS.md` (new) — execute-plan must handle both files via T-/H- prefix on thread IDs
+Path correction: ROADMAP.md is at repo root, not `.claude/ROADMAP.md`.
+
+Token efficiency criteria (applied in step 12):
+- description: 60-120 chars, keyword-rich, answers "when should I load this?" — not a summary
+- essential_principles: ≤7 items; each must be load-bearing (removing it causes systematic failure)
+- SKILL.md total lines: target <150; inline blocks that are reference/context (not non-negotiable principles) belong in sub-files
+- No restatement of the description in the body; no preamble phrases
 
 ## Steps
 [Numbered steps for Haiku to execute via the `execute-plan` skill. Each step is independently verifiable. No `[Ken]` or `[blocked-on-input]` markers — all steps are mechanical edits informed by `.claude/SKILLS_AUDIT.md`.]
@@ -64,13 +70,17 @@ Path corrections:
 8. Update `.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md`: replace the "Existing Project Skills" table (currently 13 seqwater entries) with the actual 5 imported skills (post-rename: `create-skill`, `write-bus-plan`, `write-bus-input`, `execute-plan`, `retire`) plus `debug-like-expert` (added in step 11).
 9. Update `CLAUDE.md` skills table to reflect the rename (`create-agent-skills` → `create-skill`) and add the `debug-like-expert` row.
 10. Confirm step 2's vertical-slice guidance landed in `plan-template.md`'s Steps section (this step is a verification cross-check; if missing, add it).
-11. Import `debug-like-expert` from `gsd-build/gsd-2/src/resources/skills/debug-like-expert/`: copy SKILL.md + selected references into `.claude/skills/debug-like-expert/`, trim GSD-specific framing, ensure `name:` and `description:` frontmatter match the imported-skills convention. After this lands, mark H02 in `.claude/HARNESS.md` as `Status: closed` and append a closure bullet.
-12. Verify:
+11. Import `debug-like-expert` from `gsd-build/gsd-2/src/resources/skills/debug-like-expert/`: clone `https://github.com/gsd-build/gsd-2.git` shallowly to a temp dir, copy SKILL.md + all files under `references/` into `.claude/skills/debug-like-expert/`, trim GSD-specific framing (remove mentions of MCP servers, `.gsd/` paths, GSD orchestrator), ensure `name:` and `description:` frontmatter are present and valid.
+12. Token-efficiency audit of all SKILL.md files. Invoke `Skill("create-skill")` and use its audit workflow as the procedure. Apply to each skill in `.claude/skills/` (after rename: `create-skill`, `write-bus-plan`, `write-bus-input`, `execute-plan`, `retire`, `debug-like-expert`). For each, check against the criteria in Context above and apply fixes. Log every SKILL.md changed and what was changed.
+13. For `execute-plan/SKILL.md` specifically: move the `<haiku_safe_definition>` block to a new file `execute-plan/references/haiku-safe-definition.md`. Replace the inline block in SKILL.md with a one-line pointer: `**Haiku-safe definition:** See [references/haiku-safe-definition.md](references/haiku-safe-definition.md).`
+14. Verify:
     - `Skill("create-skill")` invocation resolves (manual smoke).
     - `plan-template.md` renders with the new frontmatter fields when used.
     - Grep `.claude/` returns zero hits for: `Wiki`, `Antigravity`, `State/`, `atomise`, `linked_decisions`.
     - `.claude/skills/debug-like-expert/SKILL.md` exists and has valid frontmatter.
-13. Retire `.claude/SKILLS_AUDIT.md` via the `retire` skill once all preceding steps verify.
+    - Each SKILL.md in `.claude/skills/` is under 150 lines.
+    - `execute-plan/SKILL.md` no longer contains the `<haiku_safe_definition>` block inline.
+15. Retire `.claude/SKILLS_AUDIT.md` via the `retire` skill once all preceding steps verify.
 
 ## Verification
 - [ ] Directory `.claude/skills/create-skill/` exists; `.claude/skills/create-agent-skills/` does not.
@@ -83,7 +93,9 @@ Path corrections:
 - [ ] `SKILLS_IMPLEMENTATION_GUIDE.md` "Existing Project Skills" table lists only the 6 actual skills (5 imported + debug-like-expert).
 - [ ] `CLAUDE.md` skills table reflects rename and lists debug-like-expert.
 - [ ] `.claude/skills/debug-like-expert/SKILL.md` exists with valid frontmatter.
-- [ ] `.claude/HARNESS.md` H01 status set to `closed` with closure bullet; H02 status set to `closed` with closure bullet.
+- [ ] Each SKILL.md in `.claude/skills/` is under 150 lines.
+- [ ] Each skill description is 60-120 chars and keyword-rich.
+- [ ] `execute-plan/SKILL.md` has a pointer to `references/haiku-safe-definition.md`; the block is not inline.
 - [ ] `.claude/SKILLS_AUDIT.md` moved to `Retired/`.
 
 ## Executor Notes

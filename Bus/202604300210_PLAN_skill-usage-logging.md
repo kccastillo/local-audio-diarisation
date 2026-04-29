@@ -27,7 +27,7 @@ Add a `post_tool_use` hook to `.claude/settings.json` that fires after every `Sk
 ## Context
 Logging skill invocations is cheap and one-shot: a small bash script + one hook entry. The *value* of the data scales with skill count and elapsed time — by setting up logging now, the future audit skill has a real history to read instead of starting from zero. The audit skill itself is deferred until either 15+ project skills exist OR a felt misfire signal hits — see PLAN 202604300220.
 
-The Claude Code hook payload schema must be discovered during execution (the executor uses `update-config` skill for the `settings.json` edit; it knows the current event names and payload format). This PLAN specifies *intent and shape* of the log row; the executor wires up the exact JSON.
+The hook is wired up by hand-authoring `.claude/settings.json` directly (Step 4 below). The script's parsing of the hook payload (Step 2) uses Opus's best-guess of Claude Code's payload field names (`tool_name`, `tool_input.skill`, `tool_input.args`, `tool_response`, `session_id`). If the actual payload uses different names, log rows will appear with empty values — that's a calibration signal, not a failure: Sonnet adjusts the script in a follow-up plan once we see what real rows look like.
 
 The log file is gitignored — it grows unboundedly and contains session-local context that does not belong in version history.
 
@@ -92,20 +92,39 @@ jq -nc \
 ### Step 3: Make the script executable
 Run: `chmod +x .claude/scripts/log-skill-usage.sh`
 
-### Step 4: Register the hook in settings.json (via update-config skill)
-The exact JSON shape for Claude Code hooks (event-name capitalisation, key names) is owned by the `update-config` skill — that skill is the canonical source for `settings.json` schema. Do NOT hand-author the JSON.
+### Step 4: Register the hook in settings.json (hand-authored JSON)
 
-1. Invoke `Skill("update-config")` and pass exactly this verbatim request:
+1. Pre-flight: check whether `.claude/settings.json` already exists.
+   - Run: `[[ -f .claude/settings.json ]] && [[ -s .claude/settings.json ]] && echo EXISTS || echo ABSENT`
+   - If output is `EXISTS`: HALT — set status `needs-revision`, report the file's current content in Executor Notes. Sonnet handles the merge into existing config; do not improvise.
+   - If output is `ABSENT`: proceed to step 4.2.
 
-   > Add a hook to project-level `.claude/settings.json` that fires after every invocation of the `Skill` tool. The hook should run the command `bash .claude/scripts/log-skill-usage.sh` and pass the hook payload via stdin. If a `.claude/settings.json` does not exist yet, create one. Do not modify any other hook entries.
+2. Create `.claude/settings.json` with this exact content:
 
-2. Follow `update-config`'s returned instructions exactly. If `update-config` asks Haiku to make a configuration choice (e.g. "user-level or project-level?", "merge with existing hook X?"), HALT — set status `needs-revision` and report. Do not improvise.
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [
+         {
+           "matcher": "Skill",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "bash .claude/scripts/log-skill-usage.sh"
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
 
-3. After `update-config` completes, verify:
+3. Verify:
    - `.claude/settings.json` exists: `[[ -f .claude/settings.json ]]`.
    - File is valid JSON: `jq empty .claude/settings.json` exits 0.
    - File contains the string `"Skill"`: `grep -F '"Skill"' .claude/settings.json` exits 0.
    - File contains the string `log-skill-usage.sh`: `grep -F 'log-skill-usage.sh' .claude/settings.json` exits 0.
+   - Structural check: `jq -e '.hooks.PostToolUse[0].matcher == "Skill"' .claude/settings.json` exits 0.
 
 ### Step 5: Add the log file to .gitignore
 Insert one new line `.claude/_skill_usage.jsonl` into `.gitignore` directly after the existing line `.claude/settings.local.json` (which sits inside the `# Claude Code harness` section). The result should look like:
@@ -151,7 +170,7 @@ The hook only fires in real Claude Code sessions, so cannot be smoke-tested mid-
 Add skill-usage logging via post_tool_use hook
 
 - .claude/scripts/log-skill-usage.sh appends JSONL rows for every Skill call
-- post_tool_use hook in .claude/settings.json wires it up (via update-config)
+- PostToolUse hook in .claude/settings.json wires it up (hand-authored)
 - Log file .claude/_skill_usage.jsonl is gitignored (grows unbounded)
 - Telemetry source for future skill-usage-audit skill (PLAN 202604300220)
 - Smoke-tested against synthetic payload; live verification deferred to
