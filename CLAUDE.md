@@ -28,8 +28,7 @@ A v2 rewrite is being planned — the current code is the baseline. Tag `v1-fina
 
 **Operating rules:**
 1. **All plans go to Bus/** — Every piece of planned work lives as a PLAN file, never chat-only.
-2. **Respect model boundaries** — Sonnet thinks; Haiku writes; Opus reviews. Never cross lanes without Ken's model switch.
-3. **Research and advice to Bus/** — RESEARCH (Haiku data) and ADVICE (Opus strategic notes) go via `write-bus-input` skill. Writing an input auto-clears blocked plans waiting on it.
+2. **Research and advice to Bus/** — RESEARCH (data drops) and ADVICE (strategic notes) go via `write-bus-input` skill. Writing an input auto-clears blocked plans waiting on it.
 
 ## Skills
 
