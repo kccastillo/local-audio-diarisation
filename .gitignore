@@ -6,6 +6,10 @@ recordings/
 temp/
 tests/
 
+# Claude Code harness
+.claude/settings.local.json
+Retired/
+
 # Byte-compiled / optimised / C files
 __pycache__/
 *.py[cod]
