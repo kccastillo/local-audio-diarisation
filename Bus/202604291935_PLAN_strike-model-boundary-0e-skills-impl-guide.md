@@ -1,7 +1,7 @@
 ---
 title: "Strike model-boundary 0e: SKILLS_IMPLEMENTATION_GUIDE.md"
 type: bus-plan
-status: needs-revision
+status: done
 assigned_to: ""
 priority: high
 created: 2026-04-29
@@ -103,25 +103,17 @@ Sub-plan 0e — last of the strike-model-boundary split. Smallest scope.
 
 ## Executor Notes
 
-**Executed:** 2026-04-29
-**Outcome:** needs-revision
+**Executed:** 2026-04-30 (re-run after 0a-0d completed)
+**Outcome:** done
 **What was done:**
-- Replaced "Existing Project Skills" table in `.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md`: 7 rows with `Haiku ...` / `Ken/Sonnet ...` "Callable By" entries swapped to `active session ...` phrasing per the Steps block.
-- Step 2 verification passed: `grep -in "haiku\|sonnet" .claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md` returns no matches.
-- Step 3 repo-wide verification FAILED — matches still present:
-  - `CLAUDE.md:31` → "Respect model boundaries — Sonnet thinks; Haiku writes; Opus reviews."
-  - `.claude/skills/write-bus-plan/SKILL.md:9` → "Haiku transcribes..."
-  - `.claude/skills/write-bus-input/SKILL.md:7` → "Haiku transcribes..."
-- Step 5 (create-agent-skills check) confirmed: matches in `core-principles.md`, `iteration-and-testing.md`, `use-xml-tags.md` — model-tier testing context, out of scope.
-- Halted before commit per halt-on-failure protocol.
-
-**Blockers:**
-- Sub-plans 0a (CLAUDE.md/AGENT_RULES.md), 0b (write-bus-plan), 0c (write-bus-input), 0d (execute-plan) all still `status: ready` in the LOG. They must execute before 0e's repo-wide verification (Step 3) can pass. 0e was authored as the *final* sub-plan but was invoked first.
+1. File edit from earlier WIP (commit 8e83246) confirmed in place: "Existing Project Skills" table updated with "active session" phrasing replacing all "Haiku on Ken request" / "Ken/Sonnet on handoff" entries
+2. Step 2 verification passed: `grep -in "haiku\|sonnet" .claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md` returns no matches
+3. Step 3 repo-wide verification NOW PASSES: `grep -rin "haiku transcribes|sonnet thinks|opus reviews|respect model boundaries" CLAUDE.md AGENT_RULES.md .claude/` returns no matches (0a-0d completed first)
+4. Step 4 verification passed: `grep -rin "haiku" CLAUDE.md AGENT_RULES.md .claude/skills/write-bus-plan/ .claude/skills/write-bus-input/ .claude/skills/execute-plan/ .claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md` returns no matches
+5. Step 5 confirmed: `grep -rin "haiku" .claude/skills/create-agent-skills/` returns 16 matches (model-tier testing context, out of scope per Objective)
+6. WIP commit 8e83246 already covers the file edit; plan now complete
+7. Push held for Ken confirmation
 
 **Files modified:**
-- `.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md` (table rewrite, kept on disk; uncommitted pending Ken's call)
-- `Bus/202604291935_PLAN_strike-model-boundary-0e-skills-impl-guide.md` (status, Executor Notes)
-
-**Recommended path forward (for Ken/Sonnet):**
-- Execute 0a → 0b → 0c → 0d in order, then re-run 0e. The 0e file edit is already on disk; the re-run can either keep it (and skip Step 1) or revert and re-apply.
-- Alternatively: revise 0e to drop the repo-wide Step 3 check (turning it into a same-file-only plan) and accept that the cross-cutting verification will live in a separate closeout plan after 0a–0d.
+- `.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md` (committed via WIP 8e83246)
+- `Bus/202604291935_PLAN_strike-model-boundary-0e-skills-impl-guide.md` (status and notes)
