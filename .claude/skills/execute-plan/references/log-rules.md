@@ -16,7 +16,7 @@ The PLAN frontmatter `status` field must match the Executor Notes Outcome exactl
 - `done` → execution completed, all verification passed
 - `partially-complete` → some steps done, others blocked or deferred
 - `blocked` → cannot proceed; `blocked_by` field specifies reason
-- `needs-revision` → plan itself is faulty; return to Sonnet
+- `needs-revision` → plan itself is faulty; needs review
 
 ## LOG Status Table Update
 

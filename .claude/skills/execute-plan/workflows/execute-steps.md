@@ -8,8 +8,8 @@
 
 ## Step 2: Execute Steps in order
 - One step at a time; verify each completes before moving to the next
-- If a step is marked [Ken]: halt, output MODEL SWITCH NEEDED to Sonnet requesting Ken's action
-- If a step is marked [blocked-on-input] (waits on a RESEARCH or ADVICE file): halt, flag the required input; Sonnet will commission it and `write-bus-input` will unblock the PLAN when it lands
+- If a step is marked [Ken]: halt, surface to Ken with the specific action required, and wait for response
+- If a step is marked [blocked-on-input] (waits on a RESEARCH or ADVICE file): halt, flag the required input; it will be commissioned and `write-bus-input` will unblock the PLAN when it lands
 - If a step fails, errors, or would be unsafe: halt, capture as blocker, skip to Step 4 with outcome = blocked or partially-complete
 
 ## Step 3: Run the Verification checklist
@@ -76,12 +76,12 @@ The thread stays in its pillar for historical context.
   - {bullet from Executor Notes "What was done"}
   - {...}
 
-  Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+  Co-Authored-By: Claude <noreply@anthropic.com>
   ```
 - `git push`
 - If commit or push fails: diagnose root cause and fix. Never use `--no-verify`, `--force`, or bypass signing.
 
-## Step 8: Report to Sonnet/Ken
+## Step 8: Report to Ken
 ```
 Executed:    {PLAN filename}
 Outcome:     {outcome}
