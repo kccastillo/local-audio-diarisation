@@ -2,10 +2,10 @@
 title: "[Plan title]"
 type: bus-plan
 status: ready
-assigned_to: haiku
+assigned_to: ""
 priority: medium
 created: YYYY-MM-DD
-created_by: haiku
+created_by: ""
 created_month: YYYYMM
 log_month: YYYYMM
 due: ""
@@ -28,8 +28,8 @@ parent_plan_of_plans: "" # Path to parent plan-of-plans file if part of a coordi
 [What prompted this plan. Link to relevant Wiki pages via [[wikilinks]]. Note any constraints or dependencies.]
 
 ## Steps
-[Numbered steps for Haiku to execute via the `execute-plan` skill. Each step must be independently verifiable.
-Mark [Ken] for steps that require human action before Haiku can proceed.
+[Numbered steps to execute via the `execute-plan` skill. Each step must be independently verifiable.
+Mark [Ken] for steps that require human action before execution can proceed.
 Mark [blocked-on-input] for steps waiting on a RESEARCH or ADVICE file (note which file — will be created via `write-bus-input`).]
 
 1. 
@@ -50,7 +50,7 @@ Mark [blocked-on-input] for steps waiting on a RESEARCH or ADVICE file (note whi
 - **Trigger condition:** [For event-driven tasks: what event fires the next cycle]
 
 ## Executor Notes
-*Populated by Haiku after execution via `execute-plan`. Leave blank.*
+*Populated after execution via `execute-plan`. Leave blank.*
 
 **Executed:**
 **Outcome:** done | partially-complete | blocked | needs-revision

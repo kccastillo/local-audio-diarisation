@@ -2,7 +2,7 @@
 
 ## Process
 
-Step 1: Receive from Sonnet:
+Step 1: Receive plan content:
   - Plan content (frontmatter values + body sections)
   - Target filename (Sonnet generates this)
   - Any LOG updates needed

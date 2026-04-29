@@ -1,39 +1,30 @@
 ---
 title: assigned_to Field — Valid Values
 type: reference
-description: Frontmatter field specifying which agent executes a PLAN file
+description: Frontmatter field specifying who or what executes a PLAN file
 ---
 
 # assigned_to Field
 
-Specifies which agent will execute the plan steps.
+Free-text optional field naming the executor of the plan. Default empty (the active session executes).
 
 ## Valid Values
 
-| Value | Agent | Context |
-|---|---|---|
-| `haiku` | Haiku (Claude Code) | **Default.** Haiku executes plan steps directly. Use this for most plans that involve Wiki writes, edits, or file operations within the vault. |
-| `ken` | Ken (human) | Plan requires human action/decision before execution can begin. Plan status should be `blocked` with `blocked_by` explaining what Ken needs to do. |
-| `antigravity` | Antigravity (Gemini) | **Optional override only.** Ken can request Antigravity instead of Haiku at execution time via Step 8 of `new-plan.md`. Do not use as the default `assigned_to` value in the PLAN file — always use `haiku`. |
-
-## Workflow Notes
-
-- **Default execution path** (new-plan.md Step 8): Haiku receives the PLAN and executes. 
-- **When Sonnet drafts the PLAN**: Always set `assigned_to: haiku` unless the plan is blocked (set `assigned_to: ken` with `blocked_by` reason).
+| Value | Meaning |
+|---|---|
+| `""` (empty) | **Default.** The active session executes the plan steps directly. |
+| `ken` | Plan requires human action/decision before execution can begin. Plan status should be `blocked` with `blocked_by` explaining what Ken needs to do. |
+| (free-text other) | Optional: a specific tool, sub-agent, or external system that should execute. Document the value's meaning where it's used. |
 
 ## Examples
 
 ```yaml
-# Most plans (Haiku executes)
-assigned_to: haiku
+# Default — active session executes
+assigned_to: ""
 status: ready
 
 # Plan blocked on Ken action
 assigned_to: ken
 status: blocked
-blocked_by: "Awaiting confirmation of Matt's lease entitlements from employer"
-
-# Plan ready but Haiku will execute (Ken may override to Antigravity at Step 8)
-assigned_to: haiku
-status: ready
+blocked_by: "Awaiting confirmation of which two commands to keep inline in CLAUDE.md"
 ```

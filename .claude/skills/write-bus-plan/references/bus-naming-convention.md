@@ -19,12 +19,12 @@ description: Complete naming rules, type tokens, and worked examples for Bus/ fi
 
 ## Type Tokens
 
-| Token | What it is | Created by | Consumed by |
-|---|---|---|---|
-| `LOG` | Monthly rollup log | Haiku | All agents for status |
-| `PLAN` | Actionable task for Haiku | Haiku | Haiku (executes) |
-| `RESEARCH` | Haiku data drop | Haiku | Sonnet (integrates) |
-| `ADVICE` | Opus strategic note (Ken pastes) | Ken | Sonnet (integrates) |
+| Token | What it is |
+|---|---|
+| `LOG` | Monthly rollup log |
+| `PLAN` | Actionable task to execute |
+| `RESEARCH` | Data drop — feeds a PLAN |
+| `ADVICE` | Strategic note (e.g., Ken pastes Opus output) — feeds a PLAN |
 
 ---
 
@@ -45,7 +45,7 @@ Slug must start with `RECUR-`:
 Recurring PLAN files are **persistent** — one file per recurring task. Each completed cycle appends a row to the `## History` table. Do not create a new file each cycle.
 
 ### RESEARCH and ADVICE files
-Written via the `write-bus-input` skill — see [.claude/skills/write-bus-input/SKILL.md](.claude/skills/write-bus-input/SKILL.md) for content rules. Sonnet pre-generates the target filename and gives it to Haiku before the input is written. This allows PLANs to pre-link via `linked_research` / `linked_advice` before the file exists.
+Written via the `write-bus-input` skill — see [.claude/skills/write-bus-input/SKILL.md](.claude/skills/write-bus-input/SKILL.md) for content rules. The target filename is generated when the PLAN is drafted, so the PLAN can pre-link via `linked_inputs` before the input file exists.
 
 ### Slugs
 - Lowercase, hyphenated
@@ -72,7 +72,7 @@ Written via the `write-bus-input` skill — see [.claude/skills/write-bus-input/
   → Recurring plan: monthly FBT exemption status check
 
 202604191700_RESEARCH_fbt-exemption-apr26.md
-  → Haiku research drop: FBT exemption status April 2026
+  → Data research drop: FBT exemption status April 2026
 
 202604191800_ADVICE_hormuz-portfolio-strategy.md
   → Opus advice: Hormuz scenario portfolio strategy

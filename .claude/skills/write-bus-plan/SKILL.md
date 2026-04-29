@@ -1,13 +1,12 @@
 ---
 name: write-bus-plan
-description: Haiku's Bus transcription skill. Use when Sonnet has finalised a plan and needs it written into System/Bus/ with correct schema. Also handles monthly LOG creation, LOG updates, and rollover file updates. Trigger phrases: "write this plan to bus", "create plan file", "update the log", "write bus file", "create the log".
+description: Bus transcription skill. Use when a plan has been finalised and needs to be written into Bus/ with correct schema. Also handles monthly LOG creation, LOG updates, and rollover file updates. Trigger phrases: "write this plan to bus", "create plan file", "update the log", "write bus file", "create the log".
 ---
 
 **Bus file conventions:** See [references/bus-conventions.md](references/bus-conventions.md) — canonical source for naming, status lifecycle, and input linkage.
 
 <essential_principles>
-Haiku transcribes. It does not think strategically or modify plan content.
-Write exactly what Sonnet provided — no additions, no omissions, no interpretation.
+Transcribe plan content accurately. Do not invent, summarise, or modify content.
 Always check if the current month LOG exists before writing any PLAN file. Create it first if missing.
 After writing any PLAN file, update the monthly LOG's Status Table.
 For recurring PLAN files: append to the existing file's History table — do not create a new file.
@@ -17,7 +16,7 @@ Report back: filename written, LOG updated, ready for next step.
 **Plan writing procedure:** See [workflows/write-plan.md](workflows/write-plan.md)
 
 <constraints>
-- Never modify plan content — transcribe exactly what Sonnet provides
+- Never modify plan content — transcribe exactly as specified
 - Never write to Wiki/ — that is Antigravity's domain
 - Never create a new RECUR- PLAN file if one already exists for that slug
 - Always create the monthly LOG before writing the first PLAN of a month
@@ -34,6 +33,6 @@ Report back: filename written, LOG updated, ready for next step.
 - Recurring tasks appear in Recurring Task Tracker
 - RECUR- files have a ## History table
 - On month rollover: prior LOG is closed; new LOG's Rollover and Status tables list all incomplete plans; each rolled plan's frontmatter has log_month updated and rollover_count incremented
-- Ken has been given the PLAN filename for handoff to Haiku
+- Ken has been given the PLAN filename for next-step handoff
 - LOG Status Table rows are ordered correctly: non-terminal statuses before terminal statuses ({done, cancelled, closed}); within each group, filename descending.
 </success_criteria>

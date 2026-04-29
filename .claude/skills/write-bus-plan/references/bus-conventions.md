@@ -25,8 +25,8 @@ Frontmatter `status` field:
 ready → in-progress → done | partially-complete | blocked | needs-revision
 ```
 
-- `ready` — transcribed, not yet started. Set by Haiku on creation.
-- `in-progress` — execute-plan skill has started. Set by Haiku on execution start.
+- `ready` — transcribed, not yet started. Set on creation.
+- `in-progress` — execute-plan skill has started. Set when execution begins.
 - `done` — all verification criteria pass. Terminal.
 - `partially-complete` — some steps done, others blocked or deferred. Terminal for this cycle.
 - `blocked` — cannot proceed; `blocked_by` holds the reason. Cleared automatically by `write-bus-input` when the resolving RESEARCH/ADVICE lands, or manually by Ken. Non-terminal until unblocked.
