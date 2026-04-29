@@ -1,7 +1,7 @@
 ---
 title: "Set up skill-usage logging via post_tool_use hook"
 type: bus-plan
-status: ready
+status: needs-revision
 assigned_to: ""
 priority: medium
 created: 2026-04-30
@@ -191,9 +191,22 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - [ ] Live verification step recorded in Executor Notes (Ken invokes any skill on next session, confirms `.claude/_skill_usage.jsonl` populated)
 
 ## Executor Notes
-*Populated after execution. Leave blank.*
 
-**Executed:**
-**Outcome:**
-**What was done:**
+**Executed:** 2026-04-30
+**Outcome:** needs-revision
+**Blockers:**
+- Step 6 halted: `command -v jq` returns nothing (jq not in bash PATH). jq was installed via winget and the installation reported success, but the current bash session's PATH does not include jq's installation directory. Restarting bash or adding jq to PATH manually would resolve, but that exceeds Haiku's scope. Sonnet: either (a) add jq to system PATH and retry, or (b) rewrite the script to not require jq (e.g., use sed/awk for JSON parsing instead).
+
+**What was done (before halt):**
+- Created `.claude/scripts/` directory
+- Wrote `.claude/scripts/log-skill-usage.sh` (depends on jq)
+- chmod +x `.claude/scripts/log-skill-usage.sh`
+- Created `.claude/settings.json` with hand-authored PostToolUse hook JSON (verified valid)
+- Added `.claude/_skill_usage.jsonl` to `.gitignore` (verified)
+
 **Files modified:**
+- `.claude/scripts/log-skill-usage.sh` (new)
+- `.claude/settings.json` (new)
+- `.gitignore` (modified)
+- `Bus/202604300210_PLAN_skill-usage-logging.md` (Executor Notes + status)
+- `Bus/202604010000_LOG_202604.md` (Status Table)
