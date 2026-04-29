@@ -16,8 +16,8 @@ linked_inputs: []
 blocked_by: ""
 rollover_count: 0
 triggers_plans: []
-closes_thread: "H01"
-advances_thread: "H02"
+closes_thread: ""
+advances_thread: ""
 parent_plan_of_plans: ""
 ---
 
