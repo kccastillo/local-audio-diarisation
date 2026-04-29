@@ -1,9 +1,9 @@
 ---
-title: "Haiku Research — [topic]"
+title: "Research — [topic]"
 type: bus-research
 created: YYYY-MM-DD
 feeds_plan: ""
-from: "Haiku"
+from: ""
 question_asked: ""
 integration_status: pending
 ---
