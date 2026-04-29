@@ -114,13 +114,13 @@ After creating a new skill:
 | `authority-detect` | Detect if content is authoritative | atomise |
 | `create-agent-skills` | Guide creation of new skills | user (invoked manually) |
 | `create-commands` | Guide creation of new commands | user (invoked manually) |
-| `write-bus-plan` | Transcribe plans into Bus/ structure | Haiku on Ken request |
-| `write-bus-input` | Write RESEARCH/ADVICE to Bus/ | Ken/Sonnet on handoff |
-| `pandoc-convert` | Convert Clippings source files to MD | Haiku in atomise pipeline |
-| `atomise` | Split MD into atomic notes | Haiku after pandoc-convert |
-| `librarian` | Route atomic notes into Wiki/ | Haiku after atomise |
+| `write-bus-plan` | Transcribe plans into Bus/ structure | active session on Ken request |
+| `write-bus-input` | Write RESEARCH/ADVICE to Bus/ | active session on handoff |
+| `pandoc-convert` | Convert Clippings source files to MD | active session in atomise pipeline |
+| `atomise` | Split MD into atomic notes | active session after pandoc-convert |
+| `librarian` | Route atomic notes into Wiki/ | active session after atomise |
 | `wiki-map-update` | Rebuild Wiki_Map.md Mermaid diagram | librarian, consolidate (after migration) |
-| `execute-plan` | Run a PLAN step-by-step | Haiku on Ken request |
+| `execute-plan` | Run a PLAN step-by-step | active session on Ken request |
 
 ---
 
