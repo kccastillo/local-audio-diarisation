@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: enforce line caps on living-config files.
+# Soft warn at 150, hard block at 300. Absent files PASS silently.
+# Only checks files that are present in this commit's staged diff.
+#
+set -euo pipefail
+
+soft=150
+hard=300
+files=("CLAUDE.md" ".claude/CONTEXT_CONSTITUTION.md")
+
+# Files staged for this commit (added/modified). Excludes deletions.
+staged=$(git diff --cached --name-only --diff-filter=AM)
+
+fail=0
+for f in "${files[@]}"; do
+  # Only check files that are actually in this commit
+  if ! echo "$staged" | grep -Fxq "$f"; then
+    continue
+  fi
+  # Skip if the working-tree file is missing (defensive — staged but vanished)
+  if [[ ! -f "$f" ]]; then
+    continue
+  fi
+  lines=$(wc -l < "$f")
+  if (( lines > hard )); then
+    echo "BLOCKED: $f has $lines lines (hard cap = $hard)." >&2
+    echo "  Run /maintain-claude-md prune before committing." >&2
+    fail=1
+  elif (( lines > soft )); then
+    echo "WARN: $f has $lines lines (soft cap = $soft)." >&2
+    echo "  Consider /maintain-claude-md prune. Commit allowed." >&2
+  fi
+done
+
+exit $fail

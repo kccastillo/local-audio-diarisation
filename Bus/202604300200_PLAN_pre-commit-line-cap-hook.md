@@ -1,7 +1,7 @@
 ---
 title: "Add git pre-commit hook to enforce CLAUDE.md and CONTEXT_CONSTITUTION.md line caps"
 type: bus-plan
-status: ready
+status: done
 assigned_to: ""
 priority: medium
 created: 2026-04-30
@@ -150,9 +150,20 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - [ ] One commit; push held
 
 ## Executor Notes
-*Populated after execution. Leave blank.*
 
-**Executed:**
-**Outcome:**
+**Executed:** 2026-04-30
+**Outcome:** done
 **What was done:**
+- Created `.githooks/` directory at repo root
+- Wrote `.githooks/pre-commit` hook script (line-count enforcement: soft 150, hard 300)
+- chmod +x `.githooks/pre-commit` (executable)
+- git config core.hooksPath .githooks (activated for this repo)
+- Verified hook syntax with bash -n (passed)
+- Recorded CLAUDE.md baseline: 161 lines (under both caps)
+- Created `.githooks/README.md` with activation instructions
+
 **Files modified:**
+- `.githooks/pre-commit` (new)
+- `.githooks/README.md` (new)
+- `Bus/202604300200_PLAN_pre-commit-line-cap-hook.md` (Executor Notes + status)
+- `Bus/202604010000_LOG_202604.md` (Status Table row)
