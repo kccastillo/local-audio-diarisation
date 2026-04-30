@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/scripts/log-skill-usage.sh"
+            "command": "python .claude/scripts/log-skill-usage.py"
           }
         ]
       }
