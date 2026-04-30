@@ -1,7 +1,7 @@
 ---
 title: "Set up skill-usage logging via post_tool_use hook"
 type: bus-plan
-status: needs-revision
+status: ready
 assigned_to: ""
 priority: medium
 created: 2026-04-30
@@ -25,188 +25,210 @@ parent_plan_of_plans: ""
 Add a `post_tool_use` hook to `.claude/settings.json` that fires after every `Skill` tool invocation and appends a JSON line to `.claude/_skill_usage.jsonl`. This produces the telemetry needed by the future skill-usage-audit skill (PLAN 202604300220, currently `blocked` / deferred).
 
 ## Context
-Logging skill invocations is cheap and one-shot: a small bash script + one hook entry. The *value* of the data scales with skill count and elapsed time — by setting up logging now, the future audit skill has a real history to read instead of starting from zero. The audit skill itself is deferred until either 15+ project skills exist OR a felt misfire signal hits — see PLAN 202604300220.
+Logging skill invocations is cheap and one-shot: a small Python script + one hook entry. The *value* of the data scales with skill count and elapsed time — by setting up logging now, the future audit skill has a real history to read instead of starting from zero. The audit skill itself is deferred until either 15+ project skills exist OR a felt misfire signal hits — see PLAN 202604300220.
 
-The hook is wired up by hand-authoring `.claude/settings.json` directly (Step 4 below). The script's parsing of the hook payload (Step 2) uses Opus's best-guess of Claude Code's payload field names (`tool_name`, `tool_input.skill`, `tool_input.args`, `tool_response`, `session_id`). If the actual payload uses different names, log rows will appear with empty values — that's a calibration signal, not a failure: Sonnet adjusts the script in a follow-up plan once we see what real rows look like.
+**Revision history:** This PLAN was originally bash + jq. The first execution (commit 8a35ab9, WIP) halted at the smoke-test step because jq was installed via winget but not visible on the bash session's PATH. Decision: rewrite in Python instead — Python is already a hard dependency of this project (it's a Python project), so adding a jq runtime dep for one trivial script was unnecessary tooling drift. This revision swaps `.sh` → `.py` and updates the hook command accordingly. The previous WIP work (`.gitignore` entry, `.claude/scripts/` directory) is preserved.
+
+The hook is wired up by editing `.claude/settings.json` directly. The script's parsing of the hook payload (Step 2) uses Opus's best-guess of Claude Code's payload field names (`tool_name`, `tool_input.skill`, `tool_input.args`, `tool_response`, `session_id`). If the actual payload uses different names, log rows will appear with empty values — that's a calibration signal, not a failure: Sonnet adjusts the script in a follow-up plan once we see what real rows look like.
 
 The log file is gitignored — it grows unboundedly and contains session-local context that does not belong in version history.
 
 ## Steps
 
-### Step 1: Create the scripts directory
-1. Create directory: `mkdir -p .claude/scripts`
-2. Verify: `.claude/scripts/` exists.
+### Step 1: Confirm the scripts directory exists
+1. Run: `[[ -d .claude/scripts ]] && echo OK || echo FAIL`. Expected: `OK` (directory was created in the prior WIP run).
+2. If `FAIL`: `mkdir -p .claude/scripts`.
 
-### Step 2: Write the logger script
-Create `.claude/scripts/log-skill-usage.sh` with this exact content:
+### Step 2: Remove the old bash script
 
-```bash
-#!/usr/bin/env bash
-#
-# post_tool_use hook for the Skill tool.
-# Reads the hook payload (JSON) from stdin, appends one JSONL row to the log.
-#
-# Expected payload fields (per Claude Code post_tool_use schema):
-#   - tool_name       (string)  — should be "Skill"
-#   - tool_input      (object)  — { skill: "...", args: "..." }
-#   - tool_response   (object)  — present if hook fires after tool returned
-#   - session_id      (string)  — Claude Code session UUID
-#
-# Output row schema (one JSON object per line):
-#   { "ts": "<iso8601>", "skill": "<name>", "args": "<string>",
-#     "session_id": "<uuid>", "ok": <bool> }
-#
-set -euo pipefail
-
-LOG_FILE=".claude/_skill_usage.jsonl"
-payload=$(cat)
-
-# Only log Skill tool invocations
-tool_name=$(echo "$payload" | jq -r '.tool_name // empty')
-if [[ "$tool_name" != "Skill" ]]; then
-  exit 0
-fi
-
-ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-skill=$(echo "$payload" | jq -r '.tool_input.skill // ""')
-args=$(echo "$payload" | jq -r '.tool_input.args // ""')
-session_id=$(echo "$payload" | jq -r '.session_id // ""')
-# Did the call succeed? Default to true if response missing.
-ok=$(echo "$payload" | jq -r '
-  if .tool_response == null then true
-  elif (.tool_response.error // null) != null then false
-  else true end
-')
-
-mkdir -p "$(dirname "$LOG_FILE")"
-jq -nc \
-  --arg ts "$ts" \
-  --arg skill "$skill" \
-  --arg args "$args" \
-  --arg session_id "$session_id" \
-  --argjson ok "$ok" \
-  '{ts:$ts, skill:$skill, args:$args, session_id:$session_id, ok:$ok}' \
-  >> "$LOG_FILE"
+Run:
+```
+rm -f .claude/scripts/log-skill-usage.sh
 ```
 
-### Step 3: Make the script executable
-Run: `chmod +x .claude/scripts/log-skill-usage.sh`
+Verify: `[[ ! -e .claude/scripts/log-skill-usage.sh ]] && echo OK || echo FAIL`. Expected: `OK`.
 
-### Step 4: Register the hook in settings.json (hand-authored JSON)
+### Step 2b: Write the Python script
 
-1. Pre-flight: check whether `.claude/settings.json` already exists.
-   - Run: `[[ -f .claude/settings.json ]] && [[ -s .claude/settings.json ]] && echo EXISTS || echo ABSENT`
-   - If output is `EXISTS`: HALT — set status `needs-revision`, report the file's current content in Executor Notes. Sonnet handles the merge into existing config; do not improvise.
-   - If output is `ABSENT`: proceed to step 4.2.
+Create `.claude/scripts/log-skill-usage.py` with this exact content (note: every line in the code block below starts at column 0 — do NOT add any indentation when writing the file):
 
-2. Create `.claude/settings.json` with this exact content:
+```python
+#!/usr/bin/env python3
+"""PostToolUse hook for the Skill tool.
 
-   ```json
-   {
-     "hooks": {
-       "PostToolUse": [
-         {
-           "matcher": "Skill",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "bash .claude/scripts/log-skill-usage.sh"
-             }
-           ]
-         }
-       ]
-     }
-   }
+Reads the hook payload (JSON) from stdin, appends one JSONL row to the log.
+
+Expected payload fields (per Claude Code PostToolUse schema):
+  - tool_name       (string)  — should be "Skill"
+  - tool_input      (object)  — { skill: "...", args: "..." }
+  - tool_response   (object | null) — present if hook fires after tool returned
+  - session_id      (string)  — Claude Code session UUID
+
+Output row schema (one JSON object per line):
+  { "ts": "<iso8601>", "skill": "<name>", "args": "<string>",
+    "session_id": "<uuid>", "ok": <bool> }
+"""
+import datetime
+import json
+import pathlib
+import sys
+
+LOG_FILE = pathlib.Path(".claude/_skill_usage.jsonl")
+
+
+def main() -> int:
+    try:
+        payload = json.load(sys.stdin)
+    except json.JSONDecodeError:
+        return 0
+
+    if payload.get("tool_name") != "Skill":
+        return 0
+
+    tool_input = payload.get("tool_input") or {}
+    tool_response = payload.get("tool_response")
+
+    if tool_response is None:
+        ok = True
+    elif isinstance(tool_response, dict) and tool_response.get("error") is not None:
+        ok = False
+    else:
+        ok = True
+
+    row = {
+        "ts": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "skill": tool_input.get("skill", ""),
+        "args": tool_input.get("args", ""),
+        "session_id": payload.get("session_id", ""),
+        "ok": ok,
+    }
+
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with LOG_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + "\n")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+Verify after writing:
+- `[[ -f .claude/scripts/log-skill-usage.py ]] && echo OK`
+- `python -c "import ast; ast.parse(open('.claude/scripts/log-skill-usage.py').read()); print('OK')"` exits 0 (Python syntax check).
+- `head -1 .claude/scripts/log-skill-usage.py` prints exactly `#!/usr/bin/env python3` (no leading whitespace).
+
+### Step 3: Make the Python script executable
+Run: `chmod +x .claude/scripts/log-skill-usage.py` (harmless on Windows; helpful on Unix).
+
+### Step 4: Update the hook command in settings.json
+
+`.claude/settings.json` exists from the prior WIP run AND has been hand-edited by Ken to add a `permissions` block. Make a TARGETED edit — do NOT rewrite the whole file.
+
+1. Pre-flight: confirm the file exists and currently points at the .sh script.
    ```
+   [[ -f .claude/settings.json ]] && grep -F '"command": "bash .claude/scripts/log-skill-usage.sh"' .claude/settings.json && echo OK_FOUND_OLD || echo HALT
+   ```
+   - If `OK_FOUND_OLD`: proceed.
+   - If `HALT`: set status `needs-revision` and report. The file is in an unexpected state — Sonnet investigates.
+
+2. Use the Edit tool to replace exactly this string in `.claude/settings.json`:
+   - old_string: `"command": "bash .claude/scripts/log-skill-usage.sh"`
+   - new_string: `"command": "python .claude/scripts/log-skill-usage.py"`
 
 3. Verify:
-   - `.claude/settings.json` exists: `[[ -f .claude/settings.json ]]`.
-   - File is valid JSON: `jq empty .claude/settings.json` exits 0.
-   - File contains the string `"Skill"`: `grep -F '"Skill"' .claude/settings.json` exits 0.
-   - File contains the string `log-skill-usage.sh`: `grep -F 'log-skill-usage.sh' .claude/settings.json` exits 0.
-   - Structural check: `jq -e '.hooks.PostToolUse[0].matcher == "Skill"' .claude/settings.json` exits 0.
+   - File is valid JSON: `python -c "import json; json.load(open('.claude/settings.json'))"` exits 0.
+   - New command present: `grep -F '"command": "python .claude/scripts/log-skill-usage.py"' .claude/settings.json` exits 0.
+   - Old command absent: `! grep -F 'log-skill-usage.sh' .claude/settings.json` (i.e., grep exits 1).
+   - Structural check: `python -c "import json; c=json.load(open('.claude/settings.json')); assert c['hooks']['PostToolUse'][0]['matcher']=='Skill'; print('OK')"` exits 0.
+   - Permissions block preserved: `python -c "import json; c=json.load(open('.claude/settings.json')); assert 'permissions' in c; print('OK')"` exits 0.
 
-### Step 5: Add the log file to .gitignore
-Insert one new line `.claude/_skill_usage.jsonl` into `.gitignore` directly after the existing line `.claude/settings.local.json` (which sits inside the `# Claude Code harness` section). The result should look like:
-
-```
-# Claude Code harness
-.claude/settings.local.json
-.claude/_skill_usage.jsonl
-Retired/
-```
-
-Verify:
+### Step 5: Verify .gitignore entry (carryover from prior WIP)
+The line `.claude/_skill_usage.jsonl` was added to `.gitignore` in the prior WIP commit and should already be present. Verify:
 - `grep -Fxn '.claude/_skill_usage.jsonl' .gitignore` returns exactly one match.
-- `git check-ignore .claude/_skill_usage.jsonl` exits 0 and prints the path (gitignored confirmed).
+- `git check-ignore .claude/_skill_usage.jsonl` exits 0 and prints the path.
 
-### Step 6: Smoke-test the logger script
-1. Confirm `jq` is installed: `command -v jq` must return a path. If absent, HALT with `needs-revision` (jq is required by the script; install or Sonnet picks an alternative).
+If either fails: HALT (`needs-revision`) — the prior commit's state is unexpected.
+
+### Step 6: Smoke-test the Python logger
+1. Confirm `python` is available: `command -v python` must return a path. If absent, HALT with `needs-revision`.
 
 2. Test the script in isolation against a synthetic payload:
-   ```bash
-   echo '{"tool_name":"Skill","tool_input":{"skill":"retire","args":"foo"},"session_id":"test-session"}' | bash .claude/scripts/log-skill-usage.sh
+   ```
+   echo '{"tool_name":"Skill","tool_input":{"skill":"retire","args":"foo"},"session_id":"test-session"}' | python .claude/scripts/log-skill-usage.py
    ```
 
-3. Verify a row exists: `wc -l .claude/_skill_usage.jsonl` must report 1.
+3. Verify exactly one row was written: `wc -l .claude/_skill_usage.jsonl` must report 1.
 
-4. Verify the row content: `cat .claude/_skill_usage.jsonl | jq -e 'select(.skill == "retire" and .session_id == "test-session" and .ok == true)'` must exit 0.
+4. Verify row content with python:
+   ```
+   python -c "import json; r=json.loads(open('.claude/_skill_usage.jsonl').readline()); assert r['skill']=='retire' and r['session_id']=='test-session' and r['ok'] is True; print('OK')"
+   ```
+   Must print `OK` and exit 0.
 
-5. Clean up the synthetic row: `rm .claude/_skill_usage.jsonl` (the file is gitignored; it will be re-created on first real Skill invocation).
+5. Negative test (non-Skill tool should be ignored):
+   ```
+   echo '{"tool_name":"Bash","tool_input":{"command":"ls"},"session_id":"test-session"}' | python .claude/scripts/log-skill-usage.py
+   ```
+   Then verify `wc -l .claude/_skill_usage.jsonl` STILL reports 1 (no new row).
+
+6. Clean up: `rm .claude/_skill_usage.jsonl` (file is gitignored; will be re-created on first real Skill invocation).
 
 ### Step 7: Live-test in the next session
-The hook only fires in real Claude Code sessions, so cannot be smoke-tested mid-execution. Document this caveat in Executor Notes — Ken verifies on next session start by invoking any skill and checking the log file.
+The hook only fires in real Claude Code sessions, so cannot be smoke-tested mid-execution. Document this caveat in Executor Notes — Ken verifies on next session start by invoking any skill and checking that `.claude/_skill_usage.jsonl` is created and populated.
 
-### Step 8: Stage, commit, hold push
+### Step 8: Stage, commit, push
 
-1. `git status` — confirm the changes are exactly: `.claude/scripts/log-skill-usage.sh` (new), `.claude/settings.json` (new or modified), `.gitignore` (modified), `Bus/202604300210_PLAN_skill-usage-logging.md` (modified — Executor Notes + status), `Bus/202604010000_LOG_202604.md` (modified — Status Table). `.claude/_skill_usage.jsonl` should NOT appear (gitignored). No other files.
-2. Stage all five:
+1. `git status` — confirm the changes are exactly:
+   - `.claude/scripts/log-skill-usage.sh` (deleted)
+   - `.claude/scripts/log-skill-usage.py` (new)
+   - `.claude/settings.json` (modified — command field only)
+   - `Bus/202604300210_PLAN_skill-usage-logging.md` (modified — Executor Notes + status)
+   - `Bus/202604010000_LOG_202604.md` (modified — Status Table)
+   - `.claude/_skill_usage.jsonl` should NOT appear (gitignored).
+   - No other files modified.
+
+2. Stage all five (the deleted `.sh` is staged via its path):
    ```
-   git add .claude/scripts/log-skill-usage.sh .claude/settings.json .gitignore Bus/202604300210_PLAN_skill-usage-logging.md Bus/202604010000_LOG_202604.md
+   git add .claude/scripts/log-skill-usage.sh .claude/scripts/log-skill-usage.py .claude/settings.json Bus/202604300210_PLAN_skill-usage-logging.md Bus/202604010000_LOG_202604.md
    ```
+
 3. Commit with this exact message (HEREDOC):
 
 ```
-Add skill-usage logging via post_tool_use hook
+Skill-usage logging: rewrite hook in Python (drop jq dep)
 
-- .claude/scripts/log-skill-usage.sh appends JSONL rows for every Skill call
-- PostToolUse hook in .claude/settings.json wires it up (hand-authored)
-- Log file .claude/_skill_usage.jsonl is gitignored (grows unbounded)
-- Telemetry source for future skill-usage-audit skill (PLAN 202604300220)
-- Smoke-tested against synthetic payload; live verification deferred to
-  next session start
+- Replace .claude/scripts/log-skill-usage.sh with .py (no jq required)
+- Update .claude/settings.json hook command (bash → python)
+- Preserve Ken's permissions block in settings.json
+- .gitignore entry for .claude/_skill_usage.jsonl unchanged from prior WIP
+- Smoke-tested with synthetic payload (Skill match + non-Skill ignored);
+  live verification deferred to next session start
+- Closes plan that was halted at 8a35ab9 (jq not on bash PATH)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-4. **Hold push** — Ken confirms before pushing.
+4. `git push` to origin. Push is NOT held this time — the prior WIP is already on origin and this commit closes it out.
 
 ## Verification
-- [ ] `.claude/scripts/log-skill-usage.sh` exists and is executable
-- [ ] `.claude/settings.json` exists, is valid JSON, and contains both `"Skill"` and `log-skill-usage.sh`
+- [ ] `.claude/scripts/log-skill-usage.py` exists and is executable
+- [ ] `.claude/scripts/log-skill-usage.sh` no longer exists
+- [ ] `.claude/settings.json` is valid JSON, contains `"command": "python .claude/scripts/log-skill-usage.py"`, no longer references the .sh script, and Ken's `permissions` block is preserved
 - [ ] `.gitignore` contains the exact line `.claude/_skill_usage.jsonl`
 - [ ] `git check-ignore .claude/_skill_usage.jsonl` returns the path (gitignored)
-- [ ] Synthetic payload smoke test produced exactly one valid JSONL row, then was cleaned (file removed)
-- [ ] One commit; push held
+- [ ] Synthetic Skill payload produced exactly one valid JSONL row; non-Skill payload added zero rows; log file cleaned afterwards
+- [ ] One commit; pushed to origin
 - [ ] Live verification step recorded in Executor Notes (Ken invokes any skill on next session, confirms `.claude/_skill_usage.jsonl` populated)
 
 ## Executor Notes
+*Populated after execution. Leave blank.*
 
-**Executed:** 2026-04-30
-**Outcome:** needs-revision
-**Blockers:**
-- Step 6 halted: `command -v jq` returns nothing (jq not in bash PATH). jq was installed via winget and the installation reported success, but the current bash session's PATH does not include jq's installation directory. Restarting bash or adding jq to PATH manually would resolve, but that exceeds Haiku's scope. Sonnet: either (a) add jq to system PATH and retry, or (b) rewrite the script to not require jq (e.g., use sed/awk for JSON parsing instead).
-
-**What was done (before halt):**
-- Created `.claude/scripts/` directory
-- Wrote `.claude/scripts/log-skill-usage.sh` (depends on jq)
-- chmod +x `.claude/scripts/log-skill-usage.sh`
-- Created `.claude/settings.json` with hand-authored PostToolUse hook JSON (verified valid)
-- Added `.claude/_skill_usage.jsonl` to `.gitignore` (verified)
-
+**Executed:**
+**Outcome:**
+**What was done:**
 **Files modified:**
-- `.claude/scripts/log-skill-usage.sh` (new)
-- `.claude/settings.json` (new)
-- `.gitignore` (modified)
-- `Bus/202604300210_PLAN_skill-usage-logging.md` (Executor Notes + status)
-- `Bus/202604010000_LOG_202604.md` (Status Table)
+
+---
+*Prior run (commit 8a35ab9): WIP, halted on jq missing from bash PATH. Setup work preserved (gitignore entry, scripts dir, settings.json with permissions block). This re-run replaces .sh→.py and updates the hook command.*

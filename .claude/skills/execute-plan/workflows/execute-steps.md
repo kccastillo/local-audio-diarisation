@@ -81,7 +81,12 @@ The thread stays in its pillar for historical context.
 - `git push`
 - If commit or push fails: diagnose root cause and fix. Never use `--no-verify`, `--force`, or bypass signing.
 
-## Step 8: Report to Ken
+## Step 8: Retire the PLAN file
+- Invoke `Skill("retire", "{Bus/PLAN-filename.md}")` to move the completed PLAN to `Retired/`
+- The retire skill handles its own commit and push — do not skip or combine with Step 7
+- If retire fails: note in report to Ken; do not block the report
+
+## Step 9: Report to Ken
 ```
 Executed:    {PLAN filename}
 Outcome:     {outcome}
