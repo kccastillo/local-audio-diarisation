@@ -1,7 +1,7 @@
 ---
 title: "Set up skill-usage logging via post_tool_use hook"
 type: bus-plan
-status: ready
+status: done
 assigned_to: ""
 priority: medium
 created: 2026-04-30
@@ -225,10 +225,24 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Executor Notes
 *Populated after execution. Leave blank.*
 
-**Executed:**
-**Outcome:**
+**Executed:** 2026-05-01
+**Outcome:** done
 **What was done:**
+- Confirmed `.claude/scripts` directory exists (from prior WIP)
+- Deleted `.claude/scripts/log-skill-usage.sh` (old bash+jq script)
+- Created `.claude/scripts/log-skill-usage.py` with stdlib-only implementation (datetime, json, pathlib, sys)
+- Verified Python syntax and shebang (no leading whitespace)
+- Made script executable via `chmod +x`
+- Updated `.claude/settings.json` hook command: `bash .sh` → `python .py`
+- Verified JSON validity, new command present, old command absent, hook structure, Ken's permissions block preserved
+- Verified `.gitignore` entry for `.claude/_skill_usage.jsonl` present and active
+- Smoke-tested: Skill payload → 1 row; row fields correct; non-Skill tool (Bash) → 0 rows (correctly ignored)
+- Cleaned up test log file
+
 **Files modified:**
+- `.claude/scripts/log-skill-usage.sh` (deleted)
+- `.claude/scripts/log-skill-usage.py` (created, executable)
+- `.claude/settings.json` (command field updated)
 
 ---
 *Prior run (commit 8a35ab9): WIP, halted on jq missing from bash PATH. Setup work preserved (gitignore entry, scripts dir, settings.json with permissions block). This re-run replaces .sh→.py and updates the hook command.*
