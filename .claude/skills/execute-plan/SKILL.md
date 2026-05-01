@@ -1,13 +1,13 @@
 ---
 name: execute-plan
-description: Plan execution skill. Runs a PLAN from Bus/ end-to-end — executes steps in order, populates Executor Notes, updates the monthly LOG Status Table, commits, and pushes to origin. Trigger phrases: "execute this plan", "implement the plan", "run PLAN_x", "ok implement".
+description: Plan execution skill. Runs a PLAN from Bus/ end-to-end — executes steps in order, populates Executor Notes, updates the monthly LOG Status Table, writes last_executor_outcome to PLAN frontmatter. Caller (plan-pipeline orchestrator or Human) commits and pushes. Trigger phrases: "execute this plan", "implement the plan", "run PLAN_x", "ok implement".
 ---
 
 <essential_principles>
 Execute the plan as written — do not redesign, re-scope, or improve mid-flight.
 Execute steps in order. Verify each before moving on.
 If a step is ambiguous, unsafe, or marked [Ken]: halt and flag. Do not improvise.
-Always populate Executor Notes AND update the LOG before git commit.
+Always populate Executor Notes AND update the LOG before returning to the caller (caller commits + pushes per parent PLAN 202605011400 decisions 13, 22).
 On closure (outcome=done), if frontmatter sets closes_thread / advances_thread / parent_plan_of_plans, apply the roadmap sync (workflows/execute-steps.md Step 4.5) before LOG update.
 Git commit and push are the caller's responsibility (e.g. plan-pipeline orchestrator, or the Human during bootstrap) — execute-plan no longer commits or pushes.
 Retirement of the PLAN file is the caller's responsibility — execute-plan no longer auto-retires.
@@ -49,8 +49,8 @@ The skill framework does not self-execute. The executor reads the skill's workfl
 - Never skip the LOG update — Ken needs monthly visibility
 - Caller must commit and push after execute-plan returns; never use --no-verify, --force, --force-with-lease, or bypass signing
 - If a PLAN step requires tools or permissions the executor lacks: halt, flag, escalate to Ken
-- If outcome is not "done": still commit and push, but clearly mark blockers in the commit body
-- **Halt-on-failure protocol:** If any step fails or produces output that does not match the step's verification criteria, halt the PLAN immediately. Do not attempt subsequent steps. Set frontmatter `status: needs-revision`. Populate Executor Notes with: which step failed, actual output, suspected cause. Update LOG Status Table row to `needs-revision` AND reorder entire Status Table per the sort rule in write-bus-plan/SKILL.md (non-terminal statuses first by filename descending, then terminal by filename descending). Commit + push partial work with message beginning `WIP:` and clearly notes the halt. Report to Ken.
+- If outcome is not "done": still populate Executor Notes and update LOG; the caller decides commit cadence and content per parent PLAN 202605011400 decision 22.
+- **Halt-on-failure protocol:** If any step fails or produces output that does not match the step's verification criteria, halt the PLAN immediately. Do not attempt subsequent steps. Set frontmatter `status: needs-revision` AND write `last_executor_outcome` with `outcome: exception` + diagnostics_summary. Populate Executor Notes with: which step failed, actual output, suspected cause. Update LOG Status Table row to `needs-revision` AND reorder entire Status Table per the sort rule in write-bus-plan/SKILL.md (non-terminal statuses first by filename descending, then terminal by filename descending). Return to caller — caller (orchestrator or Human in bootstrap) handles commit/push of partial work with `WIP:` prefix per decision 22. Report to Ken.
 </constraints>
 
 <success_criteria>
@@ -60,6 +60,6 @@ The skill framework does not self-execute. The executor reads the skill's workfl
 - Monthly LOG Status Table row updated with the final outcome (matches PLAN frontmatter `status`)
 - last_executor_outcome frontmatter populated with outcome enum + diagnostics_summary.
 - Ken has been given the final report: filename, outcome, LOG path
-- Halt-on-failure protocol applied: any failed step results in PLAN status `needs-revision` and a `WIP:` commit; Ken is notified before any further steps are attempted
+- Halt-on-failure protocol applied: any failed step results in PLAN status `needs-revision` AND `last_executor_outcome.outcome: exception`; caller is notified to handle commit/push and recovery
 - Roadmap sync applied if applicable: thread Status flipped to `closed` and closure bullet appended in pillar (closes_thread), or progress bullet appended in pillar (advances_thread), or parent plan-of-plans updated (parent_plan_of_plans). ROADMAP.md frontmatter last_updated bumped to today.
 </success_criteria>

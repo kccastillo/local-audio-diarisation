@@ -73,6 +73,6 @@ The thread stays in its pillar for historical context.
 Executed:    {PLAN filename}
 Outcome:     {outcome}
 LOG:         {LOG filename} → status: {status}
-Commit:      {hash} on {branch}
-Pushed:      {branch} → origin
+last_executor_outcome: {outcome enum} (subtype: {outcome_subtype})
 ```
+Caller (plan-pipeline orchestrator or Human) handles git commit + push per parent PLAN 202605011400 decisions 13, 22.
