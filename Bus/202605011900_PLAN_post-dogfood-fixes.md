@@ -12,7 +12,8 @@ due: ""
 repeatable: false
 repeat_cadence: ""
 linked_decisions: []
-linked_inputs: []
+linked_inputs:
+  - 202605012000_RESEARCH_subagent-bash-permissions.md
 blocked_by: ""
 rollover_count: 0
 triggers_plans: []
