@@ -1,7 +1,7 @@
 ---
 title: "Dogfood plan-pipeline against a real small target (note-jot utility skill)"
 type: bus-plan
-status: blocked
+status: ready
 assigned_to: sonnet
 priority: medium
 created: 2026-05-01
@@ -13,7 +13,7 @@ repeatable: false
 repeat_cadence: ""
 linked_decisions: []
 linked_inputs: []
-blocked_by: "Parent PLAN 202605011400 step 8 (CLAUDE.md skill table updated) must be done before this child runs — implies all three skill-creation children are also done"
+blocked_by: ""
 rollover_count: 0
 triggers_plans: []
 closes_thread: ""
