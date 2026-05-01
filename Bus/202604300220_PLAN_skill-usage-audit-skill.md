@@ -7,14 +7,14 @@ priority: low
 created: 2026-04-30
 created_by: opus
 created_month: 202604
-log_month: 202604
+log_month: 202605
 due: ""
 repeatable: false
 repeat_cadence: ""
 linked_decisions: []
 linked_inputs: []
 blocked_by: "deferred until either (a) project has 15+ skills, OR (b) Ken hits a felt misfire (Claude invoking the wrong skill at a noticeable rate). When unblocked, Sonnet must revise Steps 2-6 below using the actual log data accumulated by then."
-rollover_count: 0
+rollover_count: 1
 triggers_plans: []
 closes_thread: ""
 advances_thread: ""

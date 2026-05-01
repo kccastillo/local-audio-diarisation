@@ -7,14 +7,14 @@ priority: high
 created: 2026-04-29
 created_by: haiku
 created_month: 202604
-log_month: 202604
+log_month: 202605
 due: ""
 repeatable: false
 repeat_cadence: ""
 linked_decisions: []
 linked_inputs: []
 blocked_by: ""
-rollover_count: 0
+rollover_count: 1
 triggers_plans: []
 closes_thread: ""
 advances_thread: ""
