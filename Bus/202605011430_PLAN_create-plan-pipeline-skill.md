@@ -68,10 +68,14 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
    - `drafting` → run `ideate` in parent session (interactive, per decision 10); checkpoint via `plan-writer` foreground dispatch at clarify-locked and survey-converged moments. After write, commit+push (decision 22). On Converge close: flip `pipeline_phase: drafted`.
    - `drafted` (audit loop, per decision 21): orchestrator behaviour is fully spelled out in decision 21 of parent — implement that exact state machine. Audits run foreground; outcome-driven branching; durable `audit_state` frontmatter; per-stage iteration counters with MAX_ITERATIONS=5.
    - `checked` → flip `pipeline_phase: executing`; commit+push the phase flip; dispatch `plan-executor` **background** (the only background dispatch); orchestrator returns control to parent.
-   - `executing` → orchestrator skill returns. The parent Claude must re-invoke `plan-pipeline` when the executor's completion message arrives (the single conversational re-entry point — see decision 18). On re-entry: read `outcome` from the agent's return.
-     - `outcome: success` → flip `pipeline_phase: complete`; commit+push.
+   - `executing` → orchestrator skill returns. The parent Claude must re-invoke `plan-pipeline` when the executor's completion message arrives (the single conversational re-entry point — see decision 18). On re-entry: read `outcome` from PLAN frontmatter (`last_executor_outcome`).
+     - `outcome: success` → flip `pipeline_phase: outcome-verifying` (NEW — per decision 25); run state and acceptance verifications; do NOT advance to complete until verifications pass.
      - `outcome: revision_needed` → revert `pipeline_phase: drafted`; reset `audit_state` if appropriate (because content changed); surface findings; commit+push.
      - `outcome: exception` → kanban full stop; commit+push WIP state with diagnostics.
+   - `outcome-verifying` (NEW phase per decision 25) → run all `verify:` and `acceptance:` shell commands from PLAN's Verification section; tally pass/fail; collect `verify: human` items into `verification_state.human_pending`; commit+push the state update.
+     - Any verify/acceptance shell command failed → outcome = revision_needed, override executor's success, revert pipeline_phase to drafted, surface diagnostics.
+     - All shell checks passed AND no human_pending → flip `pipeline_phase: complete`, advance to retire.
+     - All shell checks passed AND human_pending non-empty → surface human items, return control. On Human reply re-invocation: interpret reply, set `verification_state.human_verdict`, branch (all_pass → complete; rejected → revision_needed → drafted).
    - `complete` → invoke `Skill("retire", "<path>")` directly OR dispatch `plan-retirer` foreground (skill design choice). After successful retire: commit+push.
 
    **Re-entry idempotency:** any orchestrator invocation must read `pipeline_phase` and `audit_state` from disk first to determine the current state. Re-invocation on the same state must not double-dispatch (e.g. if parent Claude accidentally invokes orchestrator twice on the same return message, the second invocation should detect "no state change since last action" and no-op). Implement via a simple "if outcome was already recorded for this stage and state hasn't advanced, do nothing" check.
@@ -127,6 +131,7 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
 - [ ] Decision 20: `outcome` enum (success | revision_needed | exception) is the load-bearing contract; routing table documented for each (phase, outcome) pair
 - [ ] Decision 21: explicit audit-loop state machine documented (durable audit_state frontmatter; per-stage iteration counters; MAX_ITERATIONS=5; rerun-vs-continue signals from outcome enum)
 - [ ] Decision 22: orchestrator commits + pushes at every milestone (write, Human revision, audit_state update, executor success, retire, exception halt) with descriptive commit messages
+- [ ] Decision 25: outcome-verifying phase implemented between executing→complete; runs verify:/acceptance: shell commands; surfaces verify: human items via structured prompt; verification_state durable on disk; human_verdict re-entry flow documented (pending → all_pass | rejected)
 - [ ] Visual feedback: phase transitions echoed to Human conversationally; LOG Status Table updated per phase
 - [ ] Smoke test passes
 

@@ -184,6 +184,79 @@ Build an end-to-end orchestrator skill (`plan-pipeline`) that walks the planning
     ```
     This makes orchestrator re-entry deterministic: orchestrator reads PLAN frontmatter on re-entry, sees `last_executor_outcome.outcome`, branches accordingly. Avoids fragile "scan conversation history for the agent return". The `<pipeline-result>` block (decision 23) is the canonical wire format; the durable disk record is the frontmatter field.
 
+25. **Spec verification by an independent verifier — not the executor.** Plan-executor (Haiku) runs the steps and self-reports `outcome: success`. Self-report is not enough — the *right things* must be independently verified to have been done. The orchestrator runs an **outcome-verification phase** between `executing` and `complete`, separate from the executor's own self-tick.
+
+    **Two tiers of verification, both shell-runnable (zero LLM tokens for the happy path):**
+
+    1. **State assertions** — `verify:` shell commands per Verification item. Mechanical: file exists, grep matches, command exit code. Catches "executor said done but didn't actually edit the file." Cheap, broad.
+
+    2. **Spec acceptance sampling** — `acceptance:` shell commands that exercise the deliverable's *behaviour* against the Objective. Sampled, not exhaustive — one or two critical-path behavioural checks per PLAN. Catches "we did the steps but the result doesn't actually work." Examples: invoke the new skill on a representative input and grep the output for an expected pattern; trigger the new orchestrator on a tiny target and check the resulting frontmatter state; for a refactor, run a focused command and check it now does/doesn't do something.
+
+    **Mandatory format for every PLAN's Verification section** (per parent decision 16's contract orientation):
+    ```
+    - [ ] <prose description>
+          verify: <shell command, exit 0 = pass>      # state-level
+    - [ ] <prose description>
+          acceptance: <shell command, exit 0 = pass>  # spec-level (at least one per PLAN)
+    - [ ] <prose>
+          verify: human                                # for genuinely subjective items
+    ```
+    Each PLAN MUST include at least one `acceptance:` item — non-negotiable. Items marked `verify: human` are surfaced to the Human at outcome-verification time but do not auto-fail the pipeline (they're inconclusive, not failed).
+
+    **Orchestrator's outcome-verification phase:**
+    ```
+    on plan-executor return with outcome: success:
+      pipeline_phase = outcome-verifying  # new transient state
+      run all verify: <shell> commands, tally pass/fail
+      run all acceptance: <shell> commands, tally pass/fail
+
+      collect all verify: human items into a "human_pending" list and write
+        verification_state to PLAN frontmatter:
+          verification_state:
+            state_pass: N
+            state_fail: N
+            acceptance_pass: N
+            acceptance_fail: N
+            human_pending: [list of item descriptions]
+            human_verdict: pending | all_pass | rejected
+      commit + push the verification_state update (decision 22)
+
+      branch:
+        if any verify: or acceptance: shell command failed:
+          outcome = revision_needed (override executor's success)
+          diagnostics: list of failed assertions with commands and exit codes
+          revert pipeline_phase to drafted, surface, halt
+        else if human_pending is non-empty:
+          surface the human items to the parent conversation with explicit prompt:
+            "Outcome-verification: <N> auto-checks passed. <M> items need
+             your eyeball:
+             - [item 1 prose]
+             - [item 2 prose]
+             Reply 'all good' to mark them passed, or describe what is wrong."
+          orchestrator returns control. pipeline_phase stays at outcome-verifying.
+        else (no human items, all auto-checks passed):
+          flip pipeline_phase = complete, advance to retire
+    ```
+
+    **`verify: human` flow — how it transmits to the orchestrator:**
+    1. **Storage.** During the verification phase the orchestrator writes a `verification_state.human_pending` list to PLAN frontmatter (the `verify: human` items' prose descriptions). State is durable on disk so a missed re-entry is recoverable.
+    2. **Surfacing.** The orchestrator surfaces those items to the parent conversation in a structured prompt: "These items need your eyeball: [list]. Reply 'all good' to mark them passed, or describe what is wrong."
+    3. **Re-entry trigger.** The Human's reply is the trigger. The parent Claude, seeing a reply that's a yes/no/critique to the prompt, re-invokes `Skill("plan-pipeline", "<plan>")`.
+    4. **Interpretation.** Orchestrator on re-entry reads `pipeline_phase: outcome-verifying` AND `verification_state.human_verdict: pending`. It examines the Human's most recent message. If unambiguously affirming ("all good", "yes", "approved", "pass"), set `human_verdict: all_pass` and continue; if rejecting/critiquing, set `human_verdict: rejected` with the Human's text as diagnostics. If ambiguous: re-prompt explicitly ("Please reply with 'pass' or 'fail [reason]'"). Update verification_state, commit + push.
+    5. **Branch from there:**
+       - `human_verdict: all_pass` → flip `pipeline_phase: complete`, advance to retire.
+       - `human_verdict: rejected` → outcome = revision_needed, revert `pipeline_phase: drafted`, surface diagnostics.
+    6. **Token cost:** parsing the Human's reply is the only LLM cost in the happy path (a single short read). Everything else is bash.
+
+    **Where the criteria land:**
+    - `_shared/plan-safe.md` (created in step 1): adds a clause that every Verification item must be shell-runnable (`verify:` or `acceptance:` or `verify: human`).
+    - `audit-haiku-safe` (child 1420): one of its mechanical checks is "every Verification item has the right shell-command format and at least one acceptance: item exists".
+    - `audit-sufficiency` (child 1425): adds a seventh lens — "does the acceptance sample actually exercise what the Objective claims, or is it only incidental?"
+    - `plan-pipeline` orchestrator (child 1430): new transient `outcome-verifying` phase between `executing` and `complete`.
+    - `plan-template.md` (updated in step 5): example Verification items show the new format.
+
+    **Token cost analysis:** state and acceptance commands are bash — zero LLM tokens for execution. Only the failure path costs tokens (orchestrator surfaces diagnostics + Human resolves). Happy path is essentially free. Sampling principle: acceptance doesn't need full coverage; if the sample exercises a representative critical-path behaviour, the rest is presumed coherent.
+
 **Constraints.**
 - Several steps below ("create the `ideate` skill") are inherently design-heavy and not Haiku-safe by the strict definition. This PLAN's `assigned_to: sonnet` is a guideline (per decision 8). Expect `check-plan` (when it exists, and when run on this PLAN dogfood-style) to flag the design-heavy steps for decomposition into per-skill sub-plans.
 - Dogfood phase requires `plan-pipeline` to exist before it can run, so the dogfood test is sequenced last (child PLAN 4) and targets the real-but-small `note-jot` utility skill — chosen so the ideation phase has genuine surface to exercise.
@@ -224,12 +297,32 @@ Discoveries made while sharpening this PLAN to be Haiku-safe — to feed forward
 
 - **Codified orchestrator behaviour replaces memory crutches** (step 3c revised). Originally we planned to *update* the `feedback_retire_push.md` memory note to reflect decision 13. After review, the memory note's purpose (reminding future Claude to commit+push after retire) is fully superseded by decision 22's stepwise milestone-commit logic. We *delete* the memory note instead — the orchestrator's codified behaviour is the new source of truth. Standalone retire callers (Human ad-hoc) own git themselves; no memory note needed.
 
+- **Spec verification ≠ step-tick verification** (decision 25). The original Verification section had Sonnet/Haiku read each item and judge "is this true?" — vulnerable to executor laziness/hallucination, and only checks intermediate state. Decision 25 splits into mechanical state assertions (`verify:`) and behavioural acceptance samples (`acceptance:`), both shell-runnable, executed by the orchestrator (not the executor) as a separate `outcome-verifying` phase between executing→complete. Token cost is near-zero on the happy path; only the failure path costs LLM tokens. The `verify: human` annotation handles genuinely subjective items via a structured prompt → human reply → orchestrator interpretation cycle, with verification_state on disk for re-entry idempotency.
+
 ## Steps
 
-1. **Create shared plan-safe reference.**
+1. **Create shared plan-safe reference (with verification-format clause).**
    - Create new file `.claude/skills/_shared/plan-safe.md`.
    - Copy the content of the `<plan_safe_definition>` block (lines 23–36 of `.claude/skills/execute-plan/SKILL.md`) into it, formatted as a standalone reference doc with H1 title "Plan-safe definition".
-   - Verification: file exists; content matches.
+   - **Append a new section** at the end:
+     ```markdown
+     ## Verification format requirement (per PLAN 202605011400 decision 25)
+
+     Every PLAN's `## Verification` section item must be shell-runnable, with one of the following annotations on the line directly below the prose checkbox:
+
+     - `verify: <shell command>` — state assertion (file exists, grep matches, command exit code). Exit 0 = pass.
+     - `acceptance: <shell command>` — spec-level behavioural check that exercises the deliverable. Exit 0 = pass. **Every PLAN must include at least one `acceptance:` item.**
+     - `verify: human` — genuinely subjective item; surfaced for Human eyeball but does not auto-fail.
+
+     The orchestrator runs all `verify:` and `acceptance:` commands as a separate outcome-verification phase (after plan-executor returns success, before advancing to complete). Failures override the executor's self-reported success.
+     ```
+   - Verification:
+     - [ ] file exists
+           `verify: test -f .claude/skills/_shared/plan-safe.md`
+     - [ ] file references the verification format clause
+           `verify: grep -q "Verification format requirement" .claude/skills/_shared/plan-safe.md`
+     - [ ] file's plan-safe definition body matches the original (sampled)
+           `acceptance: grep -q "Concrete: specific file paths" .claude/skills/_shared/plan-safe.md`
 
 2. **Update `execute-plan/SKILL.md` to reference the shared file.**
    - Replace lines 23–36 of `.claude/skills/execute-plan/SKILL.md` with a one-line reference: `**Plan-safe definition:** See [../_shared/plan-safe.md](../_shared/plan-safe.md) — single source of truth shared with check-plan.`
@@ -315,7 +408,27 @@ Discoveries made while sharpening this PLAN to be Haiku-safe — to feed forward
      ```
      pipeline_phase: ""       # plan-pipeline orchestration state; empty for ad-hoc PLANs (see bus-conventions.md)
      ```
-   - Verification: `grep -n "PLAN Pipeline Phase" .claude/skills/write-bus-plan/references/bus-conventions.md` returns the heading line; `grep -n "pipeline_phase:" .claude/skills/write-bus-plan/templates/plan-template.md` returns the new line.
+   - Replace the existing `## Verification` section example items (lines 39–43 of plan-template.md) with this updated example, demonstrating the verify:/acceptance: format (per parent decision 25):
+     ```markdown
+     ## Verification
+     - [ ] [State check — e.g. "file X exists"]
+           `verify: test -f path/to/file`
+     - [ ] [State check — e.g. "frontmatter status field is 'active'"]
+           `verify: grep -q "^status: active" path/to/file`
+     - [ ] [Acceptance check — exercises the deliverable's behaviour. AT LEAST ONE per PLAN.]
+           `acceptance: <shell command that runs the deliverable on a representative input and checks its output>`
+     - [ ] [Subjective item — surfaced for Human eyeball; no auto-fail]
+           `verify: human`
+     ```
+   - Verification:
+     - [ ] bus-conventions.md contains pipeline_phase section
+           `verify: grep -q "PLAN Pipeline Phase" .claude/skills/write-bus-plan/references/bus-conventions.md`
+     - [ ] template includes pipeline_phase frontmatter
+           `verify: grep -q "^pipeline_phase:" .claude/skills/write-bus-plan/templates/plan-template.md`
+     - [ ] template Verification section references verify:/acceptance: format
+           `verify: grep -q "acceptance:" .claude/skills/write-bus-plan/templates/plan-template.md`
+     - [ ] template format actually parses as the new format (acceptance check)
+           `acceptance: grep -E '^\s*(verify|acceptance):' .claude/skills/write-bus-plan/templates/plan-template.md | wc -l | awk '{exit !($1>=3)}'`
 
 6. **[Human — design-review checkpoint]** Pause here.
    - **Apply the decision-triage rule (decision 15) first.** Classify each design decision (1–N) into Already-locked, Mechanically-forced, or Real-judgement-call.
@@ -458,6 +571,9 @@ Discoveries made while sharpening this PLAN to be Haiku-safe — to feed forward
 - [ ] `retire/workflows/retire-file.md` no longer contains commit/push step; `retire/SKILL.md` description, quick_start return, and success_criteria no longer reference git operations (parent step 3b)
 - [ ] Memory file `feedback_retire_push.md` deleted; MEMORY.md index entry removed (parent step 3c)
 - [ ] `execute-plan` halt-on-failure protocol writes `last_executor_outcome` frontmatter with `outcome: exception`; SKILL.md success_criteria includes last_executor_outcome line (parent step 3, per decisions 19, 24)
+- [ ] `_shared/plan-safe.md` includes the verification-format clause requiring verify:/acceptance:/human annotations (parent step 1, per decision 25)
+- [ ] `plan-template.md` Verification section demonstrates the verify:/acceptance: format with at least one acceptance: example (parent step 5, per decision 25)
+      `acceptance: grep -E '^\s*acceptance:' .claude/skills/write-bus-plan/templates/plan-template.md`
 - [ ] `write-bus-plan/SKILL.md` description and `<essential_principles>` updated per step 4 exact text
 - [ ] `bus-conventions.md` contains "## PLAN Pipeline Phase" section; `plan-template.md` contains `pipeline_phase: ""` (parent step 5)
 - [ ] `.claude/agents/` contains five pinned-model subagent files (plan-writer, sufficiency-auditor, plan-safety-auditor, plan-executor, plan-retirer); no `planning-ideator` (parent step 6a)

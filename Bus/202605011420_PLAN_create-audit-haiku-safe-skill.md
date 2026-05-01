@@ -83,6 +83,7 @@ Spawned from parent PLAN `202605011400`. Per parent's revised decision 5: suffic
 - [ ] Decision 16 compliance: SKILL.md contains `<preconditions>` and `<output_schema>` blocks
 - [ ] Decision 19: SKILL.md contains `<exception_conditions>` block (e.g. PLAN unreadable, sufficiency-auditor not yet passed, shared plan-safe.md missing); subagent self-terminates with `outcome: exception` on any condition; no mid-execution milestones (not platform-supported)
 - [ ] Decision 20: explicit `<inputs>` block AND `<output_schema>` block in SKILL.md body; output schema includes `outcome: enum[success, revision_needed, exception]` + `payload: {blockers_count, review_text}` + `diagnostics`
+- [ ] Decision 25: skill checks every PLAN Verification item is shell-runnable (annotated `verify:`, `acceptance:`, or `verify: human`) AND at least one `acceptance:` item exists per PLAN. Missing format or absent acceptance item → flag as blocker.
 - [ ] Sequencing precondition documented: requires audit-sufficiency to have run and passed first
 - [ ] Smoke test against self produces a substantive, mechanical review
 

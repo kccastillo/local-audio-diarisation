@@ -30,13 +30,14 @@ Create the `audit-sufficiency` skill at `.claude/skills/audit-sufficiency/SKILL.
 
 Spawned from parent PLAN `202605011400`. The need for this skill was surfaced during the dogfood when six rounds of mechanical check returned `Blockers: 0` but a Human-led Opus pass identified six architectural issues none of the prior reviews touched. See ADVICE 202605011500 for the worked exemplar of what an Opus-pass output looks like — that is the design reference for this skill.
 
-**What it checks** (six lenses — borrowed from the exemplar):
+**What it checks** (seven lenses — borrowed from the exemplar; the seventh added per parent decision 25):
 1. **Assumptions** — what is the design depending on but hasn't verified? Surface load-bearing assumptions before they become silent failures.
 2. **Validation path** — when does the design first get tested? If late, what's at risk if foundational assumptions are wrong?
 3. **Test fidelity** — does the dogfood / smoke test exercise real friction, or is it a contrived smoke test?
 4. **Edge cases at orchestration layer** — missing referenced artefact? malformed sub-output? downstream component fails? Are these handled?
 5. **Freshness** — anything elsewhere in codebase / memory / docs that this design contradicts? Anything that will become misleading after execution?
 6. **Meta** — is the design over-engineered? Could it be smaller? What's the minimum viable version?
+7. **Spec-acceptance fidelity** (decision 25) — does the PLAN's `acceptance:` sample(s) actually exercise what the Objective claims to deliver, or do they just incidentally box-tick? Are they too narrow (one branch covered, others not) or too broad (untestable as written)? An acceptance sample that doesn't relate to the Objective is a blocker.
 
 **What it does NOT check** (mechanical lens — that's `audit-haiku-safe`'s job):
 - Per-step concreteness, atomicity, exact-text completeness, line-number accuracy.
@@ -79,6 +80,7 @@ Spawned from parent PLAN `202605011400`. The need for this skill was surfaced du
 - [ ] Decision 16 compliance: SKILL.md contains `<preconditions>` and `<output_schema>` blocks
 - [ ] Decision 19: SKILL.md contains `<exception_conditions>` block (PLAN unreadable, linked_inputs missing, PLAN structurally malformed); subagent self-terminates with `outcome: exception` on any condition; no mid-execution milestones (not platform-supported)
 - [ ] Decision 20: explicit `<inputs>` block AND `<output_schema>` block in SKILL.md body; output schema includes `outcome: enum[success, revision_needed, exception]` + `payload: {blockers_count, review_text, triaged_human_items}` + `diagnostics`
+- [ ] Decision 25 (seventh lens): skill checks that PLAN's `acceptance:` sample(s) actually map to the Objective; an unrelated/incidental acceptance is flagged as a blocker.
 - [ ] Sequencing documented: this skill runs first; `audit-haiku-safe` runs after
 - [ ] Smoke test against parent PLAN produces substantive output reflective of the exemplar's quality
 
