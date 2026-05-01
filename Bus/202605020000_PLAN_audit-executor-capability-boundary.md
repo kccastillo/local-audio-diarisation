@@ -19,11 +19,11 @@ triggers_plans: []
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: ""
-pipeline_phase: drafted
+pipeline_phase: checked
 audit_state:
   sufficiency_iterations: 2
-  plan_safety_iterations: 0
-  last_stage: sufficiency
+  plan_safety_iterations: 1
+  last_stage: plan_safety
   last_outcome: success
 ---
 
