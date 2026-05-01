@@ -1,0 +1,24 @@
+# Plan-safe definition
+
+A plan is "plan-safe" (executable mechanically, without design work) when every step is:
+- **Concrete:** specific file paths, exact command syntax, no "likely" or "probably"
+- **Unambiguous:** no judgment calls; the executor runs the steps, not redesigns them
+- **Atomic:** one step at a time; clear success/failure condition
+- **Safe:** no destructive operations without explicit Human approval; no bypasses (--no-verify, --force)
+- **Testable:** verification criteria are independent and checkable
+
+Example of plan-safe: "Read SKILL.md from `.claude/skills/atomise/SKILL.md`. Verify frontmatter `name: atomise`. Extract `<process>` block (lines 43–68) to `workflows/atomise-steps.md`. Commit with message 'chore: trim atomise SKILL.md'"
+
+Example of NOT plan-safe: "Audit SKILL.md and extract any residual content. Use your judgment." (ambiguous, requires interpretation)
+
+**When authoring plans:** refer to [.claude/skills/execute-plan/workflows/execute-steps.md](../execute-plan/workflows/execute-steps.md) for the execution protocol and [.claude/skills/execute-plan/references/log-rules.md](../execute-plan/references/log-rules.md) for the LOG contract, and ensure every step passes this definition.
+
+## Verification format requirement (per PLAN 202605011400 decision 25)
+
+Every PLAN's `## Verification` section item must be shell-runnable, with one of the following annotations on the line directly below the prose checkbox:
+
+- `verify: <shell command>` — state assertion (file exists, grep matches, command exit code). Exit 0 = pass.
+- `acceptance: <shell command>` — spec-level behavioural check that exercises the deliverable. Exit 0 = pass. **Every PLAN must include at least one `acceptance:` item.**
+- `verify: human` — genuinely subjective item; surfaced for Human eyeball but does not auto-fail.
+
+The orchestrator runs all `verify:` and `acceptance:` commands as a separate outcome-verification phase (after plan-executor returns success, before advancing to complete). Failures override the executor's self-reported success.

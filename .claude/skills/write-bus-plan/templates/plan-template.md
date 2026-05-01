@@ -19,6 +19,7 @@ triggers_plans: []
 closes_thread: ""        # ROADMAP.md thread ID this PLAN fully closes (e.g. "T01"); empty if none
 advances_thread: ""      # ROADMAP.md thread ID this PLAN partially progresses; empty if none
 parent_plan_of_plans: "" # Path to parent plan-of-plans file if part of a coordinated effort; empty if standalone
+pipeline_phase: ""       # plan-pipeline orchestration state; empty for ad-hoc PLANs (see bus-conventions.md)
 ---
 
 ## Objective
@@ -37,10 +38,14 @@ Mark [blocked-on-input] for steps waiting on a RESEARCH or ADVICE file (note whi
 3. 
 
 ## Verification
-- [ ] [Specific check — e.g. "Wiki/Property/PPOR.md exists"]
-- [ ] [Frontmatter check — e.g. "status field is 'active'"]
-- [ ] [_index.md updated if new Wiki pages were created]
-- [ ] [Wikilinks from related pages point to new pages]
+- [ ] [State check — e.g. "file X exists"]
+      `verify: test -f path/to/file`
+- [ ] [State check — e.g. "frontmatter status field is 'active'"]
+      `verify: grep -q "^status: active" path/to/file`
+- [ ] [Acceptance check — exercises the deliverable's behaviour. AT LEAST ONE per PLAN.]
+      `acceptance: <shell command that runs the deliverable on a representative input and checks its output>`
+- [ ] [Subjective item — surfaced for Human eyeball; no auto-fail]
+      `verify: human`
 
 ## Recurring Task
 *(Remove this section if repeatable: false)*

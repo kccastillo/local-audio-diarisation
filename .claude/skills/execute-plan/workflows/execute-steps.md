@@ -11,6 +11,7 @@
 - If a step is marked [Ken]: halt, surface to Ken with the specific action required, and wait for response
 - If a step is marked [blocked-on-input] (waits on a RESEARCH or ADVICE file): halt, flag the required input; it will be commissioned and `write-bus-input` will unblock the PLAN when it lands
 - If a step fails, errors, or would be unsafe: halt, capture as blocker, skip to Step 4 with outcome = blocked or partially-complete
+- On halt-on-failure (any of the conditions above — step failure, ambiguity, [Ken]/[Human] marker requiring approval, destructive operation without consent): populate `last_executor_outcome` in PLAN frontmatter with `outcome: exception` and a `diagnostics_summary`; populate Executor Notes; return. Do NOT commit (caller owns git per PLAN 202605011400 decision 13). The orchestrator (or Human in bootstrap) reads the frontmatter outcome on completion and applies the kanban full-stop.
 
 ## Step 3: Run the Verification checklist
 - For each checkbox, independently confirm the condition is true
@@ -25,6 +26,7 @@ Modify ONLY Executor Notes section + frontmatter `status`:
 - **Blockers (if any):** specific step numbers and reasons; leave blank if none
 - **Files modified:** bullets listing created/modified/renamed paths
 - **Flip frontmatter `status`** to match the Outcome exactly (done / partially-complete / blocked / needs-revision). PLAN frontmatter `status` and LOG Status column must always agree.
+- Also write `last_executor_outcome` frontmatter on completion (any outcome): outcome (enum: success | revision_needed | exception), outcome_subtype (existing values: done | partially-complete | blocked | needs-revision), executed (today YYYY-MM-DD), diagnostics_summary (one-line; empty if outcome=success). Per PLAN 202605011400 decision 24.
 
 ## Step 4.5: Roadmap and plan-of-plans sync
 
@@ -66,27 +68,7 @@ The thread stays in its pillar for historical context.
 - Update the Status column to match the Executor Notes outcome (and PLAN frontmatter `status`)
 - Update `last_updated` in the LOG frontmatter to today
 
-## Step 7: Git commit and push
-- Run `git status` to confirm expected changes
-- `git add -A`
-- Commit via HEREDOC with format:
-  ```
-  {Subject: ≤72 chars, adapted from PLAN title, reflects what was done}
-
-  - {bullet from Executor Notes "What was done"}
-  - {...}
-
-  Co-Authored-By: Claude <noreply@anthropic.com>
-  ```
-- `git push`
-- If commit or push fails: diagnose root cause and fix. Never use `--no-verify`, `--force`, or bypass signing.
-
-## Step 8: Retire the PLAN file
-- Invoke `Skill("retire", "{Bus/PLAN-filename.md}")` to move the completed PLAN to `Retired/`
-- The retire skill handles its own commit and push — do not skip or combine with Step 7
-- If retire fails: note in report to Ken; do not block the report
-
-## Step 9: Report to Ken
+## Step 7: Report to Ken
 ```
 Executed:    {PLAN filename}
 Outcome:     {outcome}

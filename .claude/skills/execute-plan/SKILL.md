@@ -8,8 +8,10 @@ Execute the plan as written — do not redesign, re-scope, or improve mid-flight
 Execute steps in order. Verify each before moving on.
 If a step is ambiguous, unsafe, or marked [Ken]: halt and flag. Do not improvise.
 Always populate Executor Notes AND update the LOG before git commit.
-Git commit + push is the final step — never skip; never use --no-verify or --force.
 On closure (outcome=done), if frontmatter sets closes_thread / advances_thread / parent_plan_of_plans, apply the roadmap sync (workflows/execute-steps.md Step 4.5) before LOG update.
+Git commit and push are the caller's responsibility (e.g. plan-pipeline orchestrator, or the Human during bootstrap) — execute-plan no longer commits or pushes.
+Retirement of the PLAN file is the caller's responsibility — execute-plan no longer auto-retires.
+On any halt (success or failure), write `last_executor_outcome` to PLAN frontmatter so callers can route deterministically (parent PLAN 202605011400 decision 24).
 </essential_principles>
 
 <preconditions>
@@ -20,20 +22,7 @@ Before starting, confirm:
 - Ken has authorised execution (trigger phrase in this skill's description)
 </preconditions>
 
-<plan_safe_definition>
-A plan is "plan-safe" (executable mechanically, without design work) when every step is:
-- **Concrete:** specific file paths, exact command syntax, no "likely" or "probably"
-- **Unambiguous:** no judgment calls; the executor runs the steps, not redesigns them
-- **Atomic:** one step at a time; clear success/failure condition
-- **Safe:** no destructive operations without explicit Ken approval; no bypasses (--no-verify, --force)
-- **Testable:** verification criteria are independent and checkable
-
-Example of plan-safe: "Read SKILL.md from `.claude/skills/atomise/SKILL.md`. Verify frontmatter `name: atomise`. Extract `<process>` block (lines 43–68) to `workflows/atomise-steps.md`. Commit with message 'chore: trim atomise SKILL.md'"
-
-Example of NOT plan-safe: "Audit SKILL.md and extract any residual content. Use your judgment." (ambiguous, requires interpretation)
-
-**When authoring plans:** refer to [workflows/execute-steps.md](workflows/execute-steps.md) for the execution protocol and [references/log-rules.md](references/log-rules.md) for the LOG contract, and ensure every step passes this definition.
-</plan_safe_definition>
+**Plan-safe definition:** See [../_shared/plan-safe.md](../_shared/plan-safe.md) — single source of truth shared with check-plan.
 
 <skill_invocation_semantics>
 **Invoking a skill from a PLAN step:**
@@ -58,8 +47,7 @@ The skill framework does not self-execute. The executor reads the skill's workfl
 - PLAN frontmatter `status` must always match the Executor Notes Outcome and the LOG Status column — never leave them in disagreement
 - Never tick a Verification checkbox without confirming the condition
 - Never skip the LOG update — Ken needs monthly visibility
-- Never skip git commit + push — the source of truth must be in origin
-- Never use `--no-verify`, `--force`, `--force-with-lease`, or bypass signing
+- Caller must commit and push after execute-plan returns; never use --no-verify, --force, --force-with-lease, or bypass signing
 - If a PLAN step requires tools or permissions the executor lacks: halt, flag, escalate to Ken
 - If outcome is not "done": still commit and push, but clearly mark blockers in the commit body
 - **Halt-on-failure protocol:** If any step fails or produces output that does not match the step's verification criteria, halt the PLAN immediately. Do not attempt subsequent steps. Set frontmatter `status: needs-revision`. Populate Executor Notes with: which step failed, actual output, suspected cause. Update LOG Status Table row to `needs-revision` AND reorder entire Status Table per the sort rule in write-bus-plan/SKILL.md (non-terminal statuses first by filename descending, then terminal by filename descending). Commit + push partial work with message beginning `WIP:` and clearly notes the halt. Report to Ken.
@@ -70,9 +58,8 @@ The skill framework does not self-execute. The executor reads the skill's workfl
 - PLAN frontmatter `status` flipped to match Outcome (not left on `ready` or `in-progress`)
 - Every State/ file modified has its frontmatter `last_updated` bumped to today
 - Monthly LOG Status Table row updated with the final outcome (matches PLAN frontmatter `status`)
-- Git commit created with subject ≤72 chars + bulleted body + Co-Authored-By trailer
-- Commit pushed to origin on the current branch
-- Ken has been given the final report: filename, outcome, LOG path, commit hash
+- last_executor_outcome frontmatter populated with outcome enum + diagnostics_summary.
+- Ken has been given the final report: filename, outcome, LOG path
 - Halt-on-failure protocol applied: any failed step results in PLAN status `needs-revision` and a `WIP:` commit; Ken is notified before any further steps are attempted
 - Roadmap sync applied if applicable: thread Status flipped to `closed` and closure bullet appended in pillar (closes_thread), or progress bullet appended in pillar (advances_thread), or parent plan-of-plans updated (parent_plan_of_plans). ROADMAP.md frontmatter last_updated bumped to today.
 </success_criteria>

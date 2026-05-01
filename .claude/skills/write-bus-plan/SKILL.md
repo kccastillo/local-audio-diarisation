@@ -1,6 +1,6 @@
 ---
 name: write-bus-plan
-description: Bus transcription skill. Use when a plan has been finalised and needs to be written into Bus/ with correct schema. Also handles monthly LOG creation, LOG updates, and rollover file updates. Trigger phrases: "write this plan to bus", "create plan file", "update the log", "write bus file", "create the log".
+description: Bus transcription skill. Writes PLAN files (and updates monthly LOG, rollover files) at any point in a plan's lifecycle — including incremental in-flight writes during ideation, draft updates, and final transcription. Overwrites of existing PLAN files with revised content are permitted. Trigger phrases: "write this plan to bus", "create plan file", "update the plan", "update the log", "write bus file", "create the log".
 ---
 
 **Bus file conventions:** See [references/bus-conventions.md](references/bus-conventions.md) — canonical source for naming, status lifecycle, and input linkage.
@@ -11,6 +11,7 @@ Always check if the current month LOG exists before writing any PLAN file. Creat
 After writing any PLAN file, update the monthly LOG's Status Table.
 For recurring PLAN files: append to the existing file's History table — do not create a new file.
 Report back: filename written, LOG updated, ready for next step.
+Overwriting an existing PLAN file with updated content is permitted during the drafting/ideation phase — preserve frontmatter `created`, `created_month`, and `created_by`; refresh body content and any `last_updated`-style fields.
 </essential_principles>
 
 **Plan writing procedure:** See [workflows/write-plan.md](workflows/write-plan.md)

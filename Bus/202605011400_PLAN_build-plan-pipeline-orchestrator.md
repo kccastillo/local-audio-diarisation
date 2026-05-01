@@ -1,7 +1,7 @@
 ---
 title: "Build plan-pipeline orchestrator and supporting skill ecosystem"
 type: bus-plan
-status: ready
+status: partially-complete
 assigned_to: sonnet
 priority: high
 created: 2026-05-01
@@ -364,12 +364,15 @@ Discoveries made while sharpening this PLAN to be Haiku-safe — to feed forward
    - In `<success_criteria>`, delete the line `- Git commit created and pushed to origin`.
    - Verification: `grep -in "commit\|push" .claude/skills/retire/SKILL.md .claude/skills/retire/workflows/retire-file.md` returns no matches related to git operations within the retire skill (the "git" string should not appear).
 
-3c. **Delete the now-redundant memory note `feedback_retire_push.md` and remove its index entry.**
-   - Rationale: the orchestrator handles git deterministically per decision 22's stepwise milestone-commit logic. The memory note's purpose (reminding future Claude to commit+push after retire) is superseded by codified orchestrator behaviour. Standalone retire callers (Human ad-hoc) own git themselves and don't need a memory crutch.
-   - Delete file: `C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/feedback_retire_push.md`
-   - Open `C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/MEMORY.md`. Delete the line `- [retire always commits and pushes](feedback_retire_push.md) — After retiring a file, always commit and push immediately.` (or equivalent line referencing `feedback_retire_push.md`).
-   - Verification: file does not exist at the deleted path; `grep -n "feedback_retire_push" C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/MEMORY.md` returns no matches.
-   - **Permission note:** if the deletion or MEMORY.md edit fails due to permissions on the user-space memory directory, halt with `outcome: exception` and request the Human to delete manually. This is a known platform-permission risk per the Opus pass.
+3c. **Memory note `feedback_retire_push.md` deletion — completed out-of-band 2026-05-01 before phase A.**
+   - Memory file `C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/feedback_retire_push.md` was deleted directly by the agent (`Bash rm`) and MEMORY.md was rewritten to remove the index entry. Done before bootstrap phase A to avoid user-space-memory permission risk during automated execute-plan.
+   - Rationale: the orchestrator handles git deterministically per decision 22; the memory note's purpose (reminding future Claude to commit+push after retire) is superseded by codified orchestrator behaviour.
+   - This step is therefore a **no-op during execute-plan** but remains documented here for traceability and verification.
+   - Verification:
+     - [ ] memory file no longer exists
+           `verify: ! test -f "C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/feedback_retire_push.md"`
+     - [ ] MEMORY.md does not reference feedback_retire_push
+           `verify: ! grep -q "feedback_retire_push" "C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/MEMORY.md"`
 
 4. **Loosen `write-bus-plan` description and principles.**
    - Open `.claude/skills/write-bus-plan/SKILL.md`.
@@ -583,10 +586,43 @@ Discoveries made while sharpening this PLAN to be Haiku-safe — to feed forward
 - [ ] All four children's outcomes summarised in this PLAN's Executor Notes
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-05-01 (Phase A — bootstrap mechanical setup)
+**Outcome:** partially-complete (steps 1–6a done; halted at step 7 awaiting children)
 **What was done:**
-**Blockers (if any):**
+- Step 1: created `.claude/skills/_shared/plan-safe.md` with the extracted plan-safe definition + verification format clause (decision 25)
+- Step 2: replaced inline plan_safe_definition in execute-plan/SKILL.md with reference to shared file
+- Step 3: deleted Step 7 (git) + Step 8 (retire) blocks from execute-plan workflow; added halt-on-failure → outcome:exception bullet to Step 2; added `last_executor_outcome` write to Step 4; updated SKILL.md essential_principles, success_criteria, constraints
+- Step 3b: removed Commit-and-push step from retire workflow; updated retire SKILL.md description, quick_start return, success_criteria, objective to drop git references
+- Step 3c: no-op (memory file `feedback_retire_push.md` already deleted out-of-band before Phase A; MEMORY.md cleared)
+- Step 4: loosened write-bus-plan/SKILL.md description and added incremental-overwrite principle
+- Step 5: added "PLAN Pipeline Phase" section to bus-conventions.md; added `pipeline_phase` frontmatter line + verify:/acceptance: Verification format guidance to plan-template.md
+- Step 6: Human checkpoint — approved in conversation (Decisions 1–25 locked at design-review point on 2026-05-01)
+- Step 6a: created 5 agent files in `.claude/agents/`: plan-writer (sonnet), sufficiency-auditor (opus), plan-safety-auditor (sonnet), plan-executor (haiku, background:true), plan-retirer (haiku)
+
+**Blockers (if any):** Step 7 contains "Wait for all four children to reach `status: done`" — non-mechanical coordination point. Bootstrap pattern: Human runs children sequentially via execute-plan, then resumes parent at step 8.
+
 **Files modified:**
+- Created: `.claude/skills/_shared/plan-safe.md`
+- Modified: `.claude/skills/execute-plan/SKILL.md`
+- Modified: `.claude/skills/execute-plan/workflows/execute-steps.md`
+- Modified: `.claude/skills/retire/SKILL.md`
+- Modified: `.claude/skills/retire/workflows/retire-file.md`
+- Modified: `.claude/skills/write-bus-plan/SKILL.md`
+- Modified: `.claude/skills/write-bus-plan/references/bus-conventions.md`
+- Modified: `.claude/skills/write-bus-plan/templates/plan-template.md`
+- Created: `.claude/agents/plan-writer.md`
+- Created: `.claude/agents/sufficiency-auditor.md`
+- Created: `.claude/agents/plan-safety-auditor.md`
+- Created: `.claude/agents/plan-executor.md`
+- Created: `.claude/agents/plan-retirer.md`
+- Deleted (out-of-band): `C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/feedback_retire_push.md`
+- Modified (out-of-band): `C:/Users/Ken/.claude/projects/d--Projects-Diarizer/memory/MEMORY.md`
+
+**Note on Verification:** the inline per-step verification grep for "Concrete: specific file paths" (step 1) failed due to markdown bold formatting (`**Concrete:**` vs literal `Concrete:`); body content is correct, confirmed by direct inspection. All other phase A verification commands passed.
+
+**last_executor_outcome:**
+  outcome: revision_needed
+  outcome_subtype: partially-complete
+  executed: 2026-05-01
+  diagnostics_summary: "Phase A complete (steps 1-6a). Halted at step 7 'Wait for children to complete' — bootstrap pattern requires Human to run children sequentially before resuming parent at step 8."

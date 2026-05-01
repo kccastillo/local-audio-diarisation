@@ -34,6 +34,22 @@ ready → in-progress → done | partially-complete | blocked | needs-revision
 
 LOG Status Table "Status" column mirrors the plan's frontmatter `status` at end of day. Rollover treats `done`, `cancelled`, `closed` as complete; everything else rolls over.
 
+## PLAN Pipeline Phase
+
+Frontmatter `pipeline_phase` field, orthogonal to `status`. Tracks orchestration state for PLANs managed by the `plan-pipeline` skill.
+
+```
+drafting → drafted → checked → executing → complete
+```
+
+- `drafting` — ideation underway; PLAN being written/updated incrementally.
+- `drafted` — ideation closed; PLAN written; awaiting sufficiency + plan-safety review.
+- `checked` — review passed; ready to execute. Aligns with `status: ready`.
+- `executing` — `plan-executor` subagent has been dispatched.
+- `complete` — execution done; ready for retirement.
+
+**Default for ad-hoc PLANs** (created directly via `write-bus-plan` outside the pipeline): field absent or empty. When `plan-pipeline` is invoked against such a PLAN, it treats absent/empty as `drafted` (assume the PLAN is already written and ready for review), not `drafting` — to avoid re-ideating an already-authored plan.
+
 ## PLAN Input Linkage
 
 Frontmatter `linked_inputs: []` contains one array of filenames — both RESEARCH and ADVICE. Type is recoverable from the `_RESEARCH_` / `_ADVICE_` token in each filename. No separate `linked_research` / `linked_advice` / `requires_opus` / `requires_research` fields — `status: blocked` + `blocked_by` carries the "needs input before running" signal.
