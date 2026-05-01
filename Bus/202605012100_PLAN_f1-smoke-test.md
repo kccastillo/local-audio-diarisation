@@ -1,7 +1,7 @@
 ---
 title: "F1 Option C smoke test — plan-executor creates tmp/smoke.txt via filesystem tools"
 type: bus-plan
-status: ready
+status: done
 assigned_to: haiku
 priority: low
 created: 2026-05-01
@@ -20,6 +20,9 @@ closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: 202605011900_PLAN_post-dogfood-fixes.md
 pipeline_phase: checked
+last_executor_outcome:
+  outcome: success
+  outcome_subtype: done
 ---
 
 ## Objective
@@ -47,8 +50,8 @@ Throwaway: retire after a successful run.
 
 *Populated after execution. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
-**What was done:**
-**Blockers (if any):**
-**Files modified:**
+**Executed:** 2026-05-01 by haiku
+**Outcome:** done
+**What was done:** Created `tmp/smoke.txt` with exact content `hello` (no trailing newline) using Write tool. File created successfully and verified via Read tool to contain correct content.
+**Blockers (if any):** None
+**Files modified:** tmp/smoke.txt (created)
