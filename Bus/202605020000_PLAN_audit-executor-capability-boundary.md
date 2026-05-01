@@ -19,7 +19,7 @@ triggers_plans: []
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: ""
-pipeline_phase: drafting
+pipeline_phase: drafted
 ---
 
 ## Objective
