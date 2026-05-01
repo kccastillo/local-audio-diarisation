@@ -41,6 +41,7 @@ camelCase principle: CLAUDE.md is living configuration; static maintenance is an
 
 | Cycle | Completed | Outcome | Audit PLAN |
 |---|---|---|---|
+| 2026-05 | 2026-05-01 | skipped — insufficient data, CLAUDE.md/CONTEXT_CONSTITUTION.md churn since last audit too low to surface meaningful findings | — |
 
 ## Executor Notes
 *Populated after execution. Leave blank.*
