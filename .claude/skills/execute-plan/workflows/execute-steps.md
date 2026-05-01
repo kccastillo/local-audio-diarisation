@@ -7,6 +7,18 @@
 - Note any cross-references to other files (e.g. "see harry_feedback_context.md")
 
 ## Step 2: Execute Steps in order
+
+**Tool-choice rule (F1 Option C, PLAN 202605011900):** the executor uses filesystem tools — Read, Write, Edit, Glob, Grep — for ALL mechanical Steps. Never call Bash for `mkdir`, `cp`, `mv`, `rm`, `touch`, `cat`, `echo`, `grep`, `sed`, `awk`, or any other filesystem operation. Reason: subagents inherit only a subset of parent permissions; shell calls fail with permission denials. Filesystem tools work in every subagent context. The plan-executor agents enforce this with `disallowedTools: [Bash, ...]`. Mapping:
+- `mkdir foo/` → use Write to create a file inside `foo/` (Write creates parent directories) or skip if not needed
+- `cp src dst` → Read src, then Write dst
+- `mv src dst` → Read src, Write dst, then (the orchestrator handles cleanup of src)
+- `cat file > out` → Read file, Write out
+- `echo "x" >> file` → Read file, Edit/Write with appended content
+- `grep pat file` → Grep tool
+- `ls dir/` → Glob tool
+
+If a PLAN Step is shell-shaped, translate the intent to the equivalent filesystem-tool call. If translation is genuinely impossible (e.g. running a test suite, invoking a compiler), halt with `outcome: exception` — that Step belongs in the orchestrator's outcome-verifying phase (`acceptance:` shell command), not the executor.
+
 - One step at a time; verify each completes before moving to the next
 - If a step is marked [Ken]: halt, surface to Ken with the specific action required, and wait for response
 - If a step is marked [blocked-on-input] (waits on a RESEARCH or ADVICE file): halt, flag the required input; it will be commissioned and `write-bus-input` will unblock the PLAN when it lands

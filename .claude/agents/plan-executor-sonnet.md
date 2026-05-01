@@ -2,7 +2,7 @@
 name: plan-executor-sonnet
 model: sonnet
 background: true
-disallowedTools: [WebFetch, WebSearch]
+disallowedTools: [Bash, WebFetch, WebSearch]
 skills: [execute-plan]
 description: Background subagent that runs the execute-plan skill against a checked PLAN. Sonnet variant — used for PLANs whose `assigned_to: sonnet` indicates Haiku won't cope (some judgement required, larger context, more reasoning). Per parent PLAN 202605011400 decisions 8 (assignments are guidelines), 17 (skills preload), 18 (background), with PLAN-driven model selection.
 ---

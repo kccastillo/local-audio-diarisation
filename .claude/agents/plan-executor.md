@@ -2,9 +2,9 @@
 name: plan-executor
 model: haiku
 background: true
-disallowedTools: [WebFetch, WebSearch]
+disallowedTools: [Bash, WebFetch, WebSearch]
 skills: [execute-plan]
-description: Background subagent that runs the execute-plan skill against a checked PLAN. The ONLY background subagent — long-running phase where parent responsiveness matters. Invoked at checked→executing. Per decisions 17, 18. Egress denied via disallowedTools. Trust model: plan-executor only sees PLANs that have already passed sufficiency-auditor + plan-safety-auditor.
+description: Background subagent that runs the execute-plan skill against a checked PLAN. The ONLY background subagent — long-running phase where parent responsiveness matters. Invoked at checked→executing. Per decisions 17, 18. `disallowedTools` denies Bash (F1 Option C, PLAN 202605011900 — executor uses filesystem tools only; shell verify:/acceptance: items are re-run by the orchestrator in parent context per decision 25) and WebFetch/WebSearch (egress denial). Trust model: plan-executor only sees PLANs that have already passed sufficiency-auditor + plan-safety-auditor.
 ---
 
 # plan-executor

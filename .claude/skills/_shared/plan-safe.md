@@ -13,6 +13,8 @@ Example of NOT plan-safe: "Audit SKILL.md and extract any residual content. Use 
 
 **When authoring plans:** refer to [.claude/skills/execute-plan/workflows/execute-steps.md](../execute-plan/workflows/execute-steps.md) for the execution protocol and [.claude/skills/execute-plan/references/log-rules.md](../execute-plan/references/log-rules.md) for the LOG contract, and ensure every step passes this definition.
 
+**Mechanical Steps must be filesystem-tool-shaped (F1 Option C, PLAN 202605011900).** Express mechanical Steps as Read/Write/Edit/Glob/Grep operations, not shell-shaped (`mkdir`, `cp`, `echo > file`, `cat file`, `sed -i`, `grep ... file`). The plan-executor agents disallow Bash structurally, so shell-shaped Steps will fail at runtime. Shell commands belong in the Verification section as `verify:`/`acceptance:` items — those run in the orchestrator's outcome-verifying phase (parent context, allowlist works correctly).
+
 ## Verification format requirement (per PLAN 202605011400 decision 25)
 
 Every PLAN's `## Verification` section item must be shell-runnable, with one of the following annotations on the line directly below the prose checkbox:

@@ -13,6 +13,7 @@ Git commit and push are the caller's responsibility (e.g. plan-pipeline orchestr
 Retirement of the PLAN file is the caller's responsibility — execute-plan no longer auto-retires.
 On any halt (success or failure), write `last_executor_outcome` to PLAN frontmatter so callers can route deterministically (parent PLAN 202605011400 decision 24).
 Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
+**Executor uses filesystem tools, never Bash, for mechanical Steps (F1 Option C, PLAN 202605011900).** Create/copy/move/read/grep/edit operations go through Read, Write, Edit, Glob, Grep — not `mkdir`/`cp`/`mv`/`cat`/`grep`/`sed` shell calls. Reason: subagents inherit only a subset of the parent's permissions (Anthropic GH #37730 closed-not-planned), so Bash calls fail with permission denials at runtime. Filesystem tools work in every subagent context. The plan-executor agents enforce this structurally via `disallowedTools: [Bash, ...]`. Bash is NOT needed for self-verification of `verify:`/`acceptance:` items — the orchestrator's outcome-verifying phase (decision 25) re-runs those in parent context, where the allowlist works correctly. The executor self-ticks Verification boxes based on filesystem-tool observations only.
 </essential_principles>
 
 <preconditions>
