@@ -2,10 +2,9 @@
 name: plan-executor-opus
 model: opus
 background: true
-permissionMode: bypassPermissions
 disallowedTools: [WebFetch, WebSearch]
 skills: [execute-plan]
-description: Background subagent that runs the execute-plan skill against a checked PLAN. Opus variant — used rarely for PLANs whose `assigned_to: opus` indicates the work is genuinely design-heavy at execution time (NOT typical — most "design-heavy" PLANs should be decomposed instead). Per parent PLAN 202605011400 decisions 8, 17, 18, with PLAN-driven model selection. permissionMode: bypassPermissions per F1 fix (see plan-executor.md for rationale; same trust model applies).
+description: Background subagent that runs the execute-plan skill against a checked PLAN. Opus variant — used rarely for PLANs whose `assigned_to: opus` indicates the work is genuinely design-heavy at execution time (NOT typical — most "design-heavy" PLANs should be decomposed instead). Per parent PLAN 202605011400 decisions 8, 17, 18, with PLAN-driven model selection.
 ---
 
 # plan-executor-opus

@@ -94,7 +94,13 @@ Surfaced during the 2026-05-01 dogfood run. Priority is engineering-effort × se
 
 ### Phase A — Converge (2026-05-01)
 
-Probe (RESEARCH 202605012000) eliminated Option C empirically; documentation evidence confirmed F1 is GitHub issue #37730 closed-as-not-planned. Survey presented A / B / A+ to Human; **chose A+** (`permissionMode: bypassPermissions` + `disallowedTools` denylist scoped to plan-executor variants only; `acceptance:` shell commands continue to run in parent context via the orchestrator's outcome-verifying phase, where allowlist works correctly). Rationale: matches the trust model (plan-executor only sees pre-audited PLANs); minimal change; doesn't depend on a defect that won't be fixed; keeps existing PLAN conventions intact.
+**Initial choice: A+ (later found ineffective).** Probe (RESEARCH 202605012000) eliminated Option C empirically; documentation evidence confirmed F1 is GitHub issue #37730 closed-as-not-planned. Survey presented A / B / A+ to Human; **chose A+** (`permissionMode: bypassPermissions` + `disallowedTools` denylist scoped to plan-executor variants only). Implemented in commit b6ed963.
+
+**A+ found ineffective (2026-05-01, post-commit).** Anthropic docs (`subagents.md` line 380) state: "If the parent uses `bypassPermissions` or `acceptEdits`, this takes precedence and cannot be overridden." Implied security model: subagents cannot escalate beyond the parent's permission mode. Since the parent session is in default (prompt) mode, the subagent's `permissionMode: bypassPermissions` is silently downgraded — the line is valid frontmatter but inert. Restart did not help because the parent stayed in default mode.
+
+**Pivoted to Option C (rewrite execute-plan to avoid Bash for mechanical steps).** Use Read/Write/Edit/Glob in the executor instead of `mkdir`/`cp`/`echo`/`cat`. `acceptance:` and `verify:` shell commands continue to run in the parent (orchestrator's outcome-verifying phase), where the parent's allowlist works correctly. Rationale: bug-proof (no dependence on a defect that won't be fixed), no special launch ritual, scoped to the executor's own tool choices, survives any future Anthropic permission-model change. Bigger rewrite than A+, but most "shell" steps map cleanly to filesystem tools.
+
+**Revert (2026-05-01).** Commit b6ed963 reverted in a follow-up commit — `permissionMode: bypassPermissions` removed from all three plan-executor agent files; `disallowedTools: [WebFetch, WebSearch]` retained (independently useful — egress denial works regardless of parent mode). Description text trimmed to remove F1 references, since the C rewrite is the load-bearing fix.
 
 ### F9 — Subagent stop semantics across phase boundaries unclear (LOW severity)
 
