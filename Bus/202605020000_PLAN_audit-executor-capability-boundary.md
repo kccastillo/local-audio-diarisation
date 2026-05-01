@@ -21,10 +21,10 @@ advances_thread: ""
 parent_plan_of_plans: ""
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 1
+  sufficiency_iterations: 2
   plan_safety_iterations: 0
   last_stage: sufficiency
-  last_outcome: revision_needed
+  last_outcome: success
 ---
 
 ## Objective
@@ -64,7 +64,7 @@ Also: codify the closeout-style-retire carve-out in `plan-pipeline/SKILL.md` so 
 
 ## Steps
 
-0. **Pre-fix smoke capture.** Author a tiny throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md` whose Step 1 says "Invoke `Skill('retire')` from inside plan-executor on `tmp/audit-smoke-target.md`". Do NOT advance it through the pipeline yet — instead, manually invoke `sufficiency-auditor` and `plan-safety-auditor` foreground via Agent tool. Capture both audit `<pipeline-result>` JSON outputs verbatim into `tmp/audit-smoke-prefix-results.txt`. Confirm both return `outcome: success` (this is the bug we're closing).
+0. **Pre-fix smoke capture (orchestrator-side, parent session).** Author a tiny throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md` whose Step 1 says "Invoke `Skill('retire')` from inside plan-executor on `tmp/audit-smoke-target.md`". Do NOT advance it through the pipeline yet — instead, the orchestrator (parent session) manually invokes `sufficiency-auditor` and `plan-safety-auditor` foreground via Agent tool. Capture both audit `<pipeline-result>` JSON outputs verbatim into `tmp/audit-smoke-prefix-results.txt`. Confirm both return `outcome: success` (this is the bug we're closing).
 
 1. **Augment `_shared/plan-safe.md`.** Add a new section after the F1 Option C rules with the following content as the target wording:
 
@@ -83,7 +83,7 @@ Also: codify the closeout-style-retire carve-out in `plan-pipeline/SKILL.md` so 
 
 4. **Author or update audit-haiku-safe regression test material.** If audit-haiku-safe maintains test fixtures, add a fixture: a PLAN whose Step 4 says "Invoke retire skill from inside executor"; assert that audit-haiku-safe returns `revision_needed` with the new capability-boundary blocker. If no test fixtures exist yet, document the regression-test scenario in audit-haiku-safe's SKILL.md as a worked example.
 
-5. **Post-fix smoke verification.** Re-invoke `plan-safety-auditor` on the same throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md`. Capture output into `tmp/audit-smoke-postfix-results.txt`. Confirm `outcome: revision_needed` with at least one blocker citing "Executor capability boundaries" or "excluded operation". Then test the runtime defence: dispatch `plan-executor` foreground (force-bypass-of-audit only for this smoke test, since the audit now correctly catches it) and confirm executor returns `outcome: exception` with diagnostic referencing "excluded operation". Finally, retire the throwaway PLAN: orchestrator (parent) `mv Bus/_tmp_audit-blind-spot-smoke.md Retired/_tmp_audit-blind-spot-smoke.md`.
+5. **Post-fix smoke verification (orchestrator-side, parent session).** Orchestrator re-invokes `plan-safety-auditor` foreground on the same throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md`. Capture output into `tmp/audit-smoke-postfix-results.txt`. Confirm `outcome: revision_needed` with at least one blocker citing "Executor capability boundaries" or "excluded operation". Then test the runtime defence: dispatch `plan-executor` foreground (force-bypass-of-audit only for this smoke test, since the audit now correctly catches it) and confirm executor returns `outcome: exception` with diagnostic referencing "excluded operation". Finally, retire the throwaway PLAN: orchestrator (parent) `mv Bus/_tmp_audit-blind-spot-smoke.md Retired/_tmp_audit-blind-spot-smoke.md`.
 
    Note: the throwaway PLAN's retire MUST happen via orchestrator (parent) since the smoke-test PLAN's content asks for the very excluded operation being tested — the executor structurally cannot retire it.
 
