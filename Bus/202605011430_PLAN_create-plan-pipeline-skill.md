@@ -49,6 +49,12 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
 
 - **One conversational re-entry point: executor completion.** When `plan-executor` (background) returns its completion message, parent Claude re-invokes `plan-pipeline` against the PLAN. Idempotent re-entry from on-disk `pipeline_phase` makes a missed cue recoverable. All other transitions are synchronous and don't require re-entry.
 
+- **PLAN-driven executor tier selection.** The orchestrator routes to one of three executor agents based on the target PLAN's `assigned_to:` frontmatter:
+  - `assigned_to: haiku` (or empty/default) → dispatch `plan-executor` (haiku)
+  - `assigned_to: sonnet` → dispatch `plan-executor-sonnet` (sonnet)
+  - `assigned_to: opus` → dispatch `plan-executor-opus` (opus)
+  Per parent decision 8, `assigned_to` is a guideline — the Human can override per PLAN. Per parent decision 16's anti-monolithic principle, prefer decomposition over `opus` execution; `plan-executor-opus` exists as an escape hatch, not a default.
+
 **Design constraints from parent's Learnings section:**
 - Trigger-phrase collision risk vs. `write-bus-plan` ("create plan file") — verify Skill matcher routes correctly; disambiguate if needed.
 - `parent_plan_of_plans` traversal — orchestrator must know how to dispatch from parent to children, wait, and resume parent.
@@ -67,7 +73,7 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
    - `(absent | empty)` pipeline_phase → treat as `drafted` (per bus-conventions ad-hoc default).
    - `drafting` → run `ideate` in parent session (interactive, per decision 10); checkpoint via `plan-writer` foreground dispatch at clarify-locked and survey-converged moments. After write, commit+push (decision 22). On Converge close: flip `pipeline_phase: drafted`.
    - `drafted` (audit loop, per decision 21): orchestrator behaviour is fully spelled out in decision 21 of parent — implement that exact state machine. Audits run foreground; outcome-driven branching; durable `audit_state` frontmatter; per-stage iteration counters with MAX_ITERATIONS=5.
-   - `checked` → flip `pipeline_phase: executing`; commit+push the phase flip; dispatch `plan-executor` **background** (the only background dispatch); orchestrator returns control to parent.
+   - `checked` → flip `pipeline_phase: executing`; commit+push the phase flip; dispatch the **appropriate executor variant** by reading the target PLAN's `assigned_to:` frontmatter (default `plan-executor` haiku; `assigned_to: sonnet` → `plan-executor-sonnet`; `assigned_to: opus` → `plan-executor-opus`). All variants run **background** (the only background dispatches in the pipeline). Orchestrator returns control to parent.
    - `executing` → orchestrator skill returns. The parent Claude must re-invoke `plan-pipeline` when the executor's completion message arrives (the single conversational re-entry point — see decision 18). On re-entry: read `outcome` from PLAN frontmatter (`last_executor_outcome`).
      - `outcome: success` → flip `pipeline_phase: outcome-verifying` (NEW — per decision 25); run state and acceptance verifications; do NOT advance to complete until verifications pass.
      - `outcome: revision_needed` → revert `pipeline_phase: drafted`; reset `audit_state` if appropriate (because content changed); surface findings; commit+push.
@@ -123,7 +129,8 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
 - [ ] Git operation handling documented: granularity, bootstrap exception, failure handling (per parent decision 13)
 - [ ] Human-facing surfacing applies decision-triage (decision 15): only Real-judgement-call items become questions
 - [ ] Decision 16 compliance: SKILL.md contains `<preconditions>`, `<output_schema>`, AND a documented set of inter-skill handoff schemas (what each subagent receives and returns)
-- [ ] Decision 18: hybrid background mode documented (only plan-executor is background); single conversational re-entry point (executor completion); idempotent re-entry from disk-state
+- [ ] Decision 18: hybrid background mode documented (only plan-executor variants are background); single conversational re-entry point (executor completion); idempotent re-entry from disk-state
+- [ ] Executor tier selection by `assigned_to:` documented (haiku default, sonnet, opus variants); routing logic concrete
 - [ ] Decision 19: subagent-driven exception handling — orchestrator routes on `outcome` enum; no streaming, no cancellation; kanban full stop on `outcome: exception`
 - [ ] Decision 20: `outcome` enum (success | revision_needed | exception) is the load-bearing contract; routing table documented for each (phase, outcome) pair
 - [ ] Decision 21: explicit audit-loop state machine documented (durable audit_state frontmatter; per-stage iteration counters; MAX_ITERATIONS=5; rerun-vs-continue signals from outcome enum)
