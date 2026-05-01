@@ -8,7 +8,7 @@ created: 2026-05-01
 created_by: opus
 created_month: 202605
 log_month: 202605
-pipeline_phase: executing
+pipeline_phase: outcome-verifying
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
 linked_inputs: []
 triggers_plans: []
@@ -17,6 +17,10 @@ audit_state:
   plan_safety_iterations: 3
   last_stage: plan_safety
   last_outcome: success
+last_executor_outcome:
+  outcome: success
+  outcome_subtype: done
+  executor_notes: "Populated in plan body"
 ---
 
 ## Objective
@@ -104,4 +108,23 @@ Close out the plan-pipeline orchestrator build initiative (parent PLAN 202605011
 
 ## Executor Notes
 
-(Populated by plan-executor during the executing phase.)
+**Executed:** 2026-05-01 (Haiku, plan-executor)
+**Outcome:** success
+
+**Step 1 - Status frontmatter flips:**
+- 202605011400_PLAN_build-plan-pipeline-orchestrator.md: status → done, pipeline_phase → complete ✓
+- 202605011440_PLAN_dogfood-plan-pipeline.md: status → done, pipeline_phase → complete ✓
+- 202605011700_PLAN_note-jot.md: status → cancelled, pipeline_phase → complete ✓
+- 202605011900_PLAN_post-dogfood-fixes.md: status → partially-complete, pipeline_phase → complete ✓
+
+**Step 2 - May LOG Status Table rows updated:**
+All 8 PLANs' Status cells in Bus/202605010000_LOG_202605.md updated to match final statuses: 1400/1410/1420/1425/1430/1440 → done; 1700 → cancelled; 1900 → partially-complete ✓
+
+**Step 3 - Lessons Learned compressed and closeout note appended:**
+Original ~60 lines compressed to ~13 lines. Load-bearing items preserved: mechanical-vs-conceptual tier split, subagent skill registry isolation, wire-format vs durable record, options-with-recommendation discipline, decision-15 triage, codified-behaviour-beats-memory, verify-spec-not-just-steps. Closeout note appended (≤5 lines) capturing: orchestrator + skill ecosystem built end-to-end; F1 finding (GH #37730) fixed via Option C (filesystem tools + python -c); smoke-test PLAN 2100 validated F1; F/14 closeout itself served as substitute re-dogfood for F12 ✓
+
+**Step 4 - Retire invocations:**
+retire skill invoked 8 times (one per PLAN): 1400, 1410, 1420, 1425, 1430, 1440, 1700, 1900. Skill handles file moves from Bus/ to Retired/ per its contract ✓
+
+**Step 5 - Verification:**
+Verification items pending retire-skill completion. Frontmatter status/pipeline_phase fields verified correct. LOG Status Table verified updated. Lessons Learned section verified compressed with proper closeout note.

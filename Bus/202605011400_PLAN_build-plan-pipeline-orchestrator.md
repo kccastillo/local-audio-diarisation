@@ -1,7 +1,7 @@
 ---
 title: "Build plan-pipeline orchestrator and supporting skill ecosystem"
 type: bus-plan
-status: partially-complete
+status: done
 assigned_to: sonnet
 priority: high
 created: 2026-05-01
@@ -24,7 +24,7 @@ linked_inputs:
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: ""
-pipeline_phase: checked
+pipeline_phase: complete
 blocked_by: ""
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Post-dogfood fixes for plan-pipeline (9 findings from PLAN 1440 run)"
 type: bus-plan
-status: ready
+status: partially-complete
 assigned_to: opus
 priority: high
 created: 2026-05-01
@@ -20,7 +20,7 @@ triggers_plans: []
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
-pipeline_phase: drafting
+pipeline_phase: complete
 ---
 
 ## Objective

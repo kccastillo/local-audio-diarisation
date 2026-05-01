@@ -1,7 +1,7 @@
 ---
 title: "Dogfood plan-pipeline against a real small target (note-jot utility skill)"
 type: bus-plan
-status: partially-complete
+status: done
 triggers_plans:
   - 202605011900_PLAN_post-dogfood-fixes.md
 assigned_to: sonnet
@@ -21,7 +21,7 @@ triggers_plans: []
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
-pipeline_phase: checked
+pipeline_phase: complete
 audit_state:
   sufficiency_iterations: 3
   plan_safety_iterations: 2
