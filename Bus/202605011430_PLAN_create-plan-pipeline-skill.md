@@ -79,9 +79,6 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
    - `complete` → invoke `Skill("retire", "<path>")` directly OR dispatch `plan-retirer` foreground (skill design choice). After successful retire: commit+push.
 
    **Re-entry idempotency:** any orchestrator invocation must read `pipeline_phase` and `audit_state` from disk first to determine the current state. Re-invocation on the same state must not double-dispatch (e.g. if parent Claude accidentally invokes orchestrator twice on the same return message, the second invocation should detect "no state change since last action" and no-op). Implement via a simple "if outcome was already recorded for this stage and state hasn't advanced, do nothing" check.
-   - `checked` → flip to `executing`; dispatch `plan-executor` agent with `run_in_background: true`.
-   - `executing` (background) → on completion notification → `complete`; on halt-on-failure → stay at `executing`, surface report.
-   - `complete` → invoke `Skill("retire", "<path>")` directly OR dispatch `plan-retirer` agent (skill design choice).
 
 4. Document the **parent/children interaction**:
    - When the active PLAN has non-empty `triggers_plans:`, orchestrator pauses parent advancement until all listed children reach `status: done`.

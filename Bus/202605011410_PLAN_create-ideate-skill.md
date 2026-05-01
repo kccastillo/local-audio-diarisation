@@ -1,8 +1,8 @@
 ---
 title: "Create ideate skill (three-phase ideation arc + write-bus-input handoff)"
 type: bus-plan
-status: blocked
-assigned_to: sonnet
+status: done
+assigned_to: opus
 priority: high
 created: 2026-05-01
 created_by: opus
@@ -13,7 +13,7 @@ repeatable: false
 repeat_cadence: ""
 linked_decisions: []
 linked_inputs: []
-blocked_by: "Parent PLAN 202605011400 must complete steps 1-6a (shared plan-safe.md, execute-plan and write-bus-plan mutations, bus-conventions update, agent files) before this child runs"
+blocked_by: ""
 rollover_count: 0
 triggers_plans: []
 closes_thread: ""
@@ -64,10 +64,27 @@ This PLAN is itself design-heavy — the child of a parent that flagged it for d
 - [ ] Handoff to plan-writer at Converge close documented
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-05-01 (authored directly in Opus during bootstrap, per option-2 path)
+**Outcome:** done
 **What was done:**
-**Blockers (if any):**
+- Created `.claude/skills/ideate/SKILL.md` with frontmatter (trigger phrases, parent-session-only note), essential_principles, preconditions, inputs, output_schema (notes that this skill is conversational, not transactional — no `<pipeline-result>` block), exception_conditions, constraints, success_criteria
+- Created `.claude/skills/ideate/workflows/ideate-arc.md` with phase-by-phase guidance: Clarify (requirement before mechanism), Survey (≥2 options with stated lean per Working style), Converge (sharpen + decision-triage at close per parent decision 15)
+- Side-channel handoff to `write-bus-input` documented for both Clarify and Survey (RESEARCH for missing data, ADVICE for persisted decisions per parent decision 12)
+- Checkpoint dispatch to `plan-writer` documented at clarify-locked and survey-converged moments (per parent decisions 4 and 18)
+- Decision 15 triage requirement at Converge close documented (Already-locked / Mechanically-forced / Real-judgement-call) so subsequent `[Human]` checkpoints don't re-prompt for already-settled decisions
+- Hard rule (decision 10) baked in: skill returns `outcome: exception` if invoked from a subagent context; runs only in parent session
+
+**Blockers (if any):** None.
+
 **Files modified:**
+- Created: `.claude/skills/ideate/SKILL.md`
+- Created: `.claude/skills/ideate/workflows/ideate-arc.md`
+
+**Smoke test deferred:** real exercise will happen the first time a Human invokes ideation against a real problem (probably during dogfood child 1440 or some real PLAN).
+
+**last_executor_outcome:**
+  outcome: success
+  outcome_subtype: done
+  executed: 2026-05-01
+  diagnostics_summary: ""
