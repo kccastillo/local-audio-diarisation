@@ -1,14 +1,14 @@
 ---
 title: "F/14 closeout: mark parent PLAN 1400 done; retire 8 PLANs from the orchestrator-build initiative"
 type: bus-plan
-status: ready
+status: in-progress
 assigned_to: haiku
 priority: high
 created: 2026-05-01
 created_by: opus
 created_month: 202605
 log_month: 202605
-pipeline_phase: checked
+pipeline_phase: executing
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
 linked_inputs: []
 triggers_plans: []
