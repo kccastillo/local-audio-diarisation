@@ -39,13 +39,14 @@ At Converge close, classify decisions touched per decision 15 (Already-locked / 
    - **Real judgement call:** needs Human answer.
    This classification accompanies the final PLAN write so the subsequent `[Human]` design-review checkpoint can surface only the third class (per decision 15).
 
-When invoked from `plan-pipeline`'s `drafting` phase, the orchestrator monitors the conversation for the Human signalling "done ideating" and then advances `pipeline_phase: drafting → drafted`. The skill itself does not flip phase state.
+**How `pipeline_phase` advances from `drafting` to `drafted`:** the skill itself does NOT flip phase state, and the orchestrator does NOT actively monitor the conversation. The mechanism is re-invocation: when the Human signals ideation is complete (e.g. "ok write it up", "ready to plan it", "let's audit this", or any phrase that triggers `plan-pipeline`'s matcher), the next invocation of `plan-pipeline` reads the PLAN's current `pipeline_phase: drafting`, sees that ideation has produced a drafted PLAN with all expected sections (Objective, Context with decision-classification, Steps, Verification with acceptance: items), flips `pipeline_phase: drafted`, and proceeds into the audit loop. Phase advance is durable on disk and orchestrator re-entry is idempotent (decision 18).
 </output_schema>
 
 <exception_conditions>
-- Invoked from inside a subagent (no Human channel) — surface and refuse; the orchestrator must dispatch this skill in the parent only.
 - Existing PLAN at `existing_plan_path` is unreadable or malformed — surface and ask the Human whether to start fresh or fix the file first.
 - Human goes silent across the arc (mid-ideation pause without a returning prompt) — not technically an exception; ideation simply waits for the next Human turn.
+
+**Subagent-invocation safeguard (structural, not detected at runtime):** there is intentionally NO `ideate-runner` agent file in `.claude/agents/`. Because the Agent tool's `subagent_type` parameter only accepts agent names that exist on disk, this skill cannot be dispatched as a subagent — it can only be invoked via `Skill("ideate")` from the parent session. The skill itself does not introspect its execution context (no documented mechanism for that); the absence-of-agent-file is the safeguard.
 </exception_conditions>
 
 **Ideation procedure:** See [workflows/ideate-arc.md](workflows/ideate-arc.md).
@@ -54,7 +55,7 @@ When invoked from `plan-pipeline`'s `drafting` phase, the orchestrator monitors 
 - Never propose a mechanism before the requirement is acknowledged. If Clarify hasn't closed, redirect Survey-phase prompting back to Clarify.
 - Never present a single option as if it were the only one. If only one option fits, state that explicitly with "no real alternative" and skip Survey.
 - Never write to disk yourself. Hand off to `plan-writer` (foreground subagent dispatch) for any PLAN write or update; hand off to `write-bus-input` for RESEARCH/ADVICE writes.
-- Never run as a subagent. If invoked via the Agent tool with `subagent_type: ideate-runner` or similar, return `outcome: exception` immediately.
+- Never run as a subagent. The structural safeguard is the absence of any agent file in `.claude/agents/` that would dispatch this skill — do not create one. If a future change introduces such an agent, this skill's interactive contract breaks.
 - Never silently exit ideation. The Human signals exit; the skill does not infer it.
 </constraints>
 

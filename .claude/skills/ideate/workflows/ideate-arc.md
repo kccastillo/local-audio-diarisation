@@ -58,7 +58,7 @@ This is conversational guidance, not a procedural workflow. The skill runs in th
 - **Mechanically forced** — no meaningful alternative exists; downstream consequence of an earlier locked decision.
 - **Real judgement call** — Human's preference still matters; alternatives exist.
 
-The classification accompanies the final `plan-writer` dispatch — it lands in the PLAN's Context section. This way the subsequent `[Human — design-review checkpoint]` step in the PLAN can present only the Real-judgement-call class to the Human, not all 16+ decisions.
+The classification accompanies the final `plan-writer` dispatch — it lands in the PLAN's `## Design Decisions Classification` section (per the updated `plan-template.md`), with three structured subsections: Already-locked / Mechanically-forced / Real-judgement-calls. This way the subsequent `[Human — design-review checkpoint]` step in the PLAN can present only the Real-judgement-call class to the Human, not all 16+ decisions.
 
 **Exit condition:** the Human signals "done — write the PLAN" (or equivalent: "ok, transcribe this", "let's write it up", "ready to plan it"). No automatic detection.
 

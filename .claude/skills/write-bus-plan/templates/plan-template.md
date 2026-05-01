@@ -28,6 +28,18 @@ pipeline_phase: ""       # plan-pipeline orchestration state; empty for ad-hoc P
 ## Context
 [What prompted this plan. Link to relevant Wiki pages via [[wikilinks]]. Note any constraints or dependencies.]
 
+## Design Decisions Classification
+*Populated by `ideate` at Converge close (per parent PLAN 202605011400 decision 15) when the PLAN is born from an ideation arc. For ad-hoc PLANs not from `ideate`, leave as "n/a — ad-hoc PLAN, not produced via ideate" or list any decisions you'd want a future Human reviewer to know about.*
+
+**Already locked** (Human proposed/affirmed during ideation; require no answer at design-review checkpoint):
+- 
+
+**Mechanically forced** (no meaningful alternative; downstream consequence of locked decisions):
+- 
+
+**Real judgement calls** (genuinely have alternatives the Human might prefer; surfaced for design-review):
+- 
+
 ## Steps
 [Numbered steps to execute via the `execute-plan` skill. Each step must be independently verifiable.
 Mark [Ken] for steps that require human action before execution can proceed.
