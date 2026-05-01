@@ -14,7 +14,7 @@ linked_inputs: []
 triggers_plans: []
 audit_state:
   sufficiency_iterations: 1
-  plan_safety_iterations: 1
+  plan_safety_iterations: 2
   last_stage: plan_safety
   last_outcome: revision_needed
 ---
@@ -90,8 +90,15 @@ Close out the plan-pipeline orchestrator build initiative (parent PLAN 202605011
 - [ ] verify: `grep -F "202605011440_PLAN_dogfood-plan-pipeline.md" Bus/202605010000_LOG_202605.md | grep -qE "\| done \|"`
 - [ ] verify: `grep -F "202605011700_PLAN_note-jot.md" Bus/202605010000_LOG_202605.md | grep -qE "\| cancelled \|"`
 - [ ] verify: `grep -F "202605011900_PLAN_post-dogfood-fixes.md" Bus/202605010000_LOG_202605.md | grep -qE "\| partially-complete \|"`
-- [ ] verify: Lessons Learned section in `Bus/202605010000_LOG_202605.md` is compressed — line count from the `## Lessons Learned` header to the next `## ` header is ≤ 35 lines
-- [ ] verify: For each of the eight filenames, `test ! -e Bus/<filename> && test -e Retired/<filename>` exits 0 (gone from Bus, present in Retired)
+- [ ] verify: `[ $(awk '/^## Lessons Learned/{f=1; next} /^## /{f=0} f' Bus/202605010000_LOG_202605.md | wc -l) -le 35 ]`
+- [ ] verify: `! test -e Bus/202605011400_PLAN_build-plan-pipeline-orchestrator.md && test -e Retired/202605011400_PLAN_build-plan-pipeline-orchestrator.md`
+- [ ] verify: `! test -e Bus/202605011410_PLAN_create-ideate-skill.md && test -e Retired/202605011410_PLAN_create-ideate-skill.md`
+- [ ] verify: `! test -e Bus/202605011420_PLAN_create-audit-haiku-safe-skill.md && test -e Retired/202605011420_PLAN_create-audit-haiku-safe-skill.md`
+- [ ] verify: `! test -e Bus/202605011425_PLAN_create-audit-sufficiency-skill.md && test -e Retired/202605011425_PLAN_create-audit-sufficiency-skill.md`
+- [ ] verify: `! test -e Bus/202605011430_PLAN_create-plan-pipeline-skill.md && test -e Retired/202605011430_PLAN_create-plan-pipeline-skill.md`
+- [ ] verify: `! test -e Bus/202605011440_PLAN_dogfood-plan-pipeline.md && test -e Retired/202605011440_PLAN_dogfood-plan-pipeline.md`
+- [ ] verify: `! test -e Bus/202605011700_PLAN_note-jot.md && test -e Retired/202605011700_PLAN_note-jot.md`
+- [ ] verify: `! test -e Bus/202605011900_PLAN_post-dogfood-fixes.md && test -e Retired/202605011900_PLAN_post-dogfood-fixes.md`
 - [ ] acceptance: human — closeout note in LOG reads tight and accurate (≤5 lines, captures: orchestrator built end-to-end; F1 + GH #37730; Option C; smoke 2100 validation; F/14-as-substitute-for-F12)
 - [ ] verify: human — this PLAN itself completes a clean walk through plan-pipeline (drafting → drafted → checked → executing → outcome-verifying → complete → retire) without a kanban halt; substantiates the substitute-dogfood claim
 
