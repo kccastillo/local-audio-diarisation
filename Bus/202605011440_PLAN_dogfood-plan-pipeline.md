@@ -19,12 +19,12 @@ triggers_plans: []
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
-pipeline_phase: drafted
+pipeline_phase: checked
 audit_state:
   sufficiency_iterations: 3
-  plan_safety_iterations: 1
+  plan_safety_iterations: 2
   last_stage: plan_safety
-  last_outcome: revision_needed
+  last_outcome: success
 ---
 
 ## Objective
@@ -46,7 +46,7 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
    - At clarify-locked and survey-converged moments, the orchestrator dispatches `plan-writer` (foreground subagent) to write/update the note-jot PLAN file incrementally.
    - Verify the new note-jot PLAN's `pipeline_phase: drafting` is set on the first plan-writer write.
    - Each plan-writer return → orchestrator commits + pushes (`plan-pipeline: drafting checkpoint <plan-filename>`).
-   - **Deliberate audit-loop exercise (per decision 21):** in the first complete draft of the note-jot PLAN (at survey-converged), intentionally seed a sufficiency-grade blocker — e.g. omit the Objective's deliverable claim, or leave Verification with no `acceptance:` item. This is so Step 4 below forces the audit loop's `revision_needed` re-dispatch path on the first iteration; the second iteration after revision should converge.
+   - **Deliberate audit-loop exercise (per decision 21):** in the first complete draft of the note-jot PLAN (at survey-converged), seed a sufficiency-grade blocker by omitting the Objective's deliverable claim — write the Objective as a one-sentence problem statement only, with no statement of what the resulting note-jot skill will produce. This forces sufficiency-auditor's lens 7 (spec-acceptance fidelity) to flag the missing deliverable, triggering the audit loop's `revision_needed` re-dispatch path on iteration 1; the second iteration (after the deliverable claim is added) should converge to `success`.
 
 3. **Phase transition: drafting → drafted** — Human signals ideation is done (any phrase that re-triggers `plan-pipeline`). On re-invocation, the orchestrator reads disk, sees the note-jot PLAN has all expected sections, flips `pipeline_phase: drafted`, commits + pushes (`plan-pipeline: drafted <plan-filename>`).
 
@@ -54,7 +54,7 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
    - Iteration 1, sufficiency stage: dispatch `sufficiency-auditor` (foreground, opus). Because the seed blocker from Step 2 is present, the auditor returns `outcome: revision_needed` with `Blockers: ≥1`. Orchestrator writes `audit_state` (sufficiency_iterations: 1, last_stage: sufficiency, last_outcome: revision_needed); commits + pushes (`plan-pipeline: audit_state update — sufficiency:revision_needed`); surfaces the review with decision-15 triage; returns. Verify: counter incremented, frontmatter durable, Human surface clean.
    - Human revises the seed blocker on the note-jot PLAN.
    - Iteration 2, sufficiency stage (after PLAN mtime advances): dispatch `sufficiency-auditor` again. This time `outcome: success`. Orchestrator updates `audit_state` (sufficiency_iterations: 2, last_stage: sufficiency, last_outcome: success); commits + pushes; chains to the plan-safety stage WITHIN the same invocation (allowed, no `pipeline_phase` boundary crossed).
-   - Iteration 1, plan-safety stage: dispatch `plan-safety-auditor` (foreground, sonnet). Verify it refuses to run if sufficiency hasn't passed (precondition); since sufficiency just passed, it proceeds. On `outcome: success`: orchestrator updates `audit_state`, flips `pipeline_phase: drafted → checked`, commits + pushes (`plan-pipeline: checked <plan-filename>`), returns. (If plan-safety returns `revision_needed` instead, exercise that loop too; sufficiency does NOT re-run.)
+   - Iteration 1, plan-safety stage: dispatch `plan-safety-auditor` (foreground, sonnet). Verify it refuses to run if sufficiency hasn't passed (precondition); since sufficiency just passed, it proceeds. On `outcome: success`: orchestrator updates `audit_state`, flips `pipeline_phase: drafted → checked`, commits + pushes (`plan-pipeline: checked <plan-filename>`), returns.
    - Verify throughout: `audit_state` frontmatter is durable on disk (re-readable across invocations); MAX_ITERATIONS=5 not breached; orchestrator never silently re-runs.
 
 5. **Phase transition: checked → executing** — orchestrator reads note-jot's `assigned_to:` (default haiku for note-jot's mechanical work), routes to `plan-executor` (haiku tier per the executor-tier table), flips `pipeline_phase: executing`, sets `status: in-progress`, commits + pushes (`plan-pipeline: executing <plan-filename>`). Dispatches via `Agent({subagent_type: "plan-executor", ..., run_in_background: true})` — passing the `run_in_background: true` parameter on the Agent tool call. Per parent PLAN 202605011400 decision 18 (amended 2026-05-01): the Agent tool's `run_in_background` parameter is the load-bearing mechanism for backgrounding; the agent's frontmatter `background: true` is preserved as authoring documentation but not relied upon for behaviour. Confirm the dispatch returns control to parent immediately. Surface "Executor dispatched in background; resume on completion" to the Human.
@@ -92,7 +92,7 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
 - [ ] All six `pipeline_phase` transitions completed on the note-jot PLAN: drafting → drafted → checked → executing → outcome-verifying → complete (then retired)
       `verify: human`
 - [ ] note-jot PLAN's `audit_state.sufficiency_iterations` reached at least 2 (forced failure path was exercised)
-      `verify: grep -E "^\s+sufficiency_iterations: [2-9]" Bus/*PLAN_note-jot*.md Retired/*PLAN_note-jot*.md 2>/dev/null | head -1`
+      `verify: grep -hE "^\s+sufficiency_iterations: [2-9]" Bus/ Retired/ -r --include="*PLAN_note-jot*.md" 2>/dev/null | grep -q .`
 - [ ] note-jot skill exists at `.claude/skills/note-jot/SKILL.md` and a smoke invocation produces a timestamped line in the daily log
       `acceptance: test -f .claude/skills/note-jot/SKILL.md && grep -q "^name: note-jot" .claude/skills/note-jot/SKILL.md`
 - [ ] note-jot PLAN retired to `Retired/`
