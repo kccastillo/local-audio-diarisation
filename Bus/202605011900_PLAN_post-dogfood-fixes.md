@@ -99,11 +99,78 @@ Surfaced during the 2026-05-01 dogfood run. Priority is engineering-effort × se
 
 ## Steps
 
-*[To be populated at Converge-close. The findings catalogue above feeds Survey; converge will pick fix-shape per finding. F1 is the keystone — without it, F2-F9 are polish on a non-running engine.]*
+Six phases (A-F), each gated on the prior. Phase A is critical-path: F1's fix-shape can't be designed without probe data. Phases C-E are independent of each other once Phase B lands.
+
+### Phase A — Probe and design F1 (subagent permission context)
+
+1. **Probe subagent permission scope.** Spawn an Agent task (general-purpose) that dispatches a haiku subagent and has it attempt several Bash commands: one allowlist-matched in parent `.claude/settings.json` (e.g. `mkdir`), one not-matched (e.g. `curl`), one with explicit working directory, one without. Capture: which commands worked, exact denial messages, any documented config the subagent's permission scope reads. Land findings as a RESEARCH file via `write-bus-input` so 1900's `linked_inputs` references it.
+
+2. **Survey F1 fix options based on probe.** At least 2 options. Common candidates: (a) `permissions:` field in agent frontmatter (per-agent scoping), (b) project-level inherit-into-subagent config, (c) explicit pass-through on the Agent invocation, (d) restructure plan-executor to depend only on already-allowed commands (`python -c` stdlib for filesystem ops). Document tradeoffs; state lean.
+
+3. **Converge on F1 design.** Decision-15 triage; capture in this PLAN's Context.
+
+### Phase B — Implement F1
+
+4. Apply the chosen F1 fix per Phase A. Likely affects: `.claude/agents/plan-executor.md` (and tier variants), possibly `.claude/settings.json`, possibly `execute-plan` skill workflow.
+
+5. **Smoke-test F1.** Author a trivial dummy PLAN (one mechanical Step: create a single file). Dispatch plan-executor on it. Confirm subagent runs the Bash command, file lands, executor returns `outcome: success`. If not, return to Phase A.
+
+### Phase C — Wire format consistency (F2)
+
+6. Update each subagent skill's SKILL.md to include a single canonical wire-format example (literal angle brackets, JSON code fence). Files: `.claude/skills/audit-sufficiency/SKILL.md`, `.claude/skills/audit-haiku-safe/SKILL.md`, `.claude/skills/write-bus-plan/SKILL.md`, `.claude/skills/execute-plan/SKILL.md`, `.claude/skills/retire/SKILL.md`. Add a non-negotiable line in each `<essential_principles>`: "Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping."
+
+### Phase D — Medium-severity findings
+
+7. **F3 — decision 25 skills-as-deliverable carve-out.** Amend parent PLAN 202605011400 decision 25 to add: "Exception: PLANs whose deliverable is a Claude skill (or other artefact not invokable from a shell) MAY satisfy the at-least-one-`acceptance:` requirement via an artefact-property check (frontmatter parses, workflow content present, gate-clauses present) PLUS a `verify: human` for the actual invocation behaviour." Mirror the carve-out in `.claude/skills/_shared/plan-safe.md`.
+
+8. **F4 — orchestrator no-direct-edit boundary.** Update `.claude/skills/plan-pipeline/SKILL.md` `<constraints>` to define the boundary explicitly: surgical body-content edits (one-line revisions, audit-resolution notes, commit-hash citations) MAY use the Edit tool directly; full body re-authoring (Objective/Steps/Verification rewrite) MUST route through plan-writer. The current "never write PLAN content" prohibition applies only to the second.
+
+9. **F5 — phase-flip + content-write atomicity.** Add `target_phase:` (optional) to plan-writer's input contract in `.claude/agents/plan-writer.md` and `.claude/skills/write-bus-plan/SKILL.md` `<inputs>`. When supplied, plan-writer writes both body content and the new `pipeline_phase` value in one file write. Orchestrator passes it for transitions where content-write and phase-flip naturally coincide (drafting checkpoints, drafting→drafted close, executor-success→outcome-verifying).
+
+### Phase E — Lower-severity housekeeping
+
+10. **F8 — deterministic seed-blocker.** Update dogfood spec 1440 Step 2 to replace "omit the Objective's deliverable claim" with a deterministic injection rule: "after the converge-close plan-writer dispatch, the orchestrator runs an Edit removing the LAST Verification item from the note-jot PLAN; this guarantees a sufficiency-grade blocker fires regardless of the Objective's wording." (The seed becomes orchestrator-mechanical, not author-judgement.)
+
+11. **F9 — phase-boundary stop semantics.** Update `.claude/skills/plan-pipeline/SKILL.md` and `workflows/dispatch.md` to state explicitly: "The orchestrator MAY chain phase transitions within a single invocation (drafted → checked → executing) when running in a continuous parent session, provided each transition produces a milestone commit. Re-entry idempotency is preserved by reading disk on every invocation." (Relaxes the strict one-phase-per-invocation; keeps re-entry safety.)
+
+### Phase F — Re-dogfood and parent closeout
+
+12. **Re-run dogfood.** Either re-execute 1440 against a fresh target, or unblock note-jot 1700 (`status: ready`, `pipeline_phase: checked`, `blocked_by: ""`) and re-dispatch plan-executor. Verify ALL six phases complete cleanly: drafting → drafted → checked → executing → outcome-verifying → complete → retired. Capture re-dogfood findings in 1440's Executor Notes (or a new dogfood successor PLAN if the second run also surfaces enough material).
+
+13. **Parent PLAN 1400 step 8 — CLAUDE.md skill table update.** Add four rows per parent step 8 (ideate, audit-sufficiency, audit-haiku-safe, plan-pipeline). Already specified in parent.
+
+14. **Close parent PLAN 1400.** Run parent's Verification list end-to-end. Mark `status: done` and `pipeline_phase: complete`. Retire parent + 1440 + 1700 + 1900 (this PLAN) via `plan-retirer`.
 
 ## Verification
 
-*[To be populated at Converge-close per parent decision 25.]*
+- [ ] F1 probe RESEARCH file landed in `Bus/`
+      `verify: ls Bus/*RESEARCH*subagent*permission*.md 2>/dev/null | grep -q .`
+- [ ] Phase A converges with chosen F1 fix-shape documented in this PLAN's Context
+      `verify: human`
+- [ ] F1 fix applied and smoke-test passes
+      `acceptance: bash -c 'ls .claude/skills/plan-pipeline-smoke-test* 2>/dev/null && echo "smoke target present" || echo "smoke target missing"' | grep -q "present"`
+- [ ] Every subagent SKILL.md contains the canonical wire-format example (F2)
+      `verify: grep -l "literal \`<pipeline-result>\`" .claude/skills/audit-sufficiency/SKILL.md .claude/skills/audit-haiku-safe/SKILL.md .claude/skills/execute-plan/SKILL.md .claude/skills/retire/SKILL.md .claude/skills/write-bus-plan/SKILL.md 2>/dev/null | wc -l | awk '{exit !($1>=5)}'`
+- [ ] Parent PLAN 1400 decision 25 carries the skills-as-deliverable carve-out (F3)
+      `verify: grep -q "skills-as-deliverable\|skills-as-exception\|Claude skill" Bus/202605011400_PLAN_build-plan-pipeline-orchestrator.md`
+- [ ] `_shared/plan-safe.md` mirrors the F3 carve-out
+      `verify: grep -q "skills-as-deliverable\|skills-as-exception" .claude/skills/_shared/plan-safe.md`
+- [ ] plan-pipeline SKILL.md surgical-edit boundary documented (F4)
+      `verify: grep -qE "(surgical|one-line)" .claude/skills/plan-pipeline/SKILL.md`
+- [ ] plan-writer accepts target_phase argument (F5)
+      `verify: grep -q "target_phase" .claude/agents/plan-writer.md .claude/skills/write-bus-plan/SKILL.md`
+- [ ] dogfood spec 1440 Step 2 uses deterministic seed (F8)
+      `verify: grep -E "removes the LAST Verification item|deterministic injection" Bus/202605011440_PLAN_dogfood-plan-pipeline.md`
+- [ ] plan-pipeline phase-boundary chaining rule documented (F9)
+      `verify: grep -E "MAY chain phase transitions|continuous parent session" .claude/skills/plan-pipeline/SKILL.md .claude/skills/plan-pipeline/workflows/dispatch.md 2>/dev/null | grep -q .`
+- [ ] re-dogfood completes all six phases without a kanban halt
+      `acceptance: git log --oneline -n 100 | grep -E "plan-pipeline: retired" | wc -l | awk '{exit !($1>=1)}'`
+- [ ] CLAUDE.md skill table updated (parent step 8)
+      `verify: grep -cE "^\| \`(ideate|audit-sufficiency|audit-haiku-safe|plan-pipeline)\`" CLAUDE.md | awk '{exit !($1>=4)}'`
+- [ ] Parent PLAN 1400 status is done and parent + dogfood + note-jot + this PLAN are retired
+      `verify: ls Retired/202605011400_*.md Retired/202605011440_*.md Retired/202605011700_*.md Retired/202605011900_*.md 2>/dev/null | wc -l | awk '{exit !($1>=4)}'`
+- [ ] Re-dogfood + closeout feels coherent — no missed findings, no surprise halts
+      `verify: human`
 
 ## Executor Notes
 
