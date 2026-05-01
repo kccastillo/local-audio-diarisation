@@ -1,14 +1,14 @@
 ---
 title: "F/14 closeout: mark parent PLAN 1400 done; retire 8 PLANs from the orchestrator-build initiative"
 type: bus-plan
-status: in-progress
+status: done
 assigned_to: haiku
 priority: high
 created: 2026-05-01
 created_by: opus
 created_month: 202605
 log_month: 202605
-pipeline_phase: outcome-verifying
+pipeline_phase: complete
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
 linked_inputs: []
 triggers_plans: []
@@ -29,7 +29,7 @@ verification_state:
   human_pending:
     - "closeout note in LOG reads tight and accurate (≤5 lines, captures: orchestrator built end-to-end; F1 + GH #37730; Option C; smoke 2100 validation; F/14-as-substitute-for-F12)"
     - "this PLAN itself completes a clean walk through plan-pipeline (drafting → drafted → checked → executing → outcome-verifying → complete → retire) without a kanban halt"
-  human_verdict: pending
+  human_verdict: all_pass
 last_executor_outcome:
   outcome: success
   outcome_subtype: done
