@@ -2,8 +2,10 @@
 name: plan-executor
 model: haiku
 background: true
+permissionMode: bypassPermissions
+disallowedTools: [WebFetch, WebSearch]
 skills: [execute-plan]
-description: Background subagent that runs the execute-plan skill against a checked PLAN. The ONLY background subagent — long-running phase where parent responsiveness matters. Invoked at checked→executing. Per decisions 17, 18.
+description: Background subagent that runs the execute-plan skill against a checked PLAN. The ONLY background subagent — long-running phase where parent responsiveness matters. Invoked at checked→executing. Per decisions 17, 18. permissionMode: bypassPermissions per F1 fix — subagents do not inherit parent .claude/settings.json permissions.allow (Anthropic-acknowledged defect, GH #37730 closed-not-planned). Trust model: plan-executor only sees PLANs that have already passed sufficiency-auditor + plan-safety-auditor; egress denied via disallowedTools.
 ---
 
 # plan-executor

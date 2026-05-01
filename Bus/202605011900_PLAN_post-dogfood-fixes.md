@@ -92,6 +92,10 @@ Surfaced during the 2026-05-01 dogfood run. Priority is engineering-effort × se
 
 **Implication:** the seed mechanism depends on the orchestrator-author judging "what counts as deliverable-light," which is exactly the judgement call the audit is supposed to catch. The audit-loop got exercised anyway via organic blockers — but a more deterministic seed (e.g. "strip the most recent Verification item") would test the loop reliably.
 
+### Phase A — Converge (2026-05-01)
+
+Probe (RESEARCH 202605012000) eliminated Option C empirically; documentation evidence confirmed F1 is GitHub issue #37730 closed-as-not-planned. Survey presented A / B / A+ to Human; **chose A+** (`permissionMode: bypassPermissions` + `disallowedTools` denylist scoped to plan-executor variants only; `acceptance:` shell commands continue to run in parent context via the orchestrator's outcome-verifying phase, where allowlist works correctly). Rationale: matches the trust model (plan-executor only sees pre-audited PLANs); minimal change; doesn't depend on a defect that won't be fixed; keeps existing PLAN conventions intact.
+
 ### F9 — Subagent stop semantics across phase boundaries unclear (LOW severity)
 
 **Symptom:** the strict "one phase per invocation" rule (drafted → checked → executing should be three invocations) was bypassed in this session for efficiency. No consequences observed but the design intent is to maintain re-entry idempotency across crashes.
