@@ -52,19 +52,30 @@ Also: codify the closeout-style-retire carve-out in `plan-pipeline/SKILL.md` so 
 - Skill-preload via `skills:` frontmatter remains the workaround for runtime skill access in subagents.
 - Decision 3 (retire is orchestrator-owned) stays as-is.
 - F1 Option C (executor has no Bash) stays as-is.
+- Framing of new exclusion rule: (β) — split by mechanism into 4 sub-clauses (Human chose 2026-05-01 during sufficiency iteration 1).
+- Enumerate vs reference exclusion list: this section in plan-safe.md is canonical; agent file documents tool-permission denials only.
 
 ### Mechanically-forced
 - Audit-haiku-safe checks against plan-safe.md, so encoding rules in plan-safe.md is the lowest-friction prevention path.
 - Runtime defence in plan-executor.md must use existing `outcome: exception` mechanism (no new wire format).
 
 ### Real-judgement-calls
-- Exact wording of the new plan-safe.md rule(s) — needs review during ideation phase.
-- Whether to enumerate the excluded skill list in plan-safe.md (drift risk if list changes) or reference the executor agent file as source of truth (auditor needs to read agent file).
 - Whether the closeout-style-retire carve-out lives in plan-pipeline SKILL.md `<constraints>` (parallel to F4, F9) or in `references/phase-state-machine.md` as a routing-table entry.
 
 ## Steps
 
-1. **Augment `_shared/plan-safe.md`.** Add a new section after the F1 Option C rules: "Executor capability boundaries — Steps asking plan-executor to invoke excluded skills (currently: `retire`, `write-bus-input`, `plan-pipeline`, `ideate`) or to run raw `Bash` are plan-safety blockers. The exclusion list mirrors `.claude/agents/plan-executor.md`'s `disallowedTools` plus the agent's prose-level exclusions ('Does not retire — decision 3')."
+0. **Pre-fix smoke capture.** Author a tiny throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md` whose Step 1 says "Invoke `Skill('retire')` from inside plan-executor on `tmp/audit-smoke-target.md`". Do NOT advance it through the pipeline yet — instead, manually invoke `sufficiency-auditor` and `plan-safety-auditor` foreground via Agent tool. Capture both audit `<pipeline-result>` JSON outputs verbatim into `tmp/audit-smoke-prefix-results.txt`. Confirm both return `outcome: success` (this is the bug we're closing).
+
+1. **Augment `_shared/plan-safe.md`.** Add a new section after the F1 Option C rules with the following content as the target wording:
+
+   > **Executor capability boundaries.** Steps must not ask `plan-executor` (or its tier variants) to perform any of the following. Each has a different mechanism but the rule is uniform: route through orchestrator (parent session) instead.
+   >
+   > - **(a) Raw `Bash`.** Denied at the tool-permission layer via `disallowedTools` (F1 Option C, PLAN 202605011900). Use Read/Edit/Write/Glob/Grep filesystem tools, or `python -c` for shell-equivalent operations within the executor's `python` allowance, instead. Audit-haiku-safe blocker if a Step's prose or `verify:`/`acceptance:` shell name `bash`/`sh` directly.
+   > - **(b) Skills excluded by orchestrator-ownership decisions.** Currently: `retire` (parent PLAN 1400 decision 3 — orchestrator owns retire via 4F or, for closeout-style PLANs, via direct parent-session retire). Audit-haiku-safe blocker if a Step says "invoke `retire`" / "use `Skill('retire')`" / "call retire skill".
+   > - **(c) Skills that are parent-session-only by structural convention.** Currently: `ideate` (decision 10 — no agent file exists; cannot be dispatched). Audit-haiku-safe blocker if a Step asks executor to run ideate; route ideation to parent session.
+   > - **(d) Skills that orchestrate other skills.** Currently: `plan-pipeline` (the orchestrator itself), `write-bus-input` (runs in parent during ideation per decision 12). These run in parent context by design. Audit-haiku-safe blocker if a Step asks executor to invoke them.
+   >
+   > Source of truth for the per-skill list: this section. Source of truth for tool-permission exclusions: `.claude/agents/plan-executor.md` `disallowedTools`. When the lists drift, this section is canonical for audit purposes; update it whenever an exclusion changes.
 
 2. **Extend `plan-executor.md` (and tier variants `plan-executor-sonnet.md`, `plan-executor-opus.md`) with runtime exception clause.** Add to each agent's exception conditions: "If a Step requires invocation of an excluded skill (`retire`, `write-bus-input`, `plan-pipeline`, `ideate`) or raw Bash, terminate `outcome: exception` with `diagnostics: { reason: 'Step requires excluded operation X — route through orchestrator (parent session)', step_number: N }`. Do not silent no-op."
 
@@ -72,7 +83,9 @@ Also: codify the closeout-style-retire carve-out in `plan-pipeline/SKILL.md` so 
 
 4. **Author or update audit-haiku-safe regression test material.** If audit-haiku-safe maintains test fixtures, add a fixture: a PLAN whose Step 4 says "Invoke retire skill from inside executor"; assert that audit-haiku-safe returns `revision_needed` with the new capability-boundary blocker. If no test fixtures exist yet, document the regression-test scenario in audit-haiku-safe's SKILL.md as a worked example.
 
-5. **Smoke-test the runtime exception path.** Author a tiny throwaway PLAN whose Step says "Invoke retire skill on Bus/<some_file>.md" (after first verifying neither audit catches it pre-fix). Run pre-fix: confirm both audits pass and executor silent-no-ops. Apply Steps 1-3. Re-run: confirm audit-haiku-safe now catches it as a blocker; if forcibly bypassed (skip audit), confirm executor returns `outcome: exception` with the documented diagnostic.
+5. **Post-fix smoke verification.** Re-invoke `plan-safety-auditor` on the same throwaway PLAN at `Bus/_tmp_audit-blind-spot-smoke.md`. Capture output into `tmp/audit-smoke-postfix-results.txt`. Confirm `outcome: revision_needed` with at least one blocker citing "Executor capability boundaries" or "excluded operation". Then test the runtime defence: dispatch `plan-executor` foreground (force-bypass-of-audit only for this smoke test, since the audit now correctly catches it) and confirm executor returns `outcome: exception` with diagnostic referencing "excluded operation". Finally, retire the throwaway PLAN: orchestrator (parent) `mv Bus/_tmp_audit-blind-spot-smoke.md Retired/_tmp_audit-blind-spot-smoke.md`.
+
+   Note: the throwaway PLAN's retire MUST happen via orchestrator (parent) since the smoke-test PLAN's content asks for the very excluded operation being tested — the executor structurally cannot retire it.
 
 ## Verification
 
@@ -81,8 +94,11 @@ Also: codify the closeout-style-retire carve-out in `plan-pipeline/SKILL.md` so 
 - [ ] verify: `grep -F "excluded operation" .claude/agents/plan-executor-sonnet.md`
 - [ ] verify: `grep -F "excluded operation" .claude/agents/plan-executor-opus.md`
 - [ ] verify: `grep -F "Closeout-style PLANs" .claude/skills/plan-pipeline/SKILL.md`
-- [ ] acceptance: A throwaway PLAN with Step "Invoke retire skill from executor" returns `revision_needed` from audit-haiku-safe with a capability-boundary blocker citation in the review_text (smoke-tested per Step 5)
-- [ ] verify: human — the new plan-safe.md rule wording is unambiguous and matches the executor agent file's actual exclusion list (no drift)
+- [ ] verify: `test -f tmp/audit-smoke-prefix-results.txt`
+- [ ] verify: `test -f tmp/audit-smoke-postfix-results.txt`
+- [ ] verify: `! test -e Bus/_tmp_audit-blind-spot-smoke.md && test -e Retired/_tmp_audit-blind-spot-smoke.md`
+- [ ] acceptance: `grep -F "Executor capability boundaries" .claude/skills/_shared/plan-safe.md && grep -F "excluded operation" .claude/agents/plan-executor.md && grep -F "excluded operation" .claude/agents/plan-executor-sonnet.md && grep -F "excluded operation" .claude/agents/plan-executor-opus.md && grep -F "Closeout-style PLANs" .claude/skills/plan-pipeline/SKILL.md`
+- [ ] verify: human — the new plan-safe.md rule wording is unambiguous and matches the executor agent file's actual exclusion list (no drift); and the throwaway PLAN's pre-fix results confirm both audits passed (bug reproduced) while post-fix results confirm audit-haiku-safe now blocks and executor raises exception (fix validated)
 
 ## Executor Notes
 
