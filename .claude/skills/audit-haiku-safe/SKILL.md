@@ -12,6 +12,7 @@ Cross-step coherence: ordering, line-number consistency after upstream edits.
 Verification format: every item must have `verify:` / `acceptance:` / `verify: human`. At least one `acceptance:` per PLAN.
 Output a machine-readable `Blockers: N` summary so the orchestrator can apply the gate.
 Do not fix the PLAN. Surface findings; the Human revises and re-audits.
+Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
 </essential_principles>
 
 <preconditions>

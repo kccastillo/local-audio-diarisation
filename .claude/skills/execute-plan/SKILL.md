@@ -12,6 +12,7 @@ On closure (outcome=done), if frontmatter sets closes_thread / advances_thread /
 Git commit and push are the caller's responsibility (e.g. plan-pipeline orchestrator, or the Human during bootstrap) — execute-plan no longer commits or pushes.
 Retirement of the PLAN file is the caller's responsibility — execute-plan no longer auto-retires.
 On any halt (success or failure), write `last_executor_outcome` to PLAN frontmatter so callers can route deterministically (parent PLAN 202605011400 decision 24).
+Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
 </essential_principles>
 
 <preconditions>

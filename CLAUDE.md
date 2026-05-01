@@ -38,6 +38,10 @@ Skills live in `.claude/skills/<name>/SKILL.md`. Invoked via `Skill("<name>")`. 
 |---|---|
 | `initiate-harness` | Bootstrap a fresh project with the Bus/PLAN harness — creates Bus/, Retired/, AGENT_RULES.md, CLAUDE.md, ROADMAP.md, current-month LOG from templates. Run after selective `.claude/` pull into a new project |
 | `create-agent-skills` | Expert guidance for creating and refining skills — structure, principles, workflows, templates |
+| `ideate` | Three-phase ideation arc (Clarify → Survey → Converge) — runs in parent session only; produces a plan-ready idea with options-and-recommendation discipline |
+| `audit-sufficiency` | Conceptual audit of a PLAN (Opus-pinned) — seven lenses: assumptions, validation path, test fidelity, orchestration edges, freshness, meta-design, spec-acceptance. Runs first in the audit loop |
+| `audit-haiku-safe` | Mechanical plan-safety audit (Sonnet-pinned) — concrete, atomic, unambiguous, safe, testable; verifies `verify:`/`acceptance:` format. Runs after sufficiency passes |
+| `plan-pipeline` | End-to-end planning orchestrator — walks a PLAN through drafting → drafted (audit loop) → checked → executing → outcome-verifying → complete (retire); owns all git milestones |
 | `write-bus-plan` | Transcribe plans to `Bus/` files; manage monthly LOG and status tables |
 | `write-bus-input` | Write RESEARCH/ADVICE files to `Bus/`; unblock plans waiting on input |
 | `execute-plan` | Execute PLAN steps in order; populate Executor Notes; update LOG; commit + push |

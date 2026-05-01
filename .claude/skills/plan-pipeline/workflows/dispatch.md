@@ -1,6 +1,8 @@
 # Plan-Pipeline Dispatch Procedure
 
-One invocation = one walk through this procedure. The orchestrator reads disk, decides what to do, does at most one phase transition (audit loop iterations stay within `drafted`), commits + pushes if anything changed, and returns control. The Human or parent-Claude triggers the next invocation.
+One invocation = one walk through this procedure. The orchestrator reads disk, decides what to do, executes one or more phase transitions, commits + pushes after each milestone, and returns control.
+
+**Phase-boundary chaining (F9 from PLAN 202605011900, 2026-05-01):** the orchestrator MAY chain phase transitions within a single invocation (e.g. `drafted → checked → executing`) when running in a continuous parent session, provided each transition produces a milestone commit + push. Audit-loop iterations stay within `drafted`. Re-entry idempotency is preserved by reading disk on every invocation — the chaining relaxation does not weaken the on-disk-state contract. The Human or parent-Claude triggers the next invocation if the chain pauses (e.g. background executor dispatched, Human-pending verification surfaced).
 
 Per-phase routing tables, commit-message templates, and frontmatter mutation cheat sheet live in [../references/phase-state-machine.md](../references/phase-state-machine.md). This file is the procedural narrative; the reference is the lookup.
 

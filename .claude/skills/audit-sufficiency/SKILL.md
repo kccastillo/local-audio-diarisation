@@ -15,6 +15,7 @@ Output ends with a machine-readable `Blockers: N` summary so the orchestrator ca
 Apply decision-triage (parent decision 15) to any Human-input items: classify Already-locked / Mechanically-forced / Real-judgement-call before surfacing.
 Do not fix the PLAN. Surface findings; the Human revises and re-audits.
 Sufficiency must pass before plan-safety runs (parent decision 21 loop) — no point checking Haiku-safety on an insufficient plan.
+Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
 </essential_principles>
 
 <preconditions>

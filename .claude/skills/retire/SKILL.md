@@ -7,6 +7,12 @@ description: Move files to a gitignored Retired/ folder when they are no longer 
 Move a file to a gitignored `Retired/` folder, removing it from the active codebase while preserving it locally. Caller is responsible for committing and pushing the removal. Plan execution should log that this skill was invoked.
 </objective>
 
+<essential_principles>
+Move the named file to `Retired/`; do not modify content or invent additional retirements.
+Caller commits and pushes — `retire` never touches git itself.
+Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
+</essential_principles>
+
 <quick_start>
 Invoke with: `Skill("retire", "path/to/file.md")`
 

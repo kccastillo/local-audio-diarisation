@@ -12,9 +12,17 @@ After writing any PLAN file, update the monthly LOG's Status Table.
 For recurring PLAN files: append to the existing file's History table — do not create a new file.
 Report back: filename written, LOG updated, ready for next step.
 Overwriting an existing PLAN file with updated content is permitted during the drafting/ideation phase — preserve frontmatter `created`, `created_month`, and `created_by`; refresh body content and any `last_updated`-style fields.
+Wire format: end response with literal `<pipeline-result>` containing JSON code fence per parent decision 23. No XML payload, no HTML escaping.
 </essential_principles>
 
 **Plan writing procedure:** See [workflows/write-plan.md](workflows/write-plan.md)
+
+<inputs>
+- `plan_content: string` — the body content to write (Objective, Context, Steps, Verification, etc.).
+- `target_filename: string` — the PLAN file basename or path under `Bus/`.
+- `mode: enum[create, update]` — whether the file is new or being overwritten in-flight.
+- `target_phase: string (optional)` — when supplied, plan-writer writes the supplied `pipeline_phase` frontmatter value in the same file write as the body content, making content-write + phase-flip atomic (F5 from PLAN 202605011900). When omitted, `pipeline_phase` is left untouched.
+</inputs>
 
 <constraints>
 - Never modify plan content — transcribe exactly as specified

@@ -205,6 +205,8 @@ Build an end-to-end orchestrator skill (`plan-pipeline`) that walks the planning
     ```
     Each PLAN MUST include at least one `acceptance:` item — non-negotiable. Items marked `verify: human` are surfaced to the Human at outcome-verification time but do not auto-fail the pipeline (they're inconclusive, not failed).
 
+    **Skills-as-deliverable carve-out (F3 from PLAN 202605011900, 2026-05-01):** PLANs whose deliverable is a Claude skill (or other artefact not invokable from a shell) MAY satisfy the at-least-one-`acceptance:` requirement via an artefact-property check (frontmatter parses, workflow content present, gate-clauses present) PLUS a `verify: human` for the actual invocation behaviour. Rationale: Claude skills are invoked by Claude, not by a shell; a true behavioural acceptance command cannot exist for them. The artefact-property `acceptance:` keeps the mechanical gate active; the `verify: human` keeps invocation fidelity in the loop.
+
     **Orchestrator's outcome-verification phase:**
     ```
     on plan-executor return with outcome: success:
