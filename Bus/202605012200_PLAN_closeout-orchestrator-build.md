@@ -1,30 +1,35 @@
 ---
 title: "F/14 closeout: mark parent PLAN 1400 done; retire 8 PLANs from the orchestrator-build initiative"
 type: bus-plan
-status: needs-revision
+status: in-progress
 assigned_to: haiku
 priority: high
 created: 2026-05-01
 created_by: opus
 created_month: 202605
 log_month: 202605
-pipeline_phase: drafted
+pipeline_phase: outcome-verifying
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
 linked_inputs: []
 triggers_plans: []
 audit_state:
-  sufficiency_iterations: 0
-  plan_safety_iterations: 0
-  last_stage: none
-  last_outcome: none
+  sufficiency_iterations: 1
+  plan_safety_iterations: 3
+  last_stage: plan_safety
+  last_outcome: success
+last_executor_outcome:
+  outcome: success
+  outcome_subtype: done
+  executor_notes: "Steps 1-3 executed by plan-executor subagent (frontmatter flips, LOG row updates, Lessons Learned compression). Step 4 retire moves attempted from subagent failed silently (decision 3 + F1 Option C — retire requires Bash and is orchestrator-owned). Step 4 recovered by parent session performing the 8 mv operations directly. Step 5 re-verification then passed all 21 shell checks."
 verification_state:
-  state_pass: 13
-  state_fail: 8
+  state_pass: 21
+  state_fail: 0
   acceptance_pass: 0
   acceptance_fail: 0
-  human_pending: ["closeout note quality (acceptance: human)", "clean pipeline walk (verify: human)"]
+  human_pending:
+    - "closeout note in LOG reads tight and accurate (≤5 lines, captures: orchestrator built end-to-end; F1 + GH #37730; Option C; smoke 2100 validation; F/14-as-substitute-for-F12)"
+    - "this PLAN itself completes a clean walk through plan-pipeline (drafting → drafted → checked → executing → outcome-verifying → complete → retire) without a kanban halt"
   human_verdict: pending
-  failed_assertions: ["all 8 per-file Bus→Retired existence checks failed; retire moves did not happen; Skill('retire') calls from inside plan-executor subagent did not actually invoke the skill"]
 last_executor_outcome:
   outcome: success
   outcome_subtype: done
@@ -84,7 +89,7 @@ Close out the plan-pipeline orchestrator build initiative (parent PLAN 202605011
 
 3. **Compress Lessons Learned and append closeout note.** Edit `Bus/202605010000_LOG_202605.md` Lessons Learned section: reduce existing four subsections (Architectural / Process / User preferences / Conventions clarified) from ~60 lines to ~25 lines total, preserving the most load-bearing items (mechanical-vs-conceptual review tier split, subagents don't inherit skill registry, wire format vs durable record, options-with-recommendation, decision-15 triage discipline, codified-behaviour-beats-memory, verify-spec-not-just-steps). Then append a tight closeout paragraph (≤5 lines) capturing: orchestrator + supporting skill ecosystem built end-to-end; F1 was the headline finding (subagent permission context, GH #37730 closed-not-planned) — fixed via Option C (plan-executor variants use filesystem tools and `python -c` for shell-equivalent ops, never raw Bash); smoke-test PLAN 2100 validated F1 fix; F/14 closeout itself served as substitute re-dogfood for F12 (1440's note-jot synthetic dogfood deliberately skipped).
 
-4. **Retire the eight PLANs.** Invoke the `retire` skill on each of the eight files (any order). The skill moves each file from `Bus/` to `Retired/`.
+4. **Retire the eight PLANs.** Orchestrator (parent session) performs the file moves from `Bus/` to `Retired/` — retire is orchestrator-owned per parent PLAN 1400 decision 3 and cannot run inside plan-executor (F1 Option C denies Bash, and `Skill("retire")` from a subagent fails to execute even with preload because the skill's mechanism requires Bash `mv`). Eight filenames moved (any order): 1400, 1410, 1420, 1425, 1430, 1440, 1700, 1900.
 
 5. **Verify clean state.** Confirm none of the eight filenames remain in `Bus/` and all eight are in `Retired/`.
 
