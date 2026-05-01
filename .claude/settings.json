@@ -9,7 +9,11 @@
       "Bash(tail *)",
       "Bash(python -c *)",
       "Bash(rm *)",
-      "Bash(rm -f *)"
+      "Bash(rm -f *)",
+      "Bash(mkdir *)",
+      "Bash(date *)",
+      "Bash(echo *)",
+      "Bash(bash *)"
     ]
   },
   "hooks": {
