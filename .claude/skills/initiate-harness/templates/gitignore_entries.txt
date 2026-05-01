@@ -1,0 +1,4 @@
+# Claude Code harness
+.claude/settings.local.json
+.claude/_skill_usage.jsonl
+Retired/

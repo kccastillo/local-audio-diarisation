@@ -36,6 +36,7 @@ Skills live in `.claude/skills/<name>/SKILL.md`. Invoked via `Skill("<name>")`. 
 
 | Skill | What it does |
 |---|---|
+| `initiate-harness` | Bootstrap a fresh project with the Bus/PLAN harness — creates Bus/, Retired/, AGENT_RULES.md, CLAUDE.md, ROADMAP.md, current-month LOG from templates. Run after selective `.claude/` pull into a new project |
 | `create-agent-skills` | Expert guidance for creating and refining skills — structure, principles, workflows, templates |
 | `write-bus-plan` | Transcribe plans to `Bus/` files; manage monthly LOG and status tables |
 | `write-bus-input` | Write RESEARCH/ADVICE files to `Bus/`; unblock plans waiting on input |
