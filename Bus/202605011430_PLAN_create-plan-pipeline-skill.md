@@ -1,7 +1,7 @@
 ---
 title: "Create plan-pipeline orchestrator skill (phase dispatch via Agent tool)"
 type: bus-plan
-status: blocked
+status: done
 assigned_to: sonnet
 priority: high
 created: 2026-05-01
@@ -13,7 +13,7 @@ repeatable: false
 repeat_cadence: ""
 linked_decisions: []
 linked_inputs: []
-blocked_by: "Parent PLAN 202605011400 must complete steps 1-6a (shared file, mutations, conventions, agents) AND children PLAN_create-ideate-skill (202605011410), PLAN_create-audit-haiku-safe-skill (202605011420), PLAN_create-audit-sufficiency-skill (202605011425) must be done before this child runs"
+blocked_by: ""
 rollover_count: 0
 triggers_plans: []
 closes_thread: ""
@@ -140,10 +140,29 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
 - [ ] Smoke test passes
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-05-01 (authored directly in Opus during bootstrap, per the same option-2 path used for children 1410/1420/1425 — design-heavy work, not mechanical execution)
+**Outcome:** done
 **What was done:**
-**Blockers (if any):**
+- Created `.claude/skills/plan-pipeline/SKILL.md` with: frontmatter (activation triggers + write-bus-plan disambiguation), pointers to workflow + reference, full set of XML-tagged contract blocks (`<essential_principles>`, `<preconditions>`, `<inputs>`, `<output_schema>`, `<exception_conditions>`, `<constraints>`, `<success_criteria>`).
+- Created `.claude/skills/plan-pipeline/workflows/dispatch.md` — per-invocation procedural narrative: resolve target → read durable state → idempotency + children gates → dispatch by phase (4A drafting, 4B drafted audit-loop, 4C checked, 4D executing re-entry, 4E outcome-verifying, 4F complete) → bootstrap exception → milestone commit + return.
+- Created `.claude/skills/plan-pipeline/references/phase-state-machine.md` — exhaustive routing tables: `(phase, outcome) → action`, audit-loop dispatch by `audit_state`, agent dispatch table with executor-tier selection, frontmatter mutation cheat sheet, commit-message templates per milestone, `<pipeline-result>` parse procedure, decision-15 triage helper, concrete `Agent({...})` snippets, idempotent-no-op summary.
+- Coverage of parent PLAN 202605011400 design constraints: decisions 1 (durable disk state), 8 (assigned_to as guideline), 9 (Human not Ken), 10 (interactive ideation in parent only), 11 (activation triggers), 13 + 22 (orchestrator owns git, milestone commits + bootstrap exception), 15 (decision-triage helper), 16 (orchestrator-as-brain, contract blocks), 17 (subagents preload skills), 18 (hybrid background, single re-entry, idempotency), 19 (subagent-driven exception, kanban full-stop), 20 (outcome enum routing table), 21 (audit loop with durable audit_state, MAX_ITERATIONS=5, per-stage counters), 23 (pipeline-result parse), 24 (last_executor_outcome read), 25 (outcome-verifying phase + verification_state + human_pending flow).
+- Trigger-phrase collision check: write-bus-plan still owns "create plan file" (transcription primitive); plan-pipeline owns "let's make a plan" / "let's plan X" / etc. Disambiguation explicit in plan-pipeline's description.
+- Parent/children traversal: children-gate in dispatch.md Step 3 detects non-terminal `triggers_plans` children and surfaces "paused for children" without auto-advancing the parent.
+- Ad-hoc PLAN handling: empty `pipeline_phase` is treated as `drafted` (per bus-conventions), not `drafting`.
+
+**Blockers (if any):** None.
+
+**Smoke test deferred:** Verification step 7 ("invoke `Skill("plan-pipeline")` with a contrived empty PLAN; verify it correctly identifies the phase and dispatches") is the dogfood (child 1440). The orchestrator's first real exercise happens there, against the `note-jot` target. Bug-finding from that pass is the dogfood's deliverable, captured in 1440's Executor Notes.
+
 **Files modified:**
+- Created: `.claude/skills/plan-pipeline/SKILL.md`
+- Created: `.claude/skills/plan-pipeline/workflows/dispatch.md`
+- Created: `.claude/skills/plan-pipeline/references/phase-state-machine.md`
+
+**last_executor_outcome:**
+  outcome: success
+  outcome_subtype: done
+  executed: 2026-05-01
+  diagnostics_summary: ""
