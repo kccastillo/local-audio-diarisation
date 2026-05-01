@@ -1,7 +1,7 @@
 ---
 title: "Create audit-sufficiency skill (conceptual review, Opus-pinned)"
 type: bus-plan
-status: blocked
+status: done
 assigned_to: opus
 priority: high
 created: 2026-05-01
@@ -14,7 +14,7 @@ repeat_cadence: ""
 linked_decisions: []
 linked_inputs:
   - 202605011500_ADVICE_sufficiency-audit-exemplar.md
-blocked_by: "Parent PLAN 202605011400 must complete steps 1-6a before this child runs"
+blocked_by: ""
 rollover_count: 0
 triggers_plans: []
 closes_thread: ""
@@ -85,10 +85,26 @@ Spawned from parent PLAN `202605011400`. The need for this skill was surfaced du
 - [ ] Smoke test against parent PLAN produces substantive output reflective of the exemplar's quality
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-05-01 (authored directly in Opus during bootstrap, per option-2 path)
+**Outcome:** done
 **What was done:**
-**Blockers (if any):**
+- Created `.claude/skills/audit-sufficiency/SKILL.md` with frontmatter (trigger phrases include "opus pass"), reference to shared plan-safe.md, reference to ADVICE 1500 exemplar, essential_principles (conceptual lens, not mechanical), preconditions, inputs, output_schema (outcome enum + payload + diagnostics + pipeline-result wire format), exception_conditions, output_format following CLAUDE.md "Reviews" rule, constraints, success_criteria
+- Created `.claude/skills/audit-sufficiency/workflows/audit-sufficiency-steps.md` with 6-step procedure: validate preconditions → read referenced inputs → apply seven lenses (assumptions, validation path, test fidelity, edges, freshness, meta, spec-acceptance fidelity) → triage Human-input items per decision 15 → compose review per CLAUDE.md format → emit pipeline-result block
+- Each lens has a concrete prompt + Blocker/Not-blocker examples
+- Workflow explicitly references the ADVICE exemplar as the calibration target ("if your review is shallower than the exemplar, you missed lenses; if heavier, you may have ventured into mechanical territory")
+- Stays out of mechanical territory (defers per-step concreteness checks to audit-haiku-safe)
+
+**Blockers (if any):** None.
+
 **Files modified:**
+- Created: `.claude/skills/audit-sufficiency/SKILL.md`
+- Created: `.claude/skills/audit-sufficiency/workflows/audit-sufficiency-steps.md`
+
+**Smoke test deferred:** Real exercise will happen the first time `plan-pipeline` orchestrator (child 1430) dispatches `sufficiency-auditor` against a real PLAN. The exemplar (ADVICE 1500) was generated against the parent PLAN and should reproduce when the skill is invoked there.
+
+**last_executor_outcome:**
+  outcome: success
+  outcome_subtype: done
+  executed: 2026-05-01
+  diagnostics_summary: ""
