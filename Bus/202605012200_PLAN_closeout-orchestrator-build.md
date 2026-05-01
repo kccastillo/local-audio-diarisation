@@ -1,22 +1,30 @@
 ---
 title: "F/14 closeout: mark parent PLAN 1400 done; retire 8 PLANs from the orchestrator-build initiative"
 type: bus-plan
-status: in-progress
+status: needs-revision
 assigned_to: haiku
 priority: high
 created: 2026-05-01
 created_by: opus
 created_month: 202605
 log_month: 202605
-pipeline_phase: outcome-verifying
+pipeline_phase: drafted
 parent_plan_of_plans: 202605011400_PLAN_build-plan-pipeline-orchestrator.md
 linked_inputs: []
 triggers_plans: []
 audit_state:
-  sufficiency_iterations: 1
-  plan_safety_iterations: 3
-  last_stage: plan_safety
-  last_outcome: success
+  sufficiency_iterations: 0
+  plan_safety_iterations: 0
+  last_stage: none
+  last_outcome: none
+verification_state:
+  state_pass: 13
+  state_fail: 8
+  acceptance_pass: 0
+  acceptance_fail: 0
+  human_pending: ["closeout note quality (acceptance: human)", "clean pipeline walk (verify: human)"]
+  human_verdict: pending
+  failed_assertions: ["all 8 per-file Bus→Retired existence checks failed; retire moves did not happen; Skill('retire') calls from inside plan-executor subagent did not actually invoke the skill"]
 last_executor_outcome:
   outcome: success
   outcome_subtype: done
