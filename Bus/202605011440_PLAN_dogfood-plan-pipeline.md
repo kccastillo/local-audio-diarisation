@@ -1,7 +1,9 @@
 ---
 title: "Dogfood plan-pipeline against a real small target (note-jot utility skill)"
 type: bus-plan
-status: ready
+status: partially-complete
+triggers_plans:
+  - 202605011900_PLAN_post-dogfood-fixes.md
 assigned_to: sonnet
 priority: medium
 created: 2026-05-01
@@ -105,10 +107,39 @@ Spawned from parent PLAN `202605011400_PLAN_build-plan-pipeline-orchestrator.md`
       `verify: human`
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-05-01 (Human-driven via parent-Claude-as-orchestrator pairing per decision 10; Step 1 was the trigger phrase "let's plan a note-jot utility skill")
+**Outcome:** partially-complete
+
 **What was done:**
-**Blockers (if any):**
+
+The dogfood ran end-to-end through `drafting → drafted → audit-loop → checked → executing` then HALTED at executing on a hard architectural finding (subagent permission context). Phases NOT exercised: outcome-verifying, complete, retire. Findings captured below; bundled into successor PLAN 202605011900 (post-dogfood-fixes).
+
+**Phase-by-phase pass/fail:**
+
+- **Trigger routing (Step 1):** PASS. Activation phrase routed to `plan-pipeline` cleanly; no collision with `write-bus-plan`'s "create plan file" trigger.
+- **drafting / ideate (Step 2):** PASS. Three-phase Clarify → Survey → Converge arc walked with the Human; plan-writer dispatched at clarify-close and converge-close. Two checkpoint commits landed (`drafting checkpoint` + `drafted`).
+- **drafting → drafted phase flip (Step 3):** PASS. Phase flip required a separate orchestrator Edit because plan-writer doesn't touch `pipeline_phase` (captured as F5).
+- **audit loop (Step 4):** PASS. sufficiency: 3 iterations (revision_needed → revision_needed → success); plan_safety: 1 iteration (success). audit_state durable across invocations. Counters incremented correctly. MAX_ITERATIONS not breached. Audit caught a real silent Edit-tool failure (F7) — positive signal.
+- **checked → executing (Step 5):** PASS. Phase flip + executor dispatch with `run_in_background: true` worked. Parent stayed responsive.
+- **Re-entry on executor completion (Step 6):** PASS. Harness fired `task-notification` cleanly when the agent completed; the load-bearing weak link survived its first real test.
+- **Executor itself:** FAIL. Subagent's Bash permission context did not honour `.claude/settings.json` allowlist (F1).
+- **outcome-verifying (Step 7):** NOT REACHED.
+- **complete → retire (Step 8):** NOT REACHED.
+
+**Blockers (if any):** F1 (subagent permission context). Hard architectural finding; blocks any Haiku-executable PLAN flowing through the pipeline. All Verification items requiring downstream phases (note-jot SKILL.md exists, retired, etc.) cannot pass until F1 is fixed.
+
+**Recommendations (feed PLAN 202605011900):** see the findings catalogue F1-F9 in 202605011900_PLAN_post-dogfood-fixes.md.
+
 **Files modified:**
+- Created: `Bus/202605011700_PLAN_note-jot.md` (the dogfood target PLAN; halted at executing)
+- Modified (multiple times): `Bus/202605010000_LOG_202605.md`
+- Modified (amendment): `Bus/202605011400_PLAN_build-plan-pipeline-orchestrator.md` (decision 18 amended inline mid-dogfood per finding F6)
+- Modified: `.claude/settings.json` (added mkdir/date/echo/bash to allowlist — relevant for F1's eventual fix)
+- Created: `Bus/202605011900_PLAN_post-dogfood-fixes.md` (this dogfood's successor)
+
+**last_executor_outcome:**
+  outcome: revision_needed
+  outcome_subtype: partially-complete
+  executed: 2026-05-01
+  diagnostics_summary: "Dogfood reached executing then halted on F1 (subagent Bash permission context). 9 findings catalogued in successor PLAN 202605011900."
