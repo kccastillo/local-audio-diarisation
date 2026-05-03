@@ -15,7 +15,7 @@ linked_decisions:
   - "Tag v1-final before rewrite begins"
 linked_inputs:
   - "ARCHITECTURE.md (v1 design baseline, 2026-05-04)"
-blocked_by: "202605040100_PLAN_integrate-harness-claude-md.md"
+blocked_by: ""
 rollover_count: 0
 parent_plan_of_plans: ""
 ---

@@ -1,166 +1,39 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Directives only. Rationale, examples, and standing rules with context live in [.claude/CONSTITUTION.md](.claude/CONSTITUTION.md).
 
 ## Project Overview
 
-This is a Python-based offline speaker diarisation and transcription pipeline. It combines OpenAI's Whisper for transcription with pyannote.audio for speaker diarisation to produce transcripts identifying "who said what". The pipeline runs entirely locally with a memory-efficient architecture that sequentially loads/unloads large AI models to work within typical GPU VRAM constraints (e.g., 8GB).
-
-A v2 rewrite is being planned — the current code is the baseline. Tag `v1-final` (or equivalent) before rewriting.
+Offline speaker-diarisation + transcription pipeline (Whisper + pyannote.audio). See [README.md](README.md) for usage and [ARCHITECTURE.md](ARCHITECTURE.md) for design.
 
 ## Working style
 
 - AU spelling, usage, date formats.
-- New conversation: check the request is well-specified; ask clarifying questions first when it isn't.
-- No unprompted output of artefacts, illustrations, code, or longform sections. If producing one seems like the best move, ask permission first.
+- New conversation: ask clarifying questions if the request is under-specified.
+- **IMPORTANT:** Treat "X is broken" / "we should Y" / "how about Z" as discussion openers, not work orders. See `.claude/CONSTITUTION.md` § Discussion-vs-work-order.
+- No unprompted output of artefacts, illustrations, code, or longform sections — ask permission first.
 - Long output: ask whether the direction is right before continuing.
-- No cross-chat references between projects unless prompted; isolate within projects by default.
-- To Ken: plain language; do not compress, abbreviate, or elide. Ruthless token economy is for internal planning only. Always name the thing, the operation, the result.
-- When offering options: describe each in full, then say which you lean toward and explain why.
+- No cross-chat references between projects unless prompted.
+- To Ken: plain language; name the thing, the operation, the result. No compression, no abbreviation.
+- When offering options: describe each in full; state recommendation with reason.
 - If a question is answerable from a tool's default behaviour, decide and proceed.
-- If something depends on a prior decision or external input, state the dependency — Ken will not always remember.
-- Requirement before solution — no mechanism design until requirement and process are agreed.
-- Reviews: brief verification preamble (what was checked against — files, not just the document under review) → one-line overall verdict → priority-ordered numbered punch list (blockers first, nits last) → "Not blockers" subgroup → net verdict (what's ready, what needs fixing).
+- State dependencies on prior decisions or external input explicitly.
+- **IMPORTANT:** Requirement before solution — no mechanism design until requirement and process are agreed.
+- **IMPORTANT:** Reviews follow the fixed five-element shape. See `.claude/CONSTITUTION.md` § Review shape.
 
 ## Agent execution rules
 
-**Plan execution protocol & model switch rules:** See [AGENT_RULES.md](AGENT_RULES.md) for plan phases, model responsibilities, and switch protocol.
+See [.claude/CONSTITUTION.md](.claude/CONSTITUTION.md) § Plan lifecycle for plan phases, halt conditions, and the skill registry.
 
 **Operating rules:**
-1. **All plans go to Bus/** — Every piece of planned work lives as a PLAN file, never chat-only.
-2. **Research and advice to Bus/** — RESEARCH (data drops) and ADVICE (strategic notes) go via `write-bus-input` skill. Writing an input auto-clears blocked plans waiting on it.
+1. All plans go to `Bus/` — never chat-only.
+2. RESEARCH and ADVICE go to `Bus/` via the `write-bus-input` skill.
+3. **Bash:** avoid `&&` / `;` / pipes that combine distinct operations in one call. See `.claude/CONSTITUTION.md` § Bash compounds.
+4. Delegate read-heavy searches (>5 files or >1500 lines) to a subagent — protects parent context from rot.
+5. Cross-session state lives in `memory/MEMORY.md`.
+6. **PLAN-or-not triage:** use the Bus PLAN mechanism for tasks that need audit-trail + reproducibility + multi-step coordination (typically: ≥3 Steps, ≥3 files touched, real-judgement-calls present, or audit/sign-off required). Below that bar, use direct edits; the PLAN overhead outweighs its benefit. When in doubt, prefer direct work and only escalate to PLAN if the task grows.
+7. The `.claude/` harness is treated as production / stable upstream. This project does not modify harness internals.
 
 ## Skills
 
-Skills live in `.claude/skills/<name>/SKILL.md`. Invoked via `Skill("<name>")`. See [.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md](.claude/skills/SKILLS_IMPLEMENTATION_GUIDE.md) for structure and conventions.
-
-| Skill | What it does |
-|---|---|
-| `initiate-harness` | Bootstrap a fresh project with the Bus/PLAN harness — creates Bus/, Retired/, AGENT_RULES.md, CLAUDE.md, ROADMAP.md, current-month LOG from templates. Run after selective `.claude/` pull into a new project |
-| `create-agent-skills` | Expert guidance for creating and refining skills — structure, principles, workflows, templates |
-| `ideate` | Three-phase ideation arc (Clarify → Survey → Converge) — runs in parent session only; produces a plan-ready idea with options-and-recommendation discipline |
-| `audit-sufficiency` | Conceptual audit of a PLAN (Opus-pinned) — seven lenses: assumptions, validation path, test fidelity, orchestration edges, freshness, meta-design, spec-acceptance. Runs first in the audit loop |
-| `audit-haiku-safe` | Mechanical plan-safety audit (Sonnet-pinned) — concrete, atomic, unambiguous, safe, testable; verifies `verify:`/`acceptance:` format. Runs after sufficiency passes |
-| `plan-pipeline` | End-to-end planning orchestrator — walks a PLAN through drafting → drafted (audit loop) → checked → executing → outcome-verifying → complete (retire); owns all git milestones |
-| `write-bus-plan` | Transcribe plans to `Bus/` files; manage monthly LOG and status tables |
-| `write-bus-input` | Write RESEARCH/ADVICE files to `Bus/`; unblock plans waiting on input |
-| `execute-plan` | Execute PLAN steps in order; populate Executor Notes; update LOG; commit + push |
-| `maintain-claude-md` | Audit CLAUDE.md and CONTEXT_CONSTITUTION.md against camelCase + rot principles; propose adds/prunes; output as Bus PLANs |
-| `retire` | Move files to gitignored `Retired/` folder when no longer needed |
-
-## Architecture & Core Design
-
-The codebase follows a **processor-based pipeline pattern** with clear separation of concerns:
-
-**Main Processing Pipeline** (`run_diariser.py`):
-- `TranscriptionManager`: Orchestrates the entire workflow across 5 sequential stages:
-  1. **Audio Preprocessing** (`audio/audio_cleaner.py`): Noise reduction and volume normalisation via FFmpeg
-  2. **Voice Activity Detection** (VADProcessor): Identifies speech regions in audio
-  3. **Speaker Diarisation** (DiarisationProcessor): Detects and labels different speakers
-  4. **Speech Transcription** (TranscriptionProcessor): Converts speech to text using Whisper
-  5. **Attribution & Output**: Assigns speakers to transcribed segments and saves results
-
-**Processor Architecture** (`processors/`):
-- All processors inherit from `BaseProcessor` (base_processor.py), which provides:
-  - Common interface: `load_model()`, `unload_model()`, `process()`
-  - Consistent logging and device management (CPU/GPU)
-  - Memory tracking integration
-- Individual processors: VADProcessor, DiarisationProcessor, TranscriptionProcessor
-- Models are loaded/unloaded on-demand to conserve VRAM
-
-**Configuration System** (`config/config_manager.py`):
-- Singleton pattern ensures single config instance across app
-- YAML-based configuration (config/config.yaml)
-- Handles path resolution, directory creation, and Hugging Face authentication tokens
-
-**Supporting Infrastructure**:
-- `utils/datatypes.py`: Immutable `TranscriptionSegment` dataclass for transcription data
-- `utils/memory_monitor.py`: Tracks GPU/CPU memory usage throughout pipeline
-- `utils/display_manager.py`: Unified console output with progress sections and formatting
-- `utils/transcription_writer.py`: Saves transcripts in TXT or JSON format
-
-## Key Dependencies
-
-- **pyannote.audio** (3.3.2): Speaker diarisation and VAD via Pyannote pipelines
-- **openai-whisper** (20240930): Speech-to-text transcription
-- **torch** (2.7.1+cu118): Deep learning backend with CUDA support
-- **librosa**, **soundfile**, **pydub**: Audio I/O and analysis
-- **pyyaml**: Configuration parsing
-- **pytest** (8.4.1): Testing framework
-
-## Commands
-
-### Setup & Environment
-```bash
-python -m venv venv
-source venv/Scripts/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### Run the Main Pipeline
-```bash
-# Interactive mode (select audio file from recordings_dir)
-python run_diariser.py
-
-# Direct file processing
-python run_diariser.py --input path/to/audio.mp4
-
-# With custom speaker count hints
-python run_diariser.py --input path/to/audio.mp4 --min-speakers 2 --max-speakers 4
-
-# Custom output format (txt or json)
-python run_diariser.py --input path/to/audio.mp4 --format json
-
-# With Hugging Face token (for model downloads)
-python run_diariser.py --input path/to/audio.mp4 --auth-token your_hf_token
-```
-
-### Testing
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_0_config.py -v
-
-# Run single test
-pytest tests/test_3_transcription_processor.py::TestTranscriptionProcessor::test_process_valid_audio -v
-
-# Run with coverage report
-pytest tests/ --cov=. --cov-report=html
-```
-
-### Output
-- Transcripts saved to `output/` directory (default)
-- Logs saved to `logs/` directory with timestamp
-- Memory usage history per file saved as JSON in `logs/`
-- Temporary processed audio stored in `temp/` (cleaned up after processing)
-
-## Configuration
-
-The application reads `config/config.yaml` with sections for:
-- **paths**: Base directory, recordings_dir, output_dir, temp_dir, logs_dir
-- **auth**: Hugging Face token location
-- **processing**: Whisper model size, Pyannote settings, speaker count hints
-- **output**: Default transcript format, timestamp format
-- **display**: Progress type (TQDM or other), verbosity
-- **logging**: Log level, format, file prefix
-
-Path values are resolved relative to the `base_dir` (typically project root).
-
-## Testing Structure
-
-- **Test Numbering**: Files are named `test_<number>_<module>.py` to indicate execution order (0-4). Tests in lower-numbered files should run before higher-numbered ones due to dependencies (e.g., config tests before processor tests).
-- **Fixtures**: Use pytest fixtures for temporary directories, mock configs, and test audio files
-- **Mocking**: pytest-mock used for isolating components; real audio/models avoided where possible in unit tests
-- **End-to-End**: `test_4_end_to_end.py` tests the full pipeline (slowest, runs last)
-
-## Important Implementation Notes
-
-**VRAM Management**: The sequential load/unload pattern in `TranscriptionManager.process_file()` is critical. Each processor loads its model, processes, then immediately unloads and clears CUDA cache. Don't change this pattern without understanding the memory implications.
-
-**Speaker Attribution**: The `_perform_speaker_attribution()` method in TranscriptionManager crops the diarisation result to each transcription segment's time window and selects the speaker with the highest overlap. Edge case: overlapping speakers default to "Unknown Speaker".
-
-**Pyannote Models**: VAD and diarisation use Pyannote pipelines, which download from Hugging Face on first run. Requires `auth_token` for some models. Cached locally by default.
-
-**Error Handling**: The pipeline continues through preprocessing/VAD failures but stops at critical errors. Check logs in `logs/` for detailed error context.
+Skills live in `.claude/skills/<name>/SKILL.md`. Invoke via `Skill("<name>")`. See [.claude/CONSTITUTION.md](.claude/CONSTITUTION.md) § Skill registry for the full list.

@@ -1,7 +1,7 @@
 ---
 title: "Integrate updated harness CLAUDE.md; retire CLAUDE copy.md"
 type: bus-plan
-status: ready
+status: done
 assigned_to: ""
 priority: high
 created: 2026-05-04
@@ -141,4 +141,25 @@ A fresh session reading only `CLAUDE.md` understands what this project is, how t
 
 ## Executor Notes
 
-*Populated after execution. Leave blank.*
+**Executed:** 2026-05-04 (same-session execution by opus, after PLAN draft)
+**Outcome:** done
+
+**What was done:**
+- Step 1: Added three HOT sections to `.claude/CONSTITUTION.md` (Discussion-vs-work-order, Review shape, Bash compounds), inserted between `Communication with the operator` and `Decision autonomy`. Updated the HOT classification list at the top of the file. Removed broken `mechanism-notes.md` reference from line 3.
+- Step 2: Rewrote `README.md` (15 → 92 lines) with Setup, Run, Outputs, Configuration, Testing, and Project status sections. Pipeline runnable from README alone.
+- Step 3: Rewrote `CLAUDE.md` (166 → 39 lines), directives-only. Project Overview is now a one-line pointer to README.md and ARCHITECTURE.md. Working style references CONSTITUTION § Discussion-vs-work-order and § Review shape. Operating rule 3 references CONSTITUTION § Bash compounds. Operating rule 7 added: harness treated as production / stable upstream. Skills section is a one-line pointer to CONSTITUTION § Skill registry.
+- Step 4: Deleted `CLAUDE copy.md` from working tree (was untracked; nothing to stage).
+- Step 5: Verified internal links in CLAUDE.md, README.md, ARCHITECTURE.md, CONSTITUTION.md all resolve. Remaining `mechanism-notes.md` references in `.claude/skills/_shared/decisions.md` and `MAINTENANCE.md` are out-of-scope (harness internals).
+- Step 6: Commit + push (this commit).
+
+**Files modified:**
+- `CLAUDE.md` (rewrite, 166→39 lines)
+- `README.md` (expand, 15→92 lines)
+- `.claude/CONSTITUTION.md` (3 new sections + HOT list update + broken-link fix)
+- `CLAUDE copy.md` (deleted; was untracked)
+- `Bus/202605010000_LOG_202605.md` (status update)
+- `Bus/202605040100_PLAN_integrate-harness-claude-md.md` (this file: status=done, Executor Notes)
+
+**Blockers:** none.
+
+**Notes:** PLAN 2 (`202605040200_PLAN_diarizer-v2-rearchitecture.md`) was `blocked_by: 202605040100_PLAN_integrate-harness-claude-md.md`; that block can now be cleared.
