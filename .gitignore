@@ -4,7 +4,14 @@ logs/
 output/
 recordings/
 temp/
-tests/
+tests/*
+!tests/diarizer/
+
+# Claude Code harness — production / stable upstream, not tracked per-project.
+.claude/
+Retired/
+MAINTENANCE.md
+.githooks/
 
 # Byte-compiled / optimised / C files
 __pycache__/
@@ -83,6 +90,7 @@ docs/_build/
 # Virtual Environment
 #  This is the most important one for this project.
 venv/
+venv-*/
 .venv/
 ENV/
 env/

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diarizer"
+version = "2.0.0"
+description = "Offline speaker-diarisation + transcription pipeline (faster-whisper + pyannote.audio 3.3)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Ken Castillo" }]
+dependencies = [
+    "ctranslate2==4.5.0",
+    "faster-whisper==1.2.0",
+    "pyannote.audio==3.3.2",
+    "huggingface_hub<1.0",
+    "speechbrain==1.0.3",
+    "matplotlib",
+    "soundfile>=0.13",
+    "librosa>=0.11",
+    "numpy>=2.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+]
+
+[project.scripts]
+diarizer = "diarizer.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["diarizer*"]
+exclude = ["tests*", "scripts*", "Bus*", "Retired*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/diarizer"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
+addopts = "-v"

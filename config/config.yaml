@@ -1,64 +1,41 @@
-# Configuration for the Audio Transcription and Diarisation Pipeline
+# Diarizer v2 configuration. Loaded by v2/config.py.
+# Every section is optional; absent sections fall back to dataclass defaults.
 
-# Section for all file and directory paths.
-# It's recommended to use absolute paths or paths relative to a clear base directory.
 paths:
-  # Base directory for the project. Use '.' for the current directory where the script is run.
-  # Using an absolute path is often safer, e.g., "D:/Projects/Diarizer"
-  base_dir: "."
-  # Subdirectories relative to the base_dir.
-  recordings_dir: "recordings"      # Where your source audio/video files are stored.
-  input_dir: "input"               # Where preprocessed audio is temporarily saved.
-  output_dir: "output"             # Where final transcripts are saved.
-  temp_dir: "temp"                 # For any other temporary files.
-  logs_dir: "logs"                 # Where log files are stored.
-  prompts_dir: "prompts"           # Directory for prompt files (if used).
+  recordings_dir: recordings
+  output_dir: output
+  temp_dir: temp
+  logs_dir: logs
 
-# Section for Hugging Face authentication.
-auth:
-  # Absolute path to the text file containing your Hugging Face authentication token.
-  # This is required for downloading pyannote models.
-  # e.g., "D:/tokens/hf_token.txt"
-  token_path: "D:/Projects/Tokens/kc_diariser.txt"
+model:
+  name: large-v3-turbo
+  compute_type: float16    # float16 | int8 | int8_float16
+  device: cuda             # cuda | cpu
+  cpu_fallback: true
+  language: null           # null = auto-detect
 
-# Section for audio capture and preprocessing settings.
-audio:
-  capture:
-    chunk_size: 1024
-    format: "float32" # Use float32 for better compatibility with audio libraries.
-    channels: 1       # Mono is standard for speech processing.
-    rate: 16000       # 16kHz is the standard for Whisper and most speech models.
-  preprocessing:
-    noise_reduction:
-      stationary: true
-      prop_decrease: 0.6
-      freq_mask_smooth_hz: 500
-    normalization:
-      target_peak: 0.7
+diarisation:
+  enabled: true
+  min_speakers: null
+  max_speakers: null
 
-# Section for display and progress visualisation settings.
-display:
-  progress_type: "TQDM"
+preprocessing:
+  enabled: true
+  normalise: true        # adaptive — only applies when input RMS < -32 dBFS
+  denoise: false         # default OFF — denoising hurts Whisper WER on clean audio
+  target_sample_rate: 16000
 
-# Section for core AI model and processing parameters.
-processing:
-  whisper:
-    # CHANGED: Switched to a smaller model for faster testing and iteration.
-    # Options: tiny, base, small, medium, large-v3
-    model_size: "base"
-    device: "cuda"
-  diarisation:
-    min_speakers: 1
-    max_speakers: 5
-    use_prompts: false
-
-# Section for output file settings.
 output:
-  default_format: "txt"
-  timestamp_format: "%Y%m%d_%H%M%S"
+  format: txt              # txt | json | srt
+  include_timestamps: true
+  include_speakers: true
 
-# Section for logging configuration.
-logging:
-  level: "INFO"
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file_prefix: "diarisation_log"
+auth:
+  # Hugging Face token. Resolution order at runtime:
+  #   1. CLI flag --auth-token
+  #   2. this field (auth.hf_token)
+  #   3. token_path file content (matches v1 convention)
+  #   4. env HF_TOKEN
+  #   5. env HUGGING_FACE_HUB_TOKEN
+  hf_token: null
+  token_path: null   # e.g. "D:/Projects/Tokens/kc_diariser.txt"
