@@ -23,6 +23,7 @@ linked_decisions:
   - "Auto-pause on edit: clicking any transcript line OR pressing Up/Down arrow keys pauses audio AND disables sync. Cursor lands on that segment for editing."
   - "Up/Down arrow keys navigate between adjacent segments. Left/Right arrows are LEFT ALONE — browsers use them for caret movement in contenteditable text."
   - "Export TXT format matches the existing pipeline's [SPEAKER] hh:mm:ss text format (one line per segment, hours always shown)"
+  - "Clicking a segment's timestamp seeks audio to that point AND enters sync mode (auto-plays from there). Distinct from clicking the row body or speaker pill, which auto-pauses for editing."
 linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
@@ -109,7 +110,9 @@ Add four affordances to the transcript-review webapp:
   - `dropOutOfSync(targetIndex?)` — calls `exitSync()`; if `targetIndex` provided, focuses that row's `.text` element and places cursor at end.
 - Refactor existing play/pause click handler to toggle between `enterSync` and `exitSync`.
 - Refactor `tickHighlight` to early-return when `syncMode === false`. Active-highlight class is removed at the moment sync is exited (visual cue for current state is via the button label, not via the highlight).
-- Click handler on each segment row → `dropOutOfSync(rowIndex)` (preserves current behaviour where clicking timestamp seeks audio — keep that on the timestamp element specifically; don't fire `dropOutOfSync` from a timestamp click since that's a navigational action; only fire it when the click lands on the speaker pill, the row body, or the text cell).
+- Click handlers on segment elements split by target:
+  - **Timestamp click** → set `audio.currentTime = seg.start`, then call `enterSync()`. This both seeks AND auto-plays from that point. (No `dropOutOfSync` call — the timestamp is a 'play from here' action.)
+  - **Speaker pill / row body / text cell click** → `dropOutOfSync(rowIndex)` (auto-pause, focus that row's text for editing). Unchanged from prior behaviour.
 - Keyboard: `keydown` listener on `document`. If `key === 'ArrowUp'` or `key === 'ArrowDown'` AND the active element is inside `#transcript`, prevent default, compute target index (`current ± 1`, clamped), call `dropOutOfSync(target)`. Do NOT intercept arrow keys when focus is outside `#transcript` (e.g. inside the volume slider).
 - Verify Left/Right are NOT bound — keep contenteditable cursor movement intact.
 
@@ -143,8 +146,9 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
 12. Export TXT button triggers a browser file download.
 13. Downloaded file contains lines of the form `[SPEAKER_00] 00:00:04 …`.
 14. Export TXT respects unsaved in-memory edits (rename a speaker, click Export TXT before saving, downloaded file shows the new label).
+15. Clicking a segment's start-time timestamp seeks audio to that point AND begins playback automatically (button shows Pause, sync mode active, active-highlight follows from that segment forwards).
 
-`verify: human — operator runs items 1–14; all must pass.`
+`verify: human — operator runs items 1–15; all must pass.`
 
 ## Verification
 
@@ -162,8 +166,8 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'ArrowUp' in p and 'ArrowDown' in p"`
 - [ ] Full smoke test suite passes.
       `acceptance: pytest tests/diarizer/test_webapp_smoke.py -q`
-- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–14; all must pass.
-      `verify: human — operator runs items 1–14; all must pass.`
+- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–15; all must pass.
+      `verify: human — operator runs items 1–15; all must pass.`
 
 ## Executor Notes
 
