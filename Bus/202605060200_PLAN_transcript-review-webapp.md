@@ -20,6 +20,7 @@ linked_decisions:
   - "Undo/redo within session DEFERRED (versioned saves provide coarse undo)"
   - "Webapp binds to 127.0.0.1 only on default port 8765 (overridable via --port); no LAN exposure"
   - "Save endpoint uses O_EXCL atomic create with retry on collision; wrap (NN=99 → 00) returns `wrapped: true` so the frontend can warn"
+  - "Frontend aesthetic: simple/functional for v1 — system fonts, no CSS frameworks, native controls, minimal palette. Polish deferred."
 linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
@@ -153,6 +154,15 @@ Components:
 - **Save button:** posts current state to `/api/transcript/save`. On success, shows the new filename and adds it to a "Versions" dropdown. If the response includes `"wrapped": true`, surfaces a toast warning to the operator.
 - **Diff toggle:** swaps the transcript pane into diff view rendered from `/api/transcript/diff` — per-segment additions/deletions/changes shown inline.
 
+#### UI aesthetic constraints
+
+The frontend prioritises function over visual polish for v1:
+- Plain, system-font-based UI (`font-family: system-ui, sans-serif`). No CSS frameworks, no icon libraries, no custom theming.
+- Native HTML controls (`<button>`, `<input type="range">`, `<textarea>` / `contenteditable`) styled minimally.
+- Layout: simple flex/grid; clear separation between player bar (top), spectrogram (mid), transcript pane (main scroll area). No animations beyond the playhead movement and the active-segment highlight.
+- Colour palette: 3–4 colours max (background, text, accent for active segment, warning/wrap toast). High contrast.
+- The aim is "looks like a tool, not a product". Polish is explicitly deferred.
+
 ### Step 6 — CLI restructure + `diarizer serve` subcommand
 
 `cli.py` is currently flat-arg (required `--input`). Adding `serve` requires real restructuring:
@@ -187,7 +197,28 @@ Components:
 - `GET /api/session` with a forged `Host: evil.example` header returns HTTP 421 or 403 (exact code is implementation choice; rejection must occur).
 - `POST /api/transcript/save` writes a sidecar with the expected filename pattern.
 
-**Manual UI walkthrough** (verify: human): open an existing session in Chrome and Firefox; confirm Opus plays; confirm spectrogram renders; confirm play/pause/+5/-5/volume work; confirm active segment highlights; confirm global rename and per-segment reassign both work; confirm save creates `_edit_YYYYMMDD_00.json`, second save creates `_NN+1`; confirm diff view renders.
+**Manual UI walkthrough** (`verify: human — operator runs the affordance checklist (1–18 above); all items must pass`):
+
+For each item, the operator must observe the stated behaviour. If any item fails, the walkthrough fails — outcome-verification will revert to drafted.
+
+1. Audio loads and plays from `/api/audio` in Chrome and Firefox.
+2. Play/pause button toggles playback (clicked while playing → pauses; clicked while paused → resumes).
+3. `+5s` button advances `audio.currentTime` by exactly 5 seconds (verify by reading the elapsed-time readout before/after).
+4. `-5s` button rewinds by exactly 5 seconds; clamps at 0 when called near start.
+5. Volume slider changes perceived loudness; setting to 0 silences; setting back to previous value restores level.
+6. Spectrogram canvas is non-empty during playback (visible spectral content updating each frame).
+7. Spectrogram playhead line moves left-to-right in sync with audio.
+8. Transcript pane renders all segments with `[speaker]` pill, start time, and editable text cell.
+9. Active-segment highlight follows the playhead — as audio crosses each segment's `[start, end]`, the corresponding row gains the highlight class and earlier rows lose it.
+10. Clicking a segment's start-time seeks audio to that timestamp.
+11. Editing a segment's text cell updates in-memory state (verify via diff view or by inspecting the next save's payload).
+12. Speaker rename modal applies globally — renaming `SPEAKER_00` to `Alice` updates every segment with that speaker in the visible pane.
+13. Per-segment speaker reassign — clicking a single segment's speaker pill and choosing a different speaker updates only that segment.
+14. Save button POSTs to `/api/transcript/save` and surfaces the new filename (e.g. `transcript_edit_20260506_00.json`).
+15. Second save the same day produces `_01`, third produces `_02`, etc.
+16. Diff toggle swaps the transcript pane into a diff view showing per-segment changes vs the original.
+17. Wrap-warning toast appears when the save endpoint returns `wrapped: true` (force this by pre-creating the necessary fixture files in a manual test path).
+18. Reloading the page restores the latest edit version (verify the dropdown lists all `_edit_*.json` files and selecting one loads its contents).
 
 `acceptance:` `pytest tests/test_webapp_smoke.py -q` — covers session JSON, transcript fetch, audio range (206/100-byte), rebinding rejection, and save round-trip.
 
@@ -215,8 +246,8 @@ Components:
       `verify: python -c "assert 'serve' in open('README.md').read()"`
 - [ ] Smoke tests pass (session JSON, transcript, audio range 206, rebinding rejection, save round-trip).
       `acceptance: pytest tests/test_webapp_smoke.py -q`
-- [ ] Manual UI walkthrough: playback, spectrogram, segment highlight, global rename, per-segment reassign, save/versioning, diff view.
-      `verify: human`
+- [ ] Manual UI walkthrough: operator runs the affordance checklist (items 1–18); all items must pass.
+      `verify: human — operator runs the affordance checklist (1–18 above); all items must pass`
 
 ## Executor Notes
 
