@@ -1,7 +1,6 @@
 ---
 title: "Transcript-review webapp: synced playback, live editing, versioned saves"
 type: bus-plan
-status: in-progress
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -25,7 +24,8 @@ linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
 rollover_count: 0
-pipeline_phase: outcome-verifying
+pipeline_phase: complete
+status: done
 audit_state:
   sufficiency_iterations: 3
   plan_safety_iterations: 1
@@ -40,9 +40,10 @@ verification_state:
   state_fail: 0
   acceptance_pass: 1
   acceptance_fail: 0
-  human_pending:
-    - "Affordance checklist (Step 7, items 1-18): manual UI walkthrough in Chrome and Firefox"
-  human_verdict: pending
+  human_pending: []
+  human_verdict: all_pass
+  human_verified_on: 2026-05-06
+  human_verified_against_session: "output/app-control-meeting-28apr_20260506_065459 (real session bridged from existing TXT + .m4a)"
 ---
 
 ## Objective
