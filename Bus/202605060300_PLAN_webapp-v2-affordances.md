@@ -12,7 +12,7 @@ due: ""
 repeatable: false
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 2
+  sufficiency_iterations: 3
   plan_safety_iterations: 0
   last_stage: sufficiency
   last_outcome: revision_needed
@@ -161,7 +161,7 @@ Add five affordances to the transcript-review webapp:
 
 - File: `diarizer/webapp/app.py`. New endpoint `GET /api/transcript/export.txt?from=<filename>` (the `from` parameter is optional; default = latest edit, or original if no edits). Returns `text/plain; charset=utf-8` with `Content-Disposition: attachment; filename=<source_basename>_export_<YYYYMMDD>.txt`.
 - Format: one line per segment, `[SPEAKER] hh:mm:ss text` — hours always shown (matching existing `output.py:_format_timestamp`). Reuse the same formatter logic; do NOT call into `diarizer.output` directly to avoid coupling — copy the small `_format_timestamp` helper into `app.py`. Add a `# keep in sync with diarizer/output.py:_format_timestamp` comment.
-- Edge cases: missing speaker → omit `[<speaker>]` prefix (do NOT include `[ ]` brackets — `write_txt` builds prefix from a `prefix_parts` list, so missing speaker yields just the timestamp prefix or empty prefix). Missing text → emit just the prefix (no trailing space). Mirror `diarizer/output.py:write_txt` — format the line as `f'{prefix} {text}'.strip()` exactly to keep the two writers aligned. Reference: `diarizer/output.py write_txt` lines 38-46 — emits `f"{prefix} {seg.text}".strip() if prefix else seg.text`; the webapp formatter must produce the same bytes.
+- Edge cases: missing speaker → omit `[<speaker>]` prefix (do NOT include `[ ]` brackets — `write_txt` builds prefix from a `prefix_parts` list, so missing speaker yields just the timestamp prefix or empty prefix). Missing text → emit just the prefix (no trailing space). Mirror `diarizer/output.py:write_txt` — format the line as `f'{prefix} {text}'.strip()` exactly to keep the two writers aligned. Reference: `diarizer/output.py:write_txt` lines 66-79 (formatting loop at 70-77) — emits `f"{prefix} {seg.text}".strip() if prefix else seg.text`; the webapp formatter must produce the same bytes.
 - The byte-identity test in Step 6 is the canonical enforcement of this decision — if the pipeline's `write_txt` format ever changes, this test will fail and force the webapp's formatter to be updated in lockstep.
 - File: `diarizer/webapp/static/index.html`. Add `<button id="btn-export" type="button">Export TXT</button>` next to Save.
 - File: `diarizer/webapp/static/app.js`. Wire `btn-export` to POST the current in-memory edit state as the body of a new `POST /api/transcript/export.txt` (operator may have unsaved edits — we don't want to require saving first). Backend: accept optional JSON body containing `{segments: [...]}`; if absent, fall back to the latest saved sidecar.
