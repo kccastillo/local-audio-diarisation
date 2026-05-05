@@ -128,6 +128,17 @@ def test_preprocess_damage_gate_centroid_unchecked_for_high_input():
     assert res.passed
 
 
+def test_preprocess_damage_gate_centroid_unchecked_when_resampled():
+    """When sample rate changes (typical: 48 kHz → 16 kHz preprocess), the centroid
+    drops mechanically because content above the new Nyquist is truncated. That's
+    expected resampling behaviour, not denoise damage — gate must not fire on it."""
+    pre = FakeMeasurement(rms_dbfs=-20.0, sample_rate=48000, spectral_centroid_hz=3000)
+    post = FakeMeasurement(rms_dbfs=-20.0, sample_rate=16000, spectral_centroid_hz=1100)
+    res = preprocess_damage_gate(pre, post)
+    assert res.passed
+    assert not res.is_blocking_failure()
+
+
 # ============================================================
 # voice_presence_gate
 # ============================================================

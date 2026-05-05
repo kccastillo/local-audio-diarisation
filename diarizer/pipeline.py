@@ -230,13 +230,25 @@ class Pipeline:
                 raise
 
         try:
-            logger.info("Transcribing %s", audio_path)
+            initial_prompt = self.config.resolved_initial_prompt()
+            beam_size = self.config.model.beam_size
+            condition_on_previous_text = self.config.model.condition_on_previous_text
+            logger.info(
+                "Transcribing %s (beam_size=%d, condition_on_previous_text=%s, initial_prompt=%s)",
+                audio_path, beam_size, condition_on_previous_text,
+                "set" if initial_prompt else "none",
+            )
             segs_iter, info = model.transcribe(
                 str(audio_path),
-                beam_size=1,                           # lower hallucination per arXiv 2501.11378
-                vad_filter=True,                       # built-in Silero
+                beam_size=beam_size,
+                vad_filter=True,                       # built-in Silero — silence trim before model sees it
                 word_timestamps=True,
-                condition_on_previous_text=False,      # break hallucination chains
+                condition_on_previous_text=condition_on_previous_text,
+                # Hallucination chain break is handled by faster-whisper's existing
+                # prompt_reset_on_temperature=0.5 default + vad_filter trim, so
+                # condition_on_previous_text=True is safer than the literature suggests
+                # for continuously-voiced meeting audio.
+                initial_prompt=initial_prompt,
                 language=self.config.model.language,
             )
             language = info.language

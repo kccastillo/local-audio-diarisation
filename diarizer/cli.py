@@ -27,6 +27,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--auth-token", default=None, help="Hugging Face token override (highest precedence).")
     p.add_argument("--no-preprocess", action="store_true", help="Skip FFmpeg preprocessing.")
     p.add_argument("--no-diarisation", action="store_true", help="Skip speaker diarisation; transcription only.")
+    p.add_argument("--beam-size", type=int, default=None, help="Whisper beam size (default 1; try 5 for proper-noun + disfluency gain).")
+    p.add_argument(
+        "--condition-on-previous-text",
+        action="store_true",
+        help="Pass prior chunk's text to the next chunk (helps trailing-word fidelity; resets on temperature fallback).",
+    )
+    p.add_argument("--initial-prompt", default=None, help="Inline initial prompt (biases proper nouns and domain vocab).")
+    p.add_argument("--initial-prompt-file", type=Path, default=None, help="File with initial prompt; overridden by --initial-prompt if both set.")
     p.add_argument("--verbose", "-v", action="store_true", help="Enable debug logging.")
     return p
 
@@ -46,6 +54,14 @@ def _apply_overrides(config: Config, args: argparse.Namespace) -> Config:
         config.preprocessing.enabled = False
     if args.no_diarisation:
         config.diarisation.enabled = False
+    if args.beam_size is not None:
+        config.model.beam_size = args.beam_size
+    if args.condition_on_previous_text:
+        config.model.condition_on_previous_text = True
+    if args.initial_prompt is not None:
+        config.model.initial_prompt = args.initial_prompt
+    if args.initial_prompt_file is not None:
+        config.model.initial_prompt_path = str(args.initial_prompt_file)
     return config
 
 

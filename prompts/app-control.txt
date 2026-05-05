@@ -1,0 +1,1 @@
+Cybersecurity meeting transcript on Application Control at Seqwater. Names: Ken, Peter, Ejaz, Pradeep, Sadeed, Declan, Bryan, Leigh, Oliver, Dave Jaremin, Steve Russell. Terms: Airlock, Citrix, Rapid7, Intune, OTP, RITM, BAU, Ring Zero, out-of-hours, blacklisting, audit, incident, configuration, executive, unexecuted, fiddle.

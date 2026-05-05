@@ -137,8 +137,14 @@ def preprocess_damage_gate(
         )
 
     # Centroid dropping a lot can indicate over-aggressive denoise eating mid-band content.
-    # Only flag if the input wasn't already pre-processed (centroid in normal range).
-    if pre.spectral_centroid_hz < 6000.0:
+    # Only check when the sample rate didn't change — downsampling (e.g. 48 kHz → 16 kHz)
+    # mathematically truncates content above the new Nyquist (e.g. 8 kHz), which mechanically
+    # drops the centroid for any input with broadband content. That's not denoise damage,
+    # just basic signal-processing physics, and would produce false positives on every
+    # 48 kHz input. The check is informative only for same-rate filter chains (denoise,
+    # loudnorm) where centroid shifts come from filtering, not from band truncation.
+    same_rate = pre.sample_rate == post.sample_rate
+    if same_rate and pre.spectral_centroid_hz < 6000.0:
         centroid_drop = pre.spectral_centroid_hz - post.spectral_centroid_hz
         if centroid_drop > centroid_drop_threshold_hz:
             return GateResult(

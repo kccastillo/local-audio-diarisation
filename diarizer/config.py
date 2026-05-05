@@ -28,6 +28,12 @@ class ModelConfig:
     device: str = "cuda"
     cpu_fallback: bool = True
     language: Optional[str] = None
+    # ASR-quality knobs. Defaults preserve the verified-baseline behaviour;
+    # override per-meeting to bias for proper-noun accuracy or completion fidelity.
+    beam_size: int = 1
+    condition_on_previous_text: bool = False
+    initial_prompt: Optional[str] = None
+    initial_prompt_path: Optional[str] = None
 
 
 @dataclass
@@ -79,6 +85,21 @@ class Config:
             if token_file.exists():
                 return token_file.read_text(encoding="utf-8").strip() or None
         return os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+
+    def resolved_initial_prompt(self) -> Optional[str]:
+        """Resolution order: inline `model.initial_prompt` > file at `initial_prompt_path` > None.
+
+        File path is convenient for parking reusable per-domain prompts under `prompts/`
+        (e.g. `prompts/app-control.txt`, `prompts/ot-csm.txt`) and switching by config.
+        """
+        if self.model.initial_prompt:
+            return self.model.initial_prompt
+        if self.model.initial_prompt_path:
+            p = Path(self.model.initial_prompt_path)
+            if p.exists():
+                text = p.read_text(encoding="utf-8").strip()
+                return text or None
+        return None
 
     def to_dict(self) -> dict:
         return asdict(self)
