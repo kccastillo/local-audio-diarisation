@@ -173,6 +173,18 @@ Real-model end-to-end runs require GPU + HF token and are exercised manually (sm
 
 ---
 
+## Transcript-review webapp (post-pipeline)
+
+`diarizer serve <session-dir>` boots a local FastAPI app on `127.0.0.1:8765` (loopback only) for reviewing and editing finished transcripts. Each pipeline run produces a session directory under `output/<stem>_<timestamp>/` containing:
+
+- `source.opus` — 16 kHz mono Opus/OGG (~16 kbps VBR), the **playback artefact**. Generated from the source file alongside the existing WAV. Browser-native, small.
+- `source.wav` — 16 kHz mono PCM WAV, the **model-canonical input** (unchanged from `preprocessing.py`). The webapp does not read this file; it exists for reproducibility and re-runs.
+- `transcript.json` — immutable copy of the original pipeline output. The webapp never overwrites this.
+- `transcript_edit_YYYYMMDD_NN.json` — versioned edit sidecars (created on every Save in the webapp). `NN` is a per-day counter `00`–`99` written via O_EXCL atomic create with retry; on the 100th same-day save the counter wraps to `00` and overwrites (operator-locked behaviour, surfaced via a `wrapped: true` flag in the save response).
+- `session.json` — manifest pointing to the artefacts above.
+
+Edit scope in v1: speaker labels (global rename + per-segment reassign) and transcript text. Segment boundaries and audio zoom are deferred. Undo/redo within a session is deferred — versioned saves provide coarse undo via the Versions dropdown.
+
 ## Recovery
 
 The pre-cutover v1 architecture (five-processor pipeline with sequential load/unload, singleton ConfigManager, separate VAD/diarisation/transcription stages) is preserved at `git checkout v1-final`. Reference if anything needs to be revived.

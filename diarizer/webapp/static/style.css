@@ -1,0 +1,142 @@
+/* Simple/functional aesthetic — system fonts, minimal palette, no frameworks. */
+
+:root {
+  --bg: #1a1a1a;
+  --fg: #e8e8e8;
+  --accent: #4ea1ff;
+  --warn: #f0a000;
+  --muted: #888;
+  --row: #232323;
+  --row-active: #2d3f55;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  font-size: 14px;
+}
+
+body { display: flex; flex-direction: column; }
+
+#player-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #111;
+  border-bottom: 1px solid #333;
+  flex-wrap: wrap;
+}
+
+#player-bar button, #player-bar select {
+  background: #2a2a2a;
+  color: var(--fg);
+  border: 1px solid #444;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+#player-bar button:hover { background: #3a3a3a; }
+
+#player-bar .time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 8ch; }
+#player-bar .spacer { flex: 1; }
+
+#vol { width: 100px; vertical-align: middle; }
+
+#spectrogram-wrap {
+  background: #000;
+  border-bottom: 1px solid #333;
+}
+#spectrogram { display: block; width: 100%; height: 120px; }
+
+#transcript {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: 110px 70px 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--row);
+  border-radius: 3px;
+  margin-bottom: 0.25rem;
+  align-items: start;
+}
+
+.segment.active { background: var(--row-active); }
+
+.segment .speaker {
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  cursor: pointer;
+  text-align: center;
+  font-size: 12px;
+}
+.segment .speaker:hover { background: #444; }
+
+.segment .ts {
+  color: var(--muted);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.segment .ts:hover { color: var(--accent); }
+
+.segment .text {
+  outline: none;
+  white-space: pre-wrap;
+}
+.segment .text:focus { background: #2a2a2a; }
+
+.segment.diff-changed { border-left: 3px solid var(--accent); }
+.segment.diff-added { border-left: 3px solid #5ac85a; }
+.segment.diff-removed { border-left: 3px solid #c85a5a; opacity: 0.7; }
+
+.diff-old { color: #c85a5a; text-decoration: line-through; margin-right: 0.5rem; }
+.diff-new { color: #5ac85a; }
+
+#toast {
+  position: fixed;
+  bottom: 1rem; right: 1rem;
+  background: var(--warn);
+  color: #000;
+  padding: 0.5rem 0.8rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+#toast.hidden { display: none; }
+
+dialog {
+  background: #222;
+  color: var(--fg);
+  border: 1px solid #555;
+  padding: 1rem;
+  font-family: inherit;
+}
+dialog h3 { margin-top: 0; }
+dialog label { display: block; margin: 0.5rem 0; }
+dialog input, dialog select {
+  background: #1a1a1a;
+  color: var(--fg);
+  border: 1px solid #444;
+  padding: 0.2rem 0.4rem;
+  font-family: inherit;
+}
+dialog menu { padding: 0; margin-top: 0.8rem; display: flex; gap: 0.4rem; justify-content: flex-end; }
+dialog button {
+  background: #2a2a2a;
+  color: var(--fg);
+  border: 1px solid #555;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}

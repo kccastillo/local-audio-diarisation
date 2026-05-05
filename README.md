@@ -33,8 +33,21 @@ FFmpeg must be available on `PATH`. The pyannote diarisation models require a Hu
 
 ## Run the pipeline
 
+The CLI uses two subcommands: `run` (the pipeline) and `serve` (the transcript-review webapp). Legacy `--input` invocations are auto-routed to `run` for back-compat.
+
 ```bash
 # Default config + auto-detected output path
+python -m diarizer.cli run --input "recordings/meeting.m4a"
+# (legacy form `python -m diarizer.cli --input ...` still works)
+
+# After a run finishes, review/edit the transcript in a local webapp:
+python -m diarizer.cli serve "output/meeting_20260506_120000"
+# → opens http://127.0.0.1:8765/ in your browser
+```
+
+### Original syntax (also supported)
+
+```bash
 python -m diarizer.cli --input "recordings/meeting.m4a"
 
 # Override format and speaker hints

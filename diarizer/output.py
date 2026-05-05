@@ -1,12 +1,44 @@
-"""v2 output formatters — TXT, JSON, SRT."""
+"""v2 output formatters — TXT, JSON, SRT, plus Opus playback artefact."""
 
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 from diarizer.config import OutputConfig
 from diarizer.pipeline import TranscriptionResult
+
+
+class OpusExportError(RuntimeError):
+    pass
+
+
+def write_opus(source_audio_path: Path | str, out_path: Path | str) -> Path:
+    """Encode source audio (or video) to 16 kHz mono Opus/OGG at ~16 kbps VBR.
+
+    This is the webapp's playback artefact — small, browser-native, lossy.
+    The model-canonical input remains the 16 kHz WAV from `preprocessing.py`.
+    """
+    src = Path(source_audio_path)
+    out = Path(out_path)
+    if not src.exists():
+        raise FileNotFoundError(f"Source audio not found: {src}")
+    if shutil.which("ffmpeg") is None:
+        raise OpusExportError("ffmpeg not found on PATH; Opus export requires ffmpeg.")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "ffmpeg", "-y", "-i", str(src),
+        "-ac", "1", "-ar", "16000",
+        "-c:a", "libopus", "-b:a", "16k", "-vbr", "on",
+        "-vn",
+        str(out),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise OpusExportError(f"ffmpeg failed (exit {result.returncode}):\n{result.stderr}")
+    return out
 
 
 def _format_timestamp(seconds: float) -> str:

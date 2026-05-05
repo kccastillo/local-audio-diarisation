@@ -22,3 +22,6 @@ numpy>=2.0
 pyyaml>=6.0
 pytest>=8.0                 # dev only
 pytest-mock>=3.14           # dev only
+fastapi>=0.110              # webapp backend
+uvicorn>=0.30               # webapp server (used by `diarizer serve`)
+httpx>=0.27                 # async test client + dev only

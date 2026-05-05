@@ -257,10 +257,26 @@ For each item, the operator must observe the stated behaviour. If any item fails
 
 ## Executor Notes
 
-*Populated after execution via `execute-plan`. Leave blank.*
+**Executed:** 2026-05-06 by parent-session (plan-executor-sonnet not dispatchable from this harness; first delegated subagent hit a shell-permission block, fell back to in-parent execution).
 
-**Executed:**
-**Outcome:**
+**Outcome:** success — all 7 Steps completed; 9/9 smoke tests pass; full suite 94/94.
+
 **What was done:**
-**Blockers (if any):**
+- Step 1 — `diarizer/session.py` written with `create_session_dir`, `load_manifest`, `append_edit`. Verify passed.
+- Step 2 — `write_opus` added to `diarizer/output.py` (libopus, 16k mono VBR, `-vn` to drop video). CLI finalisation in `_run` writes `source.opus` and copies the JSON output to `<session-dir>/transcript.json`; if format ≠ json, a forced JSON dump is also written for the webapp.
+- Step 3 — ARCHITECTURE.md gained a "Transcript-review webapp (post-pipeline)" section documenting the session-dir layout, Opus-as-playback-artefact, and edit-scope/deferred items. Verify passed (`'Opus' in ARCHITECTURE.md`).
+- Step 4 — `diarizer/webapp/app.py` (FastAPI) — `create_app(session_dir)` factory, all 8 endpoints, `HostHeaderMiddleware` (rejects non-127.0.0.1/localhost with 421), Range support on `/api/audio` returning 206 with `Content-Range`, save endpoint uses `os.O_EXCL` atomic create with retry; on wrap (NN > 99) returns `wrapped: true` after deliberate overwrite of `_00`.
+- Step 5 — `diarizer/webapp/static/{index.html,app.js,style.css}` — vanilla JS, system fonts, 4-colour palette, no frameworks. Web Audio wiring lazy-creates AudioContext on first play, calls `resume()` if suspended, connects source→analyser AND analyser→destination. Spectrogram scrolls left and renders viridis-mapped log-frequency. Per-segment speaker reassign via click; global rename via Shift-R modal. Save shows toast (longer + warning text on `wrapped: true`). Diff toggle.
+- Step 6 — `diarizer/cli.py` restructured to subparsers (`run` + `serve`); `_is_legacy_invocation()` routes flat-arg `--input ...` invocations to `run` for back-compat (verified). README.md updated with one-line note; legacy syntax still documented.
+- Step 7 — `tests/diarizer/conftest.py` materialises a `stub_session` fixture (1-second silent Opus via ffmpeg lavfi anullsrc + hand-built `transcript.json` + `session.json`). `tests/diarizer/test_webapp_smoke.py` covers session JSON, transcript fetch, audio range (206 / 100-byte body), forged Host rejection (421), save round-trip, O_EXCL pre-existing `_05` → next is `_06`, root serves HTML, diff with no edits. 9/9 pass.
+
+**Deviations from PLAN:**
+- The PLAN's Verification line `verify: python -c "import httpx, asyncio; r = asyncio.run(httpx.AsyncClient(app=...).get('/'))"` cannot run as-written: (a) httpx 0.28 deprecated the `app=` kwarg in favour of `ASGITransport`, and (b) the module no longer exposes a bare `app` — `create_app(session_dir)` requires a session dir. The smoke-test `test_root_serves_html` covers the same surface using the modern `httpx.ASGITransport(app=create_app(stub_session))` pattern.
+- Tests live under `tests/diarizer/` (matching the project's existing `pyproject.toml` `testpaths = ["tests/diarizer"]`), not bare `tests/`.
+- Added `pytest-asyncio` (auto mode) and `fastapi`, `uvicorn`, `httpx` to `requirements.txt`.
+
+**Blockers:** none. Manual UI walkthrough (affordance items 1–18) is the operator's job; awaits human verification.
+
 **Files modified:**
+- New: `diarizer/session.py`, `diarizer/webapp/__init__.py`, `diarizer/webapp/app.py`, `diarizer/webapp/static/index.html`, `diarizer/webapp/static/app.js`, `diarizer/webapp/static/style.css`, `tests/diarizer/conftest.py`, `tests/diarizer/test_webapp_smoke.py`.
+- Modified: `diarizer/cli.py` (subparser restructure + finalisation), `diarizer/output.py` (write_opus), `ARCHITECTURE.md` (new section), `README.md` (subcommand note), `pyproject.toml` (asyncio_mode = "auto"), `requirements.txt` (webapp deps).

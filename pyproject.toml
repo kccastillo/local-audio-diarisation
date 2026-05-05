@@ -41,3 +41,4 @@ testpaths = ["tests/diarizer"]
 python_files = ["test_*.py"]
 pythonpath = ["."]
 addopts = "-v"
+asyncio_mode = "auto"
