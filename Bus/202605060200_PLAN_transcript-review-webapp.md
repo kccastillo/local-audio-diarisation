@@ -148,7 +148,13 @@ Files: `index.html`, `app.js`, `style.css`. Vanilla JS only — no bundler, no f
 
 Components:
 - **Player bar:** play/pause toggle, −5s, +5s, volume slider (0-1), elapsed/total time. Backed by a single `<audio>` element with `src=/api/audio`.
-- **Spectrogram canvas:** `<canvas>` rendered each frame from a Web Audio `AnalyserNode` connected via `MediaElementAudioSourceNode` from the `<audio>` element. FFT size 1024; log-frequency Y axis; magnitude mapped to a viridis-like colour ramp; horizontal scroll = time, with a vertical playhead line at the current time. (Note: the analyser is realtime — only past audio is rendered as the user plays.)
+- **Spectrogram canvas:** `<canvas>` driven by Web Audio. Wiring:
+  - Create `audioCtx = new AudioContext()` lazily on the first user-gesture (play click).
+  - `source = audioCtx.createMediaElementSource(audioElement)`.
+  - `analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024;`
+  - **Connect both** `source.connect(analyser)` AND `analyser.connect(audioCtx.destination)` — without the destination connection the operator hears no audio.
+  - On the `play` click handler: `if (audioCtx.state === 'suspended') await audioCtx.resume()` — autoplay-policy gates require this on first gesture.
+  - Render loop reads `analyser.getByteFrequencyData()` per frame; magnitude mapped to a viridis-like colour ramp; horizontal scroll = time, vertical playhead line at current `audio.currentTime`.
 - **Transcript pane:** vertical list of segments. Each segment row shows `[speaker]` (clickable — opens speaker-rename modal), `start time` (clickable — seeks audio), and the segment text in a `contenteditable` cell. The row whose `[start, end]` brackets the current playhead is highlighted (CSS class).
 - **Speaker controls:** "Rename speaker" modal — choose a speaker (e.g. `SPEAKER_00`), enter a new label, confirm — applies to every segment with that speaker. Per-segment reassign is done by clicking the speaker pill on a single segment and picking from a dropdown.
 - **Save button:** posts current state to `/api/transcript/save`. On success, shows the new filename and adds it to a "Versions" dropdown. If the response includes `"wrapped": true`, surfaces a toast warning to the operator.
@@ -211,7 +217,7 @@ For each item, the operator must observe the stated behaviour. If any item fails
 8. Transcript pane renders all segments with `[speaker]` pill, start time, and editable text cell.
 9. Active-segment highlight follows the playhead — as audio crosses each segment's `[start, end]`, the corresponding row gains the highlight class and earlier rows lose it.
 10. Clicking a segment's start-time seeks audio to that timestamp.
-11. Editing a segment's text cell updates in-memory state (verify via diff view or by inspecting the next save's payload).
+11. Editing a segment's text cell persists across blur/focus — clicking out of an edited cell and back in shows the edited text, not the original. Edits are not silently reverted.
 12. Speaker rename modal applies globally — renaming `SPEAKER_00` to `Alice` updates every segment with that speaker in the visible pane.
 13. Per-segment speaker reassign — clicking a single segment's speaker pill and choosing a different speaker updates only that segment.
 14. Save button POSTs to `/api/transcript/save` and surfaces the new filename (e.g. `transcript_edit_20260506_00.json`).
@@ -227,7 +233,7 @@ For each item, the operator must observe the stated behaviour. If any item fails
 - [ ] Session dir helper creates directory and `session.json` with correct schema; `transcript_original` points to session-dir `transcript.json`.
       `verify: python -c "from diarizer.session import create_session_dir; import tempfile, pathlib; d = create_session_dir(pathlib.Path(tempfile.mkdtemp()), pathlib.Path('foo.mp4')); assert (d/'session.json').exists()"`
 - [ ] After pipeline run, `output/<stem>.json` and `<session-dir>/transcript.json` exist and are byte-identical.
-      `verify: python -c "import pathlib; s = list(pathlib.Path('output').glob('*/transcript.json'))[0]; o = pathlib.Path('output') / (s.parent.name.split('_')[0] + '.json'); assert s.read_bytes() == o.read_bytes()"`
+      `verify: python -c "import json, pathlib; s = list(pathlib.Path('output').glob('*/session.json'))[0]; m = json.loads(s.read_text()); o = pathlib.Path('output') / (m['source_basename'] + '.json'); t = s.parent / 'transcript.json'; assert o.read_bytes() == t.read_bytes()"`
 - [ ] Opus output has 1 channel, 16000 Hz, codec opus.
       `verify: ffprobe -v error -show_entries stream=codec_name,channels,sample_rate -of default=noprint_wrappers=1 <session-dir>/source.opus`
 - [ ] ARCHITECTURE.md updated with Opus playback artefact paragraph.
