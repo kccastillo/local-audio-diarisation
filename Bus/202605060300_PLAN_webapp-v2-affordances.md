@@ -24,6 +24,7 @@ linked_decisions:
   - "Up/Down arrow keys navigate between adjacent segments. Left/Right arrows are LEFT ALONE — browsers use them for caret movement in contenteditable text."
   - "Export TXT format matches the existing pipeline's [SPEAKER] hh:mm:ss text format (one line per segment, hours always shown)"
   - "Clicking a segment's timestamp seeks audio to that point AND enters sync mode (auto-plays from there). Distinct from clicking the row body or speaker pill, which auto-pauses for editing."
+  - "Speaker pill click opens a unified Speaker modal: pick from existing speakers OR type a new label, with a 'replace all instances of <current speaker>' checkbox for global rename. New labels typed here become first-class speakers (appear in the dropdown for future segments). The hidden Shift-R global-rename modal is removed — discoverability."
 linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
@@ -119,7 +120,44 @@ Add four affordances to the transcript-review webapp:
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'syncMode' in p and 'enterSync' in p and 'exitSync' in p and 'dropOutOfSync' in p"`
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'ArrowUp' in p and 'ArrowDown' in p"`
 
-### Step 5 — Smoke tests for the new endpoints + frontend invariants
+### Step 5 — Unified Speaker modal
+
+**Goal:** consolidate per-segment reassign + global rename + new-speaker creation into a single affordance triggered by clicking any speaker pill. Remove the Shift-R global-rename keybinding (undiscoverable).
+
+**Files touched:** `diarizer/webapp/static/index.html`, `diarizer/webapp/static/app.js`, `diarizer/webapp/static/style.css`.
+
+**HTML changes (`index.html`):**
+- Delete the existing `<dialog id="rename-modal">` (the Shift-R modal).
+- Replace the existing `<dialog id="reassign-modal">` with a new `<dialog id="speaker-modal">` containing:
+  - A `<select id="speaker-existing">` populated from current unique speakers — first option is "(new label below)" sentinel for the empty/new-label case.
+  - An `<input id="speaker-new" type="text" placeholder="or type new label">` — when non-empty, takes precedence over the dropdown selection.
+  - A `<label><input id="speaker-replace-all" type="checkbox"> Replace all segments currently labelled "<current>"</label>` — text shows the segment's current speaker name dynamically, defaults UNCHECKED.
+  - Submit + Cancel buttons.
+
+**JS changes (`app.js`):**
+- Remove the `Shift-R` global keydown listener and the `openRenameModal()` / `rename-ok` handler entirely.
+- Replace `openReassignModal(idx)` with a new `openSpeakerModal(idx)` that:
+  - Captures the current segment's speaker into a `currentSpeaker` variable.
+  - Rebuilds `#speaker-existing` from `uniqueSpeakers(segments)` plus a leading `<option value="">(new label below)</option>` sentinel.
+  - Pre-selects the current speaker in the dropdown.
+  - Clears `#speaker-new` to empty.
+  - Updates the `replace-all` checkbox label text to include the current speaker, e.g. `Replace all segments currently labelled "SPEAKER_00"`.
+  - Resets the checkbox UNCHECKED.
+  - `showModal()`.
+- Submit handler:
+  1. Resolve target label: `newLabel = speakerNew.value.trim() || speakerExisting.value`. If both empty, do nothing (close modal).
+  2. **Uniqueness rule:** if `speakerNew.value.trim()` is non-empty, normalise (trim) and check it is not already an existing speaker (case-sensitive match against `uniqueSpeakers(segments)`). If it collides, surface a toast `"Speaker '<X>' already exists — pick from the dropdown"` and re-open the modal. (Do NOT silently swallow — the operator's intent matters.)
+  3. If `replace-all` is CHECKED → walk all segments where `seg.speaker === currentSpeaker` and set their speaker to `newLabel`. (Global replacement.)
+  4. If UNCHECKED → set only the clicked segment's speaker to `newLabel`. (Per-segment reassign.)
+  5. Re-render transcript. New label automatically appears in the next modal's dropdown via `uniqueSpeakers(segments)`.
+- The speaker pill click handler now calls `openSpeakerModal(rowIndex)` (not `openReassignModal`). Per the auto-pause-on-edit rule from Step 4: clicking the speaker pill ALSO triggers `dropOutOfSync(rowIndex)` before the modal opens.
+
+**CSS (`style.css`):** ensure the new modal's spacing is consistent with the existing dialog styles. No new colour additions.
+
+`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'openSpeakerModal' in p and 'openRenameModal' not in p and 'openReassignModal' not in p"`
+`verify:` `python -c "p = open('diarizer/webapp/static/index.html', encoding='utf-8').read(); assert 'speaker-modal' in p and 'rename-modal' not in p and 'reassign-modal' not in p"`
+
+### Step 6 — Smoke tests for the new endpoints + frontend invariants
 
 - File: `tests/diarizer/test_webapp_smoke.py`. Append:
   - `test_export_txt_get_returns_plaintext` — GET `/api/transcript/export.txt`, asserts 200, `text/plain` content type, `[SPEAKER_00]` substring present.
@@ -128,7 +166,7 @@ Add four affordances to the transcript-review webapp:
 
 `acceptance:` `pytest tests/diarizer/test_webapp_smoke.py -q`
 
-### Step 6 — Manual UI walkthrough (verify: human)
+### Step 7 — Manual UI walkthrough (verify: human)
 
 Operator-visible affordance checklist for the new behaviours. Each item must be confirmed working in Chrome and Firefox. Any failure → outcome-verification reverts to drafted.
 
@@ -143,12 +181,18 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
 9. Pressing Up arrow while focused inside the transcript moves focus to the previous segment's text cell, auto-pauses if needed.
 10. Pressing Down arrow moves to the next segment's text cell.
 11. Left and Right arrows still move the text caret inside a contenteditable cell (no segment navigation hijack).
-12. Export TXT button triggers a browser file download.
-13. Downloaded file contains lines of the form `[SPEAKER_00] 00:00:04 …`.
-14. Export TXT respects unsaved in-memory edits (rename a speaker, click Export TXT before saving, downloaded file shows the new label).
-15. Clicking a segment's start-time timestamp seeks audio to that point AND begins playback automatically (button shows Pause, sync mode active, active-highlight follows from that segment forwards).
+12. Clicking any speaker pill opens the Speaker modal. The dropdown shows every speaker currently in the transcript; the current segment's speaker is preselected.
+13. Typing a new label in the input + Submit (with replace-all UNCHECKED) changes only that segment's speaker. The new label now appears in the dropdown for subsequent modal opens.
+14. Selecting an existing speaker from the dropdown + Submit (with replace-all UNCHECKED) reassigns only that segment.
+15. Selecting a target speaker (existing or new) + ticking "Replace all segments currently labelled '<X>'" + Submit replaces every segment that had the original speaker. Confirm by scrolling — no occurrences of the old label remain.
+16. Typing a new label that collides with an existing speaker name → Submit shows a "Speaker already exists" toast, modal stays open. Operator can correct.
+17. The Shift-R keybinding for the old rename modal is gone (pressing Shift+R does nothing).
+18. Export TXT button triggers a browser file download.
+19. Downloaded file contains lines of the form `[SPEAKER_00] 00:00:04 …`.
+20. Export TXT respects unsaved in-memory edits (rename a speaker, click Export TXT before saving, downloaded file shows the new label).
+21. Clicking a segment's start-time timestamp seeks audio to that point AND begins playback automatically (button shows Pause, sync mode active, active-highlight follows from that segment forwards).
 
-`verify: human — operator runs items 1–15; all must pass.`
+`verify: human — operator runs items 1–21; all must pass.`
 
 ## Verification
 
@@ -164,10 +208,13 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'syncMode' in p and 'enterSync' in p and 'exitSync' in p and 'dropOutOfSync' in p"`
 - [ ] Arrow-key segment navigation identifiers present in `app.js`.
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'ArrowUp' in p and 'ArrowDown' in p"`
+- [ ] Unified Speaker modal identifiers present — `openSpeakerModal` in `app.js`; `speaker-modal` in `index.html`; old `rename-modal`, `reassign-modal`, `openRenameModal`, `openReassignModal` absent. (Step 5)
+      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'openSpeakerModal' in p and 'openRenameModal' not in p and 'openReassignModal' not in p"`
+      `verify: python -c "p = open('diarizer/webapp/static/index.html', encoding='utf-8').read(); assert 'speaker-modal' in p and 'rename-modal' not in p and 'reassign-modal' not in p"`
 - [ ] Full smoke test suite passes.
       `acceptance: pytest tests/diarizer/test_webapp_smoke.py -q`
-- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–15; all must pass.
-      `verify: human — operator runs items 1–15; all must pass.`
+- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–21; all must pass.
+      `verify: human — operator runs items 1–21; all must pass.`
 
 ## Executor Notes
 
