@@ -1,7 +1,7 @@
 ---
 title: "Transcript-review webapp: synced playback, live editing, versioned saves"
 type: bus-plan
-status: ready
+status: in-progress
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -25,11 +25,11 @@ linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
 rollover_count: 0
-pipeline_phase: drafted
+pipeline_phase: executing
 audit_state:
   sufficiency_iterations: 3
-  plan_safety_iterations: 0
-  last_stage: sufficiency
+  plan_safety_iterations: 1
+  last_stage: plan_safety
   last_outcome: success
 ---
 
