@@ -119,3 +119,123 @@ async def test_diff_no_edits(client):
     assert r.status_code == 200
     j = r.json()
     assert j["segments"] == []
+
+
+# ---------- v2 affordances: waveform, lazy-gen, TXT export ----------
+
+
+@pytest.mark.asyncio
+async def test_waveform_lazy_generates_when_missing(stub_session: Path):
+    """First /api/waveform request when peaks file is absent should compute + persist."""
+    peaks_path = stub_session / "waveform_peaks.json"
+    assert not peaks_path.exists()
+    app = create_app(stub_session)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://127.0.0.1") as c:
+        r = await c.get("/api/waveform")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["version"] == 1
+    assert body["bins"] == len(body["peaks"]) > 0
+    assert all(0.0 <= p <= 1.0 for p in body["peaks"])
+    assert peaks_path.exists()  # lazy-write happened
+
+
+@pytest.mark.asyncio
+async def test_waveform_returns_existing_peaks(stub_session: Path):
+    pre = {"version": 1, "bins": 3, "duration_s": 1.0, "peaks": [0.1, 0.5, 0.9]}
+    (stub_session / "waveform_peaks.json").write_text(json.dumps(pre))
+    app = create_app(stub_session)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://127.0.0.1") as c:
+        r = await c.get("/api/waveform")
+    assert r.status_code == 200
+    assert r.json() == pre
+
+
+@pytest.mark.asyncio
+async def test_waveform_404_when_source_missing(stub_session: Path):
+    """If both waveform_peaks.json and source.opus are absent, 404."""
+    (stub_session / "source.opus").unlink()
+    app = create_app(stub_session)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://127.0.0.1") as c:
+        r = await c.get("/api/waveform")
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_export_txt_get_returns_plaintext(client, stub_session: Path):
+    # Pin assertion to whatever speaker label the fixture's transcript actually uses.
+    fixture_transcript = json.loads((stub_session / "transcript.json").read_text(encoding="utf-8"))
+    expected_speaker = fixture_transcript["segments"][0]["speaker"]
+
+    async with client as c:
+        r = await c.get("/api/transcript/export.txt")
+    assert r.status_code == 200
+    assert "text/plain" in r.headers["content-type"]
+    assert "attachment" in r.headers.get("content-disposition", "")
+    assert f"[{expected_speaker}]" in r.text
+
+
+@pytest.mark.asyncio
+async def test_export_txt_post_uses_body_segments(client):
+    custom = {
+        "segments": [
+            {"start": 7.0, "end": 8.0, "text": "custom body wins", "speaker": "Alice"},
+        ]
+    }
+    async with client as c:
+        r = await c.post("/api/transcript/export.txt", json=custom)
+    assert r.status_code == 200
+    assert "[Alice]" in r.text
+    assert "custom body wins" in r.text
+
+
+@pytest.mark.asyncio
+async def test_export_txt_format_includes_timestamps(client):
+    import re
+    payload = {
+        "segments": [
+            {"start": 4.0, "end": 5.0, "text": "hello", "speaker": "S0"},
+            {"start": 65.0, "end": 66.0, "text": "world", "speaker": "S1"},
+        ]
+    }
+    async with client as c:
+        r = await c.post("/api/transcript/export.txt", json=payload)
+    body = r.text.rstrip("\n")
+    for line in body.split("\n"):
+        assert re.match(r"^\[.+\] \d{2}:\d{2}:\d{2}", line), f"bad line: {line!r}"
+
+
+@pytest.mark.asyncio
+async def test_export_txt_matches_write_txt_byte_for_byte(client, tmp_path):
+    """Webapp's TXT export must produce identical bytes to diarizer.output.write_txt
+    on the same segment list, with speakers + timestamps both enabled.
+    """
+    from diarizer.config import OutputConfig
+    from diarizer.output import write_txt
+    from diarizer.pipeline import Segment, TranscriptionResult
+
+    segs_data = [
+        {"start": 0.0, "end": 1.0, "text": "first line here", "speaker": "SPEAKER_00"},
+        {"start": 4.5, "end": 5.0, "text": "no speaker line", "speaker": ""},
+        {"start": 12.0, "end": 13.0, "text": "third with caps", "speaker": "Alice"},
+        {"start": 3700.5, "end": 3701.0, "text": "over an hour", "speaker": "Bob"},
+    ]
+    result = TranscriptionResult(
+        source_path="x", model_name="x", language="en",
+        segments=[Segment(**s, words=[]) for s in segs_data],
+    )
+    cfg = OutputConfig(format="txt", include_speakers=True, include_timestamps=True)
+    out_path = tmp_path / "expected.txt"
+    write_txt(result, out_path, cfg)
+    expected_bytes = out_path.read_bytes()
+
+    async with client as c:
+        r = await c.post("/api/transcript/export.txt", json={"segments": segs_data})
+    actual_bytes = r.content
+    assert actual_bytes == expected_bytes, (
+        f"webapp export diverges from output.py:write_txt\n"
+        f"expected: {expected_bytes!r}\nactual:   {actual_bytes!r}"
+    )

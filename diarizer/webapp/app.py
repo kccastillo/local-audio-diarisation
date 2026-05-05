@@ -14,11 +14,44 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from diarizer.session import append_edit, load_manifest
+
+
+# Keep in sync with diarizer/output.py:_format_timestamp (and the formatting loop
+# in write_txt at lines 70-77). Step 6's byte-identity test enforces this.
+def _format_timestamp(seconds: float) -> str:
+    if seconds < 0:
+        seconds = 0
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+def _format_segments_as_txt(segments: list[dict]) -> str:
+    """Mirror diarizer/output.py:write_txt formatting EXACTLY (lines 70-77).
+
+    Per-segment line shape: prefix joins '[<speaker>]' and 'hh:mm:ss' (when present),
+    then 'f"{prefix} {seg.text}".strip() if prefix else seg.text'.
+    """
+    lines = []
+    for seg in segments:
+        prefix_parts = []
+        speaker = seg.get("speaker") if isinstance(seg, dict) else getattr(seg, "speaker", None)
+        if speaker:
+            prefix_parts.append(f"[{speaker}]")
+        # webapp default: timestamps always on (matches the existing pipeline default
+        # for transcripts that include both speakers and timestamps).
+        start = seg.get("start", 0.0) if isinstance(seg, dict) else getattr(seg, "start", 0.0)
+        prefix_parts.append(_format_timestamp(start))
+        prefix = " ".join(prefix_parts)
+        text = seg.get("text", "") if isinstance(seg, dict) else getattr(seg, "text", "")
+        lines.append(f"{prefix} {text}".strip() if prefix else text)
+    return "\n".join(lines) + ("\n" if lines else "")
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -167,6 +200,66 @@ def create_app(session_dir: Path | str) -> FastAPI:
             append_edit(d, candidate.name)
             return {"filename": candidate.name, "wrapped": wrapped}
         raise HTTPException(status_code=507, detail="exhausted save retries")
+
+    @app.get("/api/waveform")
+    async def get_waveform():
+        d = _resolve_session_dir(app)
+        peaks_path = d / "waveform_peaks.json"
+        if peaks_path.exists():
+            return JSONResponse(json.loads(peaks_path.read_text(encoding="utf-8")))
+        # Lazy-generate from source.opus if available.
+        opus_path = d / "source.opus"
+        if not opus_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail="source.opus missing — cannot generate waveform peaks",
+            )
+        from diarizer.webapp.peaks import compute_peaks
+        data = compute_peaks(opus_path)
+        try:
+            peaks_path.write_text(json.dumps(data), encoding="utf-8")
+            import logging as _logging
+            _logging.getLogger(__name__).info(
+                "Lazily generated waveform_peaks.json for %s", d
+            )
+        except OSError:
+            # Read-only session dir; serve in-memory result anyway.
+            pass
+        return JSONResponse(data)
+
+    @app.get("/api/transcript/export.txt")
+    async def export_txt_get(from_: Optional[str] = None):
+        d = _resolve_session_dir(app)
+        if from_:
+            if "/" in from_ or "\\" in from_ or ".." in from_:
+                raise HTTPException(status_code=400, detail="invalid filename")
+            src = d / from_
+            if not src.exists() or not from_.startswith("transcript_edit_"):
+                raise HTTPException(status_code=404, detail="edit not found")
+        else:
+            edits = sorted(d.glob("transcript_edit_*.json"))
+            src = edits[-1] if edits else (d / "transcript.json")
+        payload = json.loads(src.read_text(encoding="utf-8"))
+        body = _format_segments_as_txt(payload.get("segments", []))
+        manifest = load_manifest(d)
+        filename = f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt"
+        return PlainTextResponse(
+            body,
+            media_type="text/plain; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    @app.post("/api/transcript/export.txt")
+    async def export_txt_post(payload: dict):
+        d = _resolve_session_dir(app)
+        body = _format_segments_as_txt(payload.get("segments", []))
+        manifest = load_manifest(d)
+        filename = f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt"
+        return PlainTextResponse(
+            body,
+            media_type="text/plain; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     @app.get("/api/transcript/diff")
     async def get_diff(against: str = "original", from_: Optional[str] = None):

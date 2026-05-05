@@ -98,6 +98,13 @@ def main(txt_path: str, audio_path: str, out_root: str = "output") -> None:
         "edits": [],
     }
     (session / "session.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    try:
+        from diarizer.webapp.peaks import write_peaks
+        write_peaks(session / "source.opus", session / "waveform_peaks.json")
+    except Exception as e:
+        print(f"Warning: waveform peaks generation failed: {e}", file=sys.stderr)
+
     print(session)
 
 

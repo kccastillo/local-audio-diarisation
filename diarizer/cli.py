@@ -140,6 +140,14 @@ def _run(args: argparse.Namespace) -> int:
         write_output(result, legacy_json, json_cfg)
     if legacy_json.exists():
         shutil.copyfile(legacy_json, session_dir / "transcript.json")
+    # Pre-render waveform peaks for the webapp (eager — instant load on `serve`).
+    try:
+        from diarizer.webapp.peaks import write_peaks
+        opus_path = session_dir / "source.opus"
+        if opus_path.exists():
+            write_peaks(opus_path, session_dir / "waveform_peaks.json")
+    except Exception as e:
+        print(f"Warning: waveform peaks generation failed: {e}", file=sys.stderr)
     print(f"Session dir: {session_dir}")
     return 0
 

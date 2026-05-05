@@ -75,7 +75,12 @@ def write_txt(result: TranscriptionResult, path: Path | str, config: OutputConfi
             prefix_parts.append(_format_timestamp(seg.start))
         prefix = " ".join(prefix_parts)
         lines.append(f"{prefix} {seg.text}".strip() if prefix else seg.text)
-    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    body = "\n".join(lines) + ("\n" if lines else "")
+    # Explicit newline="\n" — without this, Path.write_text on Windows
+    # translates LF to CRLF, breaking byte-equivalence with the webapp's
+    # /api/transcript/export.txt and producing platform-dependent output.
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(body)
     return path
 
 

@@ -1,18 +1,30 @@
-// Diarizer transcript-review frontend. Vanilla JS, no build step.
+// Diarizer transcript-review frontend v2.
+// No live audio-graph analyser — pre-rendered waveform peaks instead.
+// Vanilla JS, no build step.
 
 const $ = (id) => document.getElementById(id);
 const audio = $("audio");
 const transcriptEl = $("transcript");
-const canvas = $("spectrogram");
+const canvas = $("waveform");
 const ctx2d = canvas.getContext("2d");
 
-let audioCtx = null;
-let analyser = null;
-let freqData = null;
-let segments = [];   // current edit state
+// ---------- State ----------
+
+let segments = [];          // current edit state
 let originalSegments = [];
-let speakers = [];   // unique speakers in current state
+let speakers = [];
 let diffMode = false;
+
+// Waveform / zoom state
+let peaks = null;            // Float32Array of peak amplitudes [0,1]
+let peaksDuration = 0;       // total seconds
+let zoomLevel = 1;           // 1 .. 32, doubling
+const ZOOM_MAX = 32;
+let windowStartTime = 0;     // left edge of visible window in seconds
+
+// Sync mode
+let syncMode = false;
+let speakerModalRow = null;  // remembered row for focus restoration
 
 // ---------- helpers ----------
 
@@ -36,74 +48,110 @@ function uniqueSpeakers(segs) {
   return [...seen];
 }
 
-// ---------- Web Audio wiring ----------
+function visibleSeconds() { return peaksDuration / zoomLevel; }
 
-async function ensureAudioCtx() {
-  if (audioCtx) {
-    if (audioCtx.state === "suspended") await audioCtx.resume();
-    return;
-  }
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const source = audioCtx.createMediaElementSource(audio);
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 1024;
-  source.connect(analyser);
-  analyser.connect(audioCtx.destination);   // critical — without this, no audio.
-  freqData = new Uint8Array(analyser.frequencyBinCount);
-  if (audioCtx.state === "suspended") await audioCtx.resume();
+function clampWindow() {
+  const vs = visibleSeconds();
+  windowStartTime = Math.max(0, Math.min(windowStartTime, peaksDuration - vs));
 }
 
-// ---------- Spectrogram render ----------
+function timeToX(t) {
+  const vs = visibleSeconds();
+  return ((t - windowStartTime) / vs) * canvas.width;
+}
 
-let scrollX = 0;
-function drawSpectrogram() {
-  requestAnimationFrame(drawSpectrogram);
+function xToTime(x) {
+  const vs = visibleSeconds();
+  return windowStartTime + (x / canvas.width) * vs;
+}
+
+// ---------- Waveform render ----------
+
+function drawWaveform() {
   const w = canvas.width, h = canvas.height;
-  if (!analyser) {
-    ctx2d.fillStyle = "#000";
-    ctx2d.fillRect(0, 0, w, h);
-    return;
-  }
-  analyser.getByteFrequencyData(freqData);
-  // Scroll existing image left by 1px, draw new column at right.
-  const imageData = ctx2d.getImageData(1, 0, w - 1, h);
-  ctx2d.putImageData(imageData, 0, 0);
   ctx2d.fillStyle = "#000";
-  ctx2d.fillRect(w - 1, 0, 1, h);
-  const bins = freqData.length;
-  // Log-frequency Y (bottom = low freq).
-  for (let y = 0; y < h; y++) {
-    const frac = 1 - y / h;
-    const binIdx = Math.floor(Math.pow(frac, 2) * bins);
-    const v = freqData[binIdx] || 0;
-    ctx2d.fillStyle = viridis(v / 255);
-    ctx2d.fillRect(w - 1, y, 1, 1);
+  ctx2d.fillRect(0, 0, w, h);
+  if (!peaks || peaks.length === 0) return;
+
+  const mid = h / 2;
+  const vs = visibleSeconds();
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent-wave").trim() || "#5fd97a";
+  ctx2d.fillStyle = accent;
+
+  for (let x = 0; x < w; x++) {
+    const t = windowStartTime + (x / w) * vs;
+    if (t < 0 || t > peaksDuration) continue;
+    const idx = Math.min(peaks.length - 1, Math.max(0, Math.floor((t / peaksDuration) * peaks.length)));
+    const peak = peaks[idx];
+    const half = peak * (h / 2);
+    ctx2d.fillRect(x, mid - half, 1, half * 2 || 1);
   }
-  // Playhead overlay (vertical line near right edge — playback edge).
-  ctx2d.strokeStyle = "#fff";
-  ctx2d.lineWidth = 1;
-  ctx2d.beginPath();
-  ctx2d.moveTo(w - 1, 0);
-  ctx2d.lineTo(w - 1, h);
-  ctx2d.stroke();
+
+  // Playhead
+  if (audio.currentTime >= windowStartTime && audio.currentTime <= windowStartTime + vs) {
+    ctx2d.strokeStyle = "#fff";
+    ctx2d.lineWidth = 1;
+    ctx2d.beginPath();
+    const px = timeToX(audio.currentTime);
+    ctx2d.moveTo(px, 0);
+    ctx2d.lineTo(px, h);
+    ctx2d.stroke();
+  }
 }
 
-function viridis(t) {
-  // 4-stop interpolation; close enough.
-  const stops = [
-    [68, 1, 84],
-    [59, 82, 139],
-    [33, 145, 140],
-    [253, 231, 37],
-  ];
-  const idx = Math.min(stops.length - 2, Math.floor(t * (stops.length - 1)));
-  const local = t * (stops.length - 1) - idx;
-  const a = stops[idx], b = stops[idx + 1];
-  const r = a[0] + (b[0] - a[0]) * local;
-  const g = a[1] + (b[1] - a[1]) * local;
-  const bl = a[2] + (b[2] - a[2]) * local;
-  return `rgb(${r|0},${g|0},${bl|0})`;
+function renderLoop() {
+  requestAnimationFrame(renderLoop);
+  // Jump-pan when zoomed and playing
+  if (zoomLevel > 1 && !audio.paused && peaksDuration > 0) {
+    const vs = visibleSeconds();
+    if (audio.currentTime > windowStartTime + vs * 0.75) {
+      windowStartTime = audio.currentTime - vs * 0.25;
+      clampWindow();
+    }
+  }
+  drawWaveform();
 }
+
+// ---------- Click to seek + auto-play ----------
+
+canvas.addEventListener("mousedown", (e) => {
+  if (!peaksDuration) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const t = xToTime(x);
+  audio.currentTime = Math.max(0, Math.min(peaksDuration, t));
+  enterSync();
+});
+
+// Ctrl+wheel to zoom
+canvas.addEventListener("wheel", (e) => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const cursorTime = xToTime(x);
+  if (e.deltaY < 0) zoomTo(zoomLevel * 2, cursorTime);
+  else zoomTo(zoomLevel / 2, cursorTime);
+}, { passive: false });
+
+// ---------- Zoom ----------
+
+function zoomTo(level, centreTime) {
+  level = Math.min(ZOOM_MAX, Math.max(1, level));
+  zoomLevel = level;
+  if (level === 1) {
+    windowStartTime = 0;
+  } else {
+    const vs = peaksDuration / zoomLevel;
+    const c = (centreTime !== undefined) ? centreTime : audio.currentTime;
+    windowStartTime = c - vs / 2;
+    clampWindow();
+  }
+  $("zoom-readout").textContent = `${zoomLevel}×`;
+}
+
+$("btn-zoom-in").addEventListener("click", () => zoomTo(zoomLevel * 2));
+$("btn-zoom-out").addEventListener("click", () => zoomTo(zoomLevel / 2));
 
 // ---------- Transcript render ----------
 
@@ -120,14 +168,21 @@ function renderTranscript() {
     const speaker = document.createElement("div");
     speaker.className = "speaker";
     speaker.textContent = seg.speaker || "—";
-    speaker.title = "Click to reassign this segment's speaker";
-    speaker.addEventListener("click", (e) => { e.stopPropagation(); openReassignModal(i); });
+    speaker.title = "Click to open speaker dialog";
+    speaker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openSpeakerModal(i);
+    });
 
     const ts = document.createElement("div");
     ts.className = "ts";
     ts.textContent = fmtTime(seg.start);
-    ts.title = "Click to seek";
-    ts.addEventListener("click", () => { audio.currentTime = seg.start; });
+    ts.title = "Click to seek + play from here";
+    ts.addEventListener("click", (e) => {
+      e.stopPropagation();
+      audio.currentTime = seg.start;
+      enterSync();
+    });
 
     const text = document.createElement("div");
     text.className = "text";
@@ -135,6 +190,16 @@ function renderTranscript() {
     text.spellcheck = true;
     text.textContent = seg.text || "";
     text.addEventListener("input", () => { segments[i].text = text.textContent; });
+    text.addEventListener("focus", () => {
+      // Focus came in via click or arrow nav — drop sync if currently in sync
+      if (syncMode) exitSync();
+    });
+
+    // Row body click (anywhere except speaker pill or ts) → drop into edit mode on this row
+    row.addEventListener("click", (e) => {
+      if (e.target === speaker || e.target === ts) return;
+      dropOutOfSync(i);
+    });
 
     row.appendChild(speaker);
     row.appendChild(ts);
@@ -159,7 +224,7 @@ function renderDiff() {
     const speaker = document.createElement("div");
     speaker.className = "speaker";
     if (o && e && o.speaker !== e.speaker) {
-      speaker.innerHTML = `<span class="diff-old">${o.speaker || "—"}</span><span class="diff-new">${e.speaker || "—"}</span>`;
+      speaker.innerHTML = `<span class="diff-old">${escapeHtml(o.speaker || "—")}</span><span class="diff-new">${escapeHtml(e.speaker || "—")}</span>`;
     } else {
       speaker.textContent = (e || o).speaker || "—";
     }
@@ -190,17 +255,24 @@ function escapeHtml(s) {
 // ---------- Active-segment highlight ----------
 
 function tickHighlight() {
-  if (diffMode) return;
-  const now = audio.currentTime;
   const rows = transcriptEl.querySelectorAll(".segment");
+  if (!syncMode || diffMode) {
+    for (const r of rows) r.classList.remove("active");
+    return;
+  }
+  const now = audio.currentTime;
+  let activeRow = null;
   for (const row of rows) {
     const i = parseInt(row.dataset.index, 10);
     const seg = segments[i];
     if (!seg) continue;
-    const active = now >= seg.start && now < seg.end;
-    row.classList.toggle("active", active);
+    const isActive = now >= seg.start && now < seg.end;
+    row.classList.toggle("active", isActive);
+    if (isActive) activeRow = row;
   }
+  if (activeRow) activeRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
+
 audio.addEventListener("timeupdate", () => {
   $("time-now").textContent = fmtTime(audio.currentTime);
   tickHighlight();
@@ -209,13 +281,47 @@ audio.addEventListener("loadedmetadata", () => {
   $("time-total").textContent = fmtTime(audio.duration);
 });
 
-// ---------- Player controls ----------
+// ---------- Sync state machine ----------
 
-$("btn-playpause").addEventListener("click", async () => {
-  await ensureAudioCtx();
-  if (audio.paused) { await audio.play(); $("btn-playpause").textContent = "Pause"; }
-  else { audio.pause(); $("btn-playpause").textContent = "Play"; }
+function enterSync() {
+  syncMode = true;
+  audio.play().catch((e) => { console.warn("play() rejected:", e); });
+  $("btn-playpause").textContent = "Pause";
+}
+
+function exitSync() {
+  syncMode = false;
+  audio.pause();
+  $("btn-playpause").textContent = "Play";
+  const rows = transcriptEl.querySelectorAll(".segment.active");
+  for (const r of rows) r.classList.remove("active");
+}
+
+function dropOutOfSync(targetIndex) {
+  exitSync();
+  if (typeof targetIndex === "number" && targetIndex >= 0) {
+    const row = transcriptEl.querySelector(`.segment[data-index="${targetIndex}"]`);
+    if (row) {
+      const text = row.querySelector(".text");
+      if (text) {
+        text.focus();
+        // Place caret at end
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+  }
+}
+
+$("btn-playpause").addEventListener("click", () => {
+  if (syncMode) exitSync();
+  else enterSync();
 });
+
 $("btn-back5").addEventListener("click", () => {
   audio.currentTime = Math.max(0, audio.currentTime - 5);
 });
@@ -226,54 +332,93 @@ $("vol").addEventListener("input", (e) => {
   audio.volume = parseFloat(e.target.value);
 });
 
-// ---------- Speaker rename / reassign ----------
+// ---------- Up/Down arrow navigation ----------
 
-let reassignIndex = -1;
-function openReassignModal(idx) {
-  reassignIndex = idx;
-  const sel = $("reassign-to");
-  sel.innerHTML = "";
-  for (const sp of speakers) {
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+  const ae = document.activeElement;
+  if (!ae || !transcriptEl.contains(ae)) return;
+  e.preventDefault();
+  // Find current index
+  let row = ae.closest(".segment");
+  if (!row) return;
+  const idx = parseInt(row.dataset.index, 10);
+  if (isNaN(idx)) return;
+  let target = idx + (e.key === "ArrowDown" ? 1 : -1);
+  target = Math.max(0, Math.min(segments.length - 1, target));
+  if (target === idx) return;
+  dropOutOfSync(target);
+});
+
+// ---------- Speaker modal ----------
+
+function openSpeakerModal(idx) {
+  if (syncMode) exitSync();
+  speakerModalRow = idx;
+  const seg = segments[idx];
+  const currentSpeaker = seg.speaker || "";
+  const sel = $("speaker-existing");
+  sel.innerHTML = `<option value="">(new label below)</option>`;
+  for (const sp of uniqueSpeakers(segments)) {
     const opt = document.createElement("option");
     opt.value = sp; opt.textContent = sp;
     sel.appendChild(opt);
   }
-  sel.value = segments[idx].speaker || "";
-  $("reassign-modal").showModal();
+  sel.value = currentSpeaker;
+  $("speaker-new").value = "";
+  $("speaker-replace-all").checked = false;
+  $("speaker-replace-label").textContent = `Replace all segments currently labelled "${currentSpeaker}"`;
+  $("speaker-modal").showModal();
 }
-$("reassign-ok").addEventListener("click", () => {
-  if (reassignIndex >= 0) {
-    segments[reassignIndex].speaker = $("reassign-to").value;
-    renderTranscript();
-  }
-});
 
-// Global rename: reuse reassign modal isn't right — wire the rename modal.
-// Add a "Rename" toolbar button via keyboard shortcut: shift+R.
-window.addEventListener("keydown", (e) => {
-  if (e.shiftKey && (e.key === "R" || e.key === "r")) openRenameModal();
-});
+$("speaker-ok").addEventListener("click", (e) => {
+  if (speakerModalRow == null) return;
+  const idx = speakerModalRow;
+  const currentSpeaker = segments[idx].speaker || "";
+  const newRaw = $("speaker-new").value;
+  const newTrim = newRaw.trim();
+  const fromDropdown = $("speaker-existing").value;
+  const replaceAll = $("speaker-replace-all").checked;
 
-function openRenameModal() {
-  const sel = $("rename-from");
-  sel.innerHTML = "";
-  for (const sp of speakers) {
-    const opt = document.createElement("option");
-    opt.value = sp; opt.textContent = sp;
-    sel.appendChild(opt);
+  // Resolve target label
+  let target;
+  if (newTrim) {
+    // Uniqueness check (case-sensitive)
+    const existing = uniqueSpeakers(segments);
+    if (existing.includes(newTrim) && newTrim !== currentSpeaker) {
+      e.preventDefault();
+      showToast(`Speaker "${newTrim}" already exists — pick from the dropdown`);
+      return;
+    }
+    target = newTrim;
+  } else if (fromDropdown) {
+    target = fromDropdown;
+  } else {
+    // No-op
+    return restoreFocus();
   }
-  $("rename-to").value = "";
-  $("rename-modal").showModal();
-}
-$("rename-ok").addEventListener("click", () => {
-  const from = $("rename-from").value;
-  const to = $("rename-to").value.trim();
-  if (!from || !to) return;
-  for (const seg of segments) if (seg.speaker === from) seg.speaker = to;
+
+  if (replaceAll && currentSpeaker) {
+    for (const s of segments) if (s.speaker === currentSpeaker) s.speaker = target;
+  } else {
+    segments[idx].speaker = target;
+  }
   renderTranscript();
+  restoreFocus();
 });
 
-// ---------- Save / diff / versions ----------
+$("speaker-modal").addEventListener("close", () => restoreFocus());
+
+function restoreFocus() {
+  if (speakerModalRow == null) return;
+  const row = transcriptEl.querySelector(`.segment[data-index="${speakerModalRow}"]`);
+  if (row) {
+    const text = row.querySelector(".text");
+    if (text) text.focus();
+  }
+}
+
+// ---------- Save / diff / versions / export ----------
 
 $("btn-save").addEventListener("click", async () => {
   const payload = { segments };
@@ -292,6 +437,26 @@ $("btn-diff").addEventListener("click", () => {
   diffMode = !diffMode;
   $("btn-diff").textContent = diffMode ? "Edit" : "Diff";
   renderTranscript();
+});
+
+$("btn-export").addEventListener("click", async () => {
+  const r = await fetch("/api/transcript/export.txt", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ segments }),
+  });
+  if (!r.ok) { showToast("Export failed: " + r.status); return; }
+  const blob = await r.blob();
+  const cd = r.headers.get("content-disposition") || "";
+  const m = cd.match(/filename="?([^";]+)"?/i);
+  const filename = m ? m[1] : "transcript_export.txt";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 $("versions-dropdown").addEventListener("change", async (e) => {
@@ -317,14 +482,24 @@ async function loadVersions() {
   }
 }
 
+async function loadWaveform() {
+  const r = await fetch("/api/waveform");
+  if (!r.ok) {
+    showToast("Waveform unavailable: " + r.status);
+    return;
+  }
+  const j = await r.json();
+  peaks = new Float32Array(j.peaks);
+  peaksDuration = j.duration_s;
+  zoomTo(1);
+}
+
 // ---------- Init ----------
 
 async function init() {
-  // Load original
   const r = await fetch("/api/transcript");
   const j = await r.json();
   originalSegments = JSON.parse(JSON.stringify(j.segments || []));
-  // If there are existing edits, load the latest as current state; else fresh copy of original.
   await loadVersions();
   const sel = $("versions-dropdown");
   if (sel.options.length > 1) {
@@ -337,7 +512,8 @@ async function init() {
     segments = JSON.parse(JSON.stringify(originalSegments));
   }
   renderTranscript();
-  drawSpectrogram();
+  await loadWaveform();
+  renderLoop();
 }
 
 init();

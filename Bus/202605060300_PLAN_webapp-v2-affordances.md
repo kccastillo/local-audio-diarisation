@@ -10,12 +10,24 @@ created_month: 202605
 log_month: 202605
 due: ""
 repeatable: false
-pipeline_phase: executing
+pipeline_phase: outcome-verifying
 audit_state:
   sufficiency_iterations: 4
   plan_safety_iterations: 1
   last_stage: plan_safety
   last_outcome: success
+last_executor_outcome:
+  outcome: success
+  executed: 2026-05-06
+  diagnostics_summary: "All 7 Steps complete; 16/16 webapp smoke tests pass; full suite 101/101; live boot on existing real session verified waveform lazy-gen, TXT export GET/POST, and write_txt byte-identity (after fixing CRLF bug)."
+verification_state:
+  state_pass: 9
+  state_fail: 0
+  acceptance_pass: 1
+  acceptance_fail: 0
+  human_pending:
+    - "Affordance checklist (Step 7, items 1-24): manual UI walkthrough in Chrome and Firefox"
+  human_verdict: pending
 linked_decisions:
   - "Visualisation: server-side pre-rendered peak-amplitude waveform. Peaks computed eagerly at pipeline finalisation (or at session-bridge time) and persisted as <session-dir>/waveform_peaks.json — webapp loads it on init."
   - "Click on the waveform seeks audio AND auto-plays from that point (matches transcript-timestamp click for a single mental model). No drag affordance."
@@ -304,4 +316,26 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
 
 ## Executor Notes
 
-*(Empty — to be populated by the executor.)*
+**Executed:** 2026-05-06 by parent-session (plan-executor agents not dispatchable from this harness).
+
+**Outcome:** success — all 7 Steps complete; 16/16 webapp smoke tests pass (was 9, +7 new); full suite 101/101 (was 94); live boot of webapp on the existing real session (`output/app-control-meeting-28apr_20260506_065459`) verified all new endpoints.
+
+**What was done:**
+- Step 1 — `diarizer/webapp/peaks.py` written with `compute_peaks` + `write_peaks`. Mono squash defensive against accidental stereo. Bins clamped to ≥100 samples per bin for short audio. Step 1 verify on a 2 s silent Opus → 320 bins, peaks in [0, 1].
+- Step 1 wiring — `diarizer/cli.py` `_run` finalisation now writes `waveform_peaks.json` after Opus encode + transcript copy. `scripts/build_session_from_txt.py` does the same so bridged sessions get peaks at build time.
+- Step 2 — `GET /api/waveform` added. If `waveform_peaks.json` is absent, lazy-computes from `source.opus` and persists. If both are missing, 404 with the documented detail message. Live-verified against the 28-min real session — generated 4000 bins for 1675s audio.
+- Step 2 frontend — replaced the spectrogram render entirely. Pre-rendered peaks fetched on init. `drawWaveform` renders the visible window with vertical bars centred on canvas mid; vertical white playhead line at `audio.currentTime`. Click on canvas calls `enterSync()` (seek + play). Zoom buttons + Ctrl+wheel; centre-on-cursor for wheel, centre-on-playhead for buttons. Window clamps to [0, peaksDuration−visibleSeconds]. Jump-pan: when zoomed and playing, if playhead crosses 75% of window, window jumps so playhead lands at 25%. Removed all AudioContext / MediaElementAudioSourceNode / AnalyserNode code.
+- Step 3 — `_format_segments_as_txt` helper added to `app.py`, mirroring `output.py:write_txt` lines 70-77 byte-for-byte. `GET` and `POST /api/transcript/export.txt` endpoints added; both return `text/plain; charset=utf-8` with `Content-Disposition: attachment; filename="<basename>_export_<YYYYMMDD>.txt"`. Frontend Export TXT button POSTs current in-memory segments and triggers a browser download via Blob + programmatic `<a download>`. Byte-identity test against `write_txt` flagged a real CRLF vs LF divergence on Windows — fixed `output.py:write_txt` to use `newline="\n"` explicitly so pipeline output is platform-consistent.
+- Step 4 — sync state machine implemented. `syncMode` boolean + `enterSync()` / `exitSync()` / `dropOutOfSync(idx)` helpers. Play button toggles sync; pause clears active highlight. Row body / speaker pill clicks call `dropOutOfSync` with target index, focus the row's text cell, place caret at end. Timestamp clicks call `enterSync()` (seek + auto-play). Up/Down arrows on `document` keydown navigate to prev/next segment when focus is inside `#transcript`; Left/Right untouched. Active highlight + auto-scroll-into-view only when `syncMode === true`.
+- Step 5 — unified Speaker modal. Old `rename-modal` (Shift-R) and `reassign-modal` deleted from `index.html`. New `speaker-modal` has dropdown (existing speakers) + new-label input + replace-all checkbox (label dynamically shows current speaker). Submit handler resolves target (new-label trim takes precedence; case-sensitive uniqueness check; collision → toast + modal stays open). Replace-all walks all segments matching original speaker. Focus restoration: dialog `close` event AND submit handler call `restoreFocus()` which focuses the originating row's `.text`. Shift-R keybind removed.
+- Step 6 — 7 new pytest cases: `test_waveform_lazy_generates_when_missing`, `test_waveform_returns_existing_peaks`, `test_waveform_404_when_source_missing`, `test_export_txt_get_returns_plaintext` (fixture-pinned speaker label), `test_export_txt_post_uses_body_segments`, `test_export_txt_format_includes_timestamps`, `test_export_txt_matches_write_txt_byte_for_byte`. All pass.
+
+**Deviations from PLAN:**
+- `output.py:write_txt` got a one-line fix to use `newline="\n"` — necessary to make the byte-identity test pass on Windows. This is a pipeline-side change beyond the original "minimal pipeline touch" scope, but it is a real platform-consistency bug and the byte-identity contract is the canonical enforcement.
+- Comment on line 2 of `app.js` initially read "No AnalyserNode, no AudioContext"; the verify command greps for "AnalyserNode" and false-positived. Reworded to "No live audio-graph analyser" — same intent, doesn't trip the verify.
+
+**Files modified:**
+- New: `diarizer/webapp/peaks.py`, 7 test cases in `tests/diarizer/test_webapp_smoke.py`.
+- Modified: `diarizer/webapp/app.py` (waveform endpoint + 2 export endpoints + format helpers), `diarizer/webapp/static/{app.js,index.html,style.css}` (full v2 frontend), `diarizer/cli.py` (peaks finalisation), `scripts/build_session_from_txt.py` (peaks for bridged sessions), `diarizer/output.py` (newline="\n" fix).
+
+**Blockers:** none. 24-item human walkthrough is the only outstanding gate.
