@@ -1,5 +1,5 @@
 ---
-title: "Webapp v2 affordances: waveform scrub, TXT export, play/sync toggle, segment-nav arrows"
+title: "Webapp v2 affordances: pre-rendered waveform, TXT export, sync toggle, segment-nav, unified speaker modal"
 type: bus-plan
 status: ready
 assigned_to: sonnet
@@ -12,13 +12,16 @@ due: ""
 repeatable: false
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 0
+  sufficiency_iterations: 1
   plan_safety_iterations: 0
-  last_stage: none
-  last_outcome: none
+  last_stage: sufficiency
+  last_outcome: revision_needed
 linked_decisions:
-  - "Replace spectrogram with scrolling mono waveform — amplitude is the operator's main affordance; mono source means stereo split is moot"
-  - "Drag horizontally on waveform canvas → audio seeks; pixel-to-time ratio 2px = 1 second; live preview during drag"
+  - "Visualisation: server-side pre-rendered peak-amplitude waveform. Peaks computed eagerly at pipeline finalisation (or at session-bridge time) and persisted as <session-dir>/waveform_peaks.json — webapp loads it on init."
+  - "Click on the waveform seeks audio AND auto-plays from that point (matches transcript-timestamp click for a single mental model). No drag affordance."
+  - "Vertical playhead line drawn at audio.currentTime within the visible window."
+  - "Zoom: 1× = whole file fits; zoom in by 2× steps up to 32×. Controls: +/- buttons in the player bar, plus Ctrl+wheel on the canvas."
+  - "Pan-on-play (when zoomed): jump-pan model. When playhead crosses 75% of visible window, window jumps forward by 50%. No smooth scrolling — DAW-style."
   - "Play/Pause is now a SYNC toggle. Play resumes audio + enables sync (auto-highlight active line, auto-scroll transcript). Pause halts both."
   - "Auto-pause on edit: clicking any transcript line OR pressing Up/Down arrow keys pauses audio AND disables sync. Cursor lands on that segment for editing."
   - "Up/Down arrow keys navigate between adjacent segments. Left/Right arrows are LEFT ALONE — browsers use them for caret movement in contenteditable text."
@@ -33,11 +36,12 @@ rollover_count: 0
 
 ## Objective
 
-Add four affordances to the transcript-review webapp:
-1. Replace the spectrogram with a scrolling, high-contrast amplitude waveform.
-2. Make the waveform draggable to scrub the audio.
-3. Add a TXT-export endpoint + button that emits the existing `[SPEAKER] hh:mm:ss text` format.
-4. Refactor the play/pause button into a SYNC toggle: Play resumes audio AND enables auto-highlight + auto-scroll-to-active-line; Pause halts both. Clicking any segment OR pressing Up/Down arrows auto-pauses (drops out of sync into edit mode).
+Add five affordances to the transcript-review webapp:
+1. Replace the live spectrogram with a server-side pre-rendered amplitude waveform; click to seek+play; zoom in/out; auto-pan when zoomed and playing.
+2. Add a TXT-export endpoint + button emitting the existing `[SPEAKER] hh:mm:ss text` format.
+3. Refactor play/pause into a SYNC toggle: Play resumes audio AND enables auto-highlight + auto-scroll-to-active-line; Pause halts both.
+4. Auto-pause on edit: clicking any transcript line (body / speaker pill / text) OR pressing Up/Down arrows pauses audio AND disables sync, focusing that segment for editing. Up/Down navigates between adjacent segments. Left/Right are left alone for caret movement.
+5. Unified Speaker modal: clicking a speaker pill opens a single dialog with existing-speaker dropdown + new-speaker text field + replace-all checkbox; new labels become first-class speakers in subsequent dropdowns.
 
 ## Context
 
@@ -50,51 +54,107 @@ Add four affordances to the transcript-review webapp:
 - Audio source is 16 kHz mono Opus (locked D6 in `Retired/202605060200_PLAN_transcript-review-webapp.md`). Stereo channel-split visualisation is therefore not available.
 
 **What is being changed.**
-- Visualisation swap: AnalyserNode's `getByteTimeDomainData()` (PCM samples in [-1, 1] equivalents) replaces `getByteFrequencyData()`. Render as a centred waveform with peak envelope per pixel column, single accent colour on dark background.
-- New drag handler on the waveform canvas: `mousedown` → start drag; `mousemove` (during drag) → seek `audio.currentTime` by `Δx / 2` seconds (preview); `mouseup`/`mouseleave` → finalise. Touch events mirror this.
+- Visualisation swap: server-side pre-rendered peak-amplitude waveform replaces the live AnalyserNode spectrogram. Peaks are computed at pipeline finalisation, stored as `waveform_peaks.json`, loaded by the webapp on init, rendered to a canvas once (re-drawn on zoom/pan changes). No Web Audio graph needed.
+- Click-to-seek-and-play on the waveform canvas. No drag handler.
+- Zoom controls (buttons + Ctrl+wheel) and jump-pan model for auto-panning while playing at zoom > 1×.
 - New endpoint `GET /api/transcript/export.txt` returns `text/plain` content with one line per segment in `[SPEAKER] hh:mm:ss text` format. Frontend "Export TXT" button triggers a browser download of the current in-memory edit state.
 - Frontend state machine refactor: introduce a single `syncMode` boolean. Play handler sets `syncMode = true`, scrolls active row into view, calls `audio.play()`. Pause handler sets `syncMode = false`, calls `audio.pause()`. Active-highlight logic only runs when `syncMode` is true. Clicking any segment row OR pressing Up/Down (when focus is anywhere in the transcript) calls a `dropOutOfSync()` helper that pauses + disables sync + focuses the target row's text cell. Up/Down move focus to the previous/next segment row's text cell.
 
 **Decisions locked this session (Human, 2026-05-06):**
-- Visualisation: scrolling mono waveform (operator chose option (a) over higher-contrast spectrogram or hybrid).
-- Drag-to-scrub pixel ratio: 2px = 1 second.
+- Visualisation: server-side pre-rendered peak-amplitude waveform (operator redirected from live AnalyserNode waveform with drag).
+- Zoom: 1×–32× by 2× steps; jump-pan (DAW-style) when playing at zoom > 1×.
+- Click-to-seek-and-play; no drag affordance.
 - Up/Down navigate segments; Left/Right untouched.
 - TXT export format: identical to existing pipeline's TXT writer (`[SPEAKER] hh:mm:ss text`).
 
 **Out of scope.**
-- Audio zoom on the waveform (deferred from `Retired/202605060200_PLAN_transcript-review-webapp.md`).
 - Segment boundary editing (still deferred).
 - Frequency-domain visualisation (operator chose amplitude-only).
 - In-session undo/redo stack (still deferred).
 
 ## Steps
 
-### Step 1 — Replace spectrogram render with waveform
+### Step 1 — Server-side pre-rendered waveform peaks
 
-- File: `diarizer/webapp/static/app.js`.
-- In the existing `drawSpectrogram` render loop, swap the per-column rendering: replace `analyser.getByteFrequencyData()` with `analyser.getByteTimeDomainData()`. Compute the peak deviation from 128 (the silent zero-line in unsigned-byte PCM) per frame; map to a vertical line length centred on `canvas.height / 2`. Draw with a single high-contrast accent colour (`#5fd97a` or similar bright green — confirm in style.css's accent variable).
-- Remove the viridis ramp helper.
-- Rename the function to `drawWaveform` (search-and-replace; only used in the requestAnimationFrame chain and `init()`).
-- `style.css`: ensure `--accent-wave: #5fd97a` (or chosen colour) is defined and used.
+**Goal:** generate a per-bin peak-amplitude array from `source.opus` and persist it as `<session-dir>/waveform_peaks.json` so the webapp can render the full file's waveform instantly without any Web Audio analysis.
 
-`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'getByteTimeDomainData' in p and 'getByteFrequencyData' not in p"`
-`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'drawWaveform' in p"`
+**Files touched:**
+- `diarizer/webapp/peaks.py` (new) — peak-extraction logic.
+- `diarizer/cli.py` — wire the peaks generator into the `_run` finalisation block (after Opus encode, before "Session dir:" print).
+- `scripts/build_session_from_txt.py` — same wiring so bridged sessions also get peaks.
+- `diarizer/webapp/app.py` — small endpoint addition (see Step 2).
 
-### Step 2 — Add drag-to-scrub on waveform canvas
+**Library choice:** use `soundfile` (already in `requirements.txt`) to decode the Opus file. `soundfile.read(path)` returns `(samples, sample_rate)` as a numpy array. Mono so `.ndim == 1`. Compute peaks via `numpy.abs(samples).reshape(num_bins, -1).max(axis=1)` then normalise by max-abs to [0, 1].
 
-- File: `diarizer/webapp/static/app.js`.
-- Attach `mousedown` to the canvas. On mousedown, capture initial `audio.currentTime` and `e.clientX`. Set `dragging = true`. On `mousemove` while dragging, compute `Δx = e.clientX - initialX`; new currentTime = clamp(`initialTime + Δx / 2`, 0, audio.duration). Seek live during drag (preview). On `mouseup` or `mouseleave`, `dragging = false`.
-- Mirror with `touchstart`/`touchmove`/`touchend` (single-touch only; ignore multi-touch).
-- Add `cursor: ew-resize;` on the canvas in `style.css`.
-- The drag must not interfere with play/pause state. If the user starts a drag while audio is playing, audio continues playing at the new time. If paused, it stays paused.
+**Bin count:** target 4000 bins for any duration ≤ 60 minutes (≈90ms per bin at 1 hour, ≈14ms at 5 min — fine resolution at all zoom levels up to 32×). For very short audio (< 30 s), drop to fewer bins so each bin holds at least 100 samples.
 
-`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'mousedown' in p and 'mousemove' in p and 'currentTime' in p"`
+**Output schema:** `waveform_peaks.json`:
+```
+{
+  "version": 1,
+  "bins": <int>,
+  "duration_s": <float>,
+  "peaks": [<float>, ...]   // length == bins, each value in [0, 1]
+}
+```
+
+**API:** `peaks.compute_peaks(opus_path: Path, target_bins: int = 4000) -> dict` returns the schema above. `peaks.write_peaks(opus_path, out_json_path, target_bins=4000) -> Path` writes it.
+
+`verify:` `python -c "from diarizer.webapp.peaks import compute_peaks; from pathlib import Path; import subprocess; tmp = Path('temp/_verify_peaks.opus'); tmp.parent.mkdir(parents=True, exist_ok=True); subprocess.run(['ffmpeg','-y','-f','lavfi','-i','anullsrc=r=16000:cl=mono','-t','2','-c:a','libopus','-b:a','16k',str(tmp)], check=True, capture_output=True); d = compute_peaks(tmp); assert d['bins'] == len(d['peaks']) > 0; assert d['duration_s'] >= 1.5; assert all(0.0 <= p <= 1.0 for p in d['peaks']); print('OK')"`
+
+### Step 2 — Frontend waveform render with click-to-seek + zoom + jump-pan
+
+**Goal:** draw the pre-rendered peaks to a canvas, draw a vertical playhead line, support click-to-seek-and-play, support zoom (1×–32× by 2× steps), and pan automatically when zoomed and playing.
+
+**Files touched:** `diarizer/webapp/static/{index.html,app.js,style.css}`, `diarizer/webapp/app.py`.
+
+**Backend endpoint:** `GET /api/waveform` returns the contents of `<session-dir>/waveform_peaks.json` with `Content-Type: application/json`. If the file is missing, return 404 with a clear `detail` message recommending re-run or re-bridge.
+
+**State held in app.js:**
+- `peaks: Float32Array | null` — the peak array, length `bins`.
+- `peaksDuration: number` — total audio length in seconds.
+- `zoomLevel: number` — integer in {1, 2, 4, 8, 16, 32}; 1 = full file fits.
+- `windowStartTime: number` — left edge of visible window in seconds.
+
+**Visible window math:**
+- `visibleSeconds = peaksDuration / zoomLevel`
+- `windowEndTime = windowStartTime + visibleSeconds`
+- A given `t` maps to canvas X via `(t - windowStartTime) / visibleSeconds * canvas.width`.
+
+**Render:**
+- Per-pixel column: pick the peak bin whose midpoint time is closest to that column's time. Draw a vertical line centred on `canvas.height / 2`, height = `peak * canvas.height`, single accent colour (`#5fd97a` or chosen accent).
+- Vertical white playhead line at the X position of `audio.currentTime` (only drawn when `windowStartTime ≤ currentTime ≤ windowEndTime`).
+- Redraw via requestAnimationFrame whenever the audio is playing OR the window/zoom changes.
+
+**Click-to-seek-and-play:**
+- `mousedown` → `clickT = windowStartTime + (e.offsetX / canvas.width) * visibleSeconds`.
+- Set `audio.currentTime = clickT`. Call `enterSync()` (defined in Step 4) to start playing + enable sync.
+
+**Zoom:**
+- Two buttons in the player bar: `Zoom +`, `Zoom -`.
+- Zoom in: `zoomLevel = min(32, zoomLevel * 2)`. Re-centre the visible window on `audio.currentTime` (so the zoom focuses on the current playhead).
+- Zoom out: `zoomLevel = max(1, zoomLevel / 2)`. Re-centre similarly. At zoomLevel=1, `windowStartTime = 0`.
+- `Ctrl+wheel` on the canvas: deltaY < 0 → zoom in; deltaY > 0 → zoom out. Centre on the cursor's time, not the playhead.
+- Display the current zoom level as text next to the buttons (e.g., `1×`, `2×`, `4×`).
+
+**Jump-pan when playing + zoomed:**
+- Each frame, if `zoomLevel > 1` AND `audio.paused === false`:
+  - If `audio.currentTime > windowStartTime + visibleSeconds * 0.75` → `windowStartTime = audio.currentTime - visibleSeconds * 0.25` (jump forward by 50% of the visible window; new window has the playhead at 25% from the left).
+  - Clamp `windowStartTime + visibleSeconds <= peaksDuration`; if it would exceed, set `windowStartTime = peaksDuration - visibleSeconds`.
+
+**No drag handler at all.** The operator's redirected design uses click-only navigation.
+
+**No AnalyserNode.** Strip out `audioCtx`, `analyser`, `source`, `ensureAudioCtx()`, the `getByteFrequencyData`/`getByteTimeDomainData` rendering. The `<audio>` element handles playback directly; volume is controlled via `audio.volume`. **This is a simplification** — Web Audio gesture-policy concerns disappear.
+
+`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'AnalyserNode' not in p and 'createMediaElementSource' not in p and 'getByteFrequencyData' not in p"`
+`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'zoomLevel' in p and 'windowStartTime' in p and 'jumpPan' in p.replace(' ','').lower() or 'pan' in p.lower()"`
+`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'peaks' in p and '/api/waveform' in p"`
 
 ### Step 3 — TXT export endpoint + button
 
 - File: `diarizer/webapp/app.py`. New endpoint `GET /api/transcript/export.txt?from=<filename>` (the `from` parameter is optional; default = latest edit, or original if no edits). Returns `text/plain; charset=utf-8` with `Content-Disposition: attachment; filename=<source_basename>_export_<YYYYMMDD>.txt`.
-- Format: one line per segment, `[SPEAKER] hh:mm:ss text` — hours always shown (matching existing `output.py:_format_timestamp`). Reuse the same formatter logic; do NOT call into `diarizer.output` directly to avoid coupling — copy the small `_format_timestamp` helper into `app.py`.
-- Edge cases: missing speaker → omit `[<speaker>]` prefix; missing text → empty line.
+- Format: one line per segment, `[SPEAKER] hh:mm:ss text` — hours always shown (matching existing `output.py:_format_timestamp`). Reuse the same formatter logic; do NOT call into `diarizer.output` directly to avoid coupling — copy the small `_format_timestamp` helper into `app.py`. Add a `# keep in sync with diarizer/output.py:_format_timestamp` comment.
+- Edge cases: missing speaker → omit `[<speaker>]` prefix; missing text → emit just the prefix (no trailing space). Mirror `diarizer/output.py:write_txt` — format the line as `f'{prefix} {text}'.strip()` exactly to keep the two writers aligned.
 - File: `diarizer/webapp/static/index.html`. Add `<button id="btn-export" type="button">Export TXT</button>` next to Save.
 - File: `diarizer/webapp/static/app.js`. Wire `btn-export` to POST the current in-memory edit state as the body of a new `POST /api/transcript/export.txt` (operator may have unsaved edits — we don't want to require saving first). Backend: accept optional JSON body containing `{segments: [...]}`; if absent, fall back to the latest saved sidecar.
 - Browser-download trick: receive the response as a Blob, create an object URL, programmatic `<a href download>` click.
@@ -106,7 +166,7 @@ Add four affordances to the transcript-review webapp:
 - File: `diarizer/webapp/static/app.js`.
 - Introduce module-scoped `let syncMode = false;`.
 - New helpers:
-  - `enterSync()` — sets `syncMode = true`, calls `audio.play()`, button text → "Pause", scrolls active row (if any) into view via `row.scrollIntoView({block: 'nearest'})`.
+  - `enterSync()` — sets `syncMode = true`, calls `audio.play()`, button text → "Pause", scrolls active row (if any) into view via `row.scrollIntoView({block: 'nearest'})`. Note: AudioContext is no longer in play — Step 2's redesign uses the pre-rendered waveform, removing the analyser graph entirely. `enterSync()` is just `audio.play()` + button label update + `scrollIntoView`.
   - `exitSync()` — sets `syncMode = false`, calls `audio.pause()`, button text → "Play".
   - `dropOutOfSync(targetIndex?)` — calls `exitSync()`; if `targetIndex` provided, focuses that row's `.text` element and places cursor at end.
 - Refactor existing play/pause click handler to toggle between `enterSync` and `exitSync`.
@@ -150,19 +210,23 @@ Add four affordances to the transcript-review webapp:
   3. If `replace-all` is CHECKED → walk all segments where `seg.speaker === currentSpeaker` and set their speaker to `newLabel`. (Global replacement.)
   4. If UNCHECKED → set only the clicked segment's speaker to `newLabel`. (Per-segment reassign.)
   5. Re-render transcript. New label automatically appears in the next modal's dropdown via `uniqueSpeakers(segments)`.
+  6. After the modal closes (whether Submit or Cancel), call `row.querySelector('.text').focus()` where `row` is the row that opened the modal. Reason: `<dialog>.showModal()` moves focus into the dialog and browsers do NOT restore focus to a contenteditable on close — without explicit restoration, Up/Down arrow navigation breaks after the modal closes.
 - The speaker pill click handler now calls `openSpeakerModal(rowIndex)` (not `openReassignModal`). Per the auto-pause-on-edit rule from Step 4: clicking the speaker pill ALSO triggers `dropOutOfSync(rowIndex)` before the modal opens.
 
 **CSS (`style.css`):** ensure the new modal's spacing is consistent with the existing dialog styles. No new colour additions.
 
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'openSpeakerModal' in p and 'openRenameModal' not in p and 'openReassignModal' not in p"`
 `verify:` `python -c "p = open('diarizer/webapp/static/index.html', encoding='utf-8').read(); assert 'speaker-modal' in p and 'rename-modal' not in p and 'reassign-modal' not in p"`
+`verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert '.text\\').focus()' in p or '.text\").focus()' in p or 'querySelector(' in p and '.focus()' in p"`
 
 ### Step 6 — Smoke tests for the new endpoints + frontend invariants
 
 - File: `tests/diarizer/test_webapp_smoke.py`. Append:
-  - `test_export_txt_get_returns_plaintext` — GET `/api/transcript/export.txt`, asserts 200, `text/plain` content type, `[SPEAKER_00]` substring present.
+  - `test_export_txt_get_returns_plaintext` — GET `/api/transcript/export.txt`, asserts 200, `text/plain` content type, then loads `tests/diarizer/conftest.py`'s `stub_session` and reads the fixture's `transcript.json` to extract the actual speaker labels, asserts one of those labels appears in the export body. (This pins the assertion to whatever the fixture actually emits — avoids hidden coupling to a hardcoded `SPEAKER_00`.)
   - `test_export_txt_post_uses_body_segments` — POST with `{segments: [{start, end, text, speaker}]}` containing a custom speaker label, asserts that label appears in the response (proves the body wins over saved files).
   - `test_export_txt_format_includes_timestamps` — assert lines match a regex `^\[.+\] \d{2}:\d{2}:\d{2} `.
+  - `test_waveform_endpoint_returns_peaks` — pre-create a `waveform_peaks.json` in the stub session (small array, 100 bins, all 0.5), GET `/api/waveform`, assert 200 + JSON shape (`bins`, `duration_s`, `peaks` keys present).
+  - `test_waveform_404_when_missing` — delete the peaks file, GET `/api/waveform`, assert 404.
 
 `acceptance:` `pytest tests/diarizer/test_webapp_smoke.py -q`
 
@@ -170,51 +234,60 @@ Add four affordances to the transcript-review webapp:
 
 Operator-visible affordance checklist for the new behaviours. Each item must be confirmed working in Chrome and Firefox. Any failure → outcome-verification reverts to drafted.
 
-1. Visualisation is now a centred waveform (no longer a colour-ramp spectrogram); amplitude varies visibly with speech vs silence.
-2. Waveform colour is high-contrast and easily readable on the dark background.
-3. Click + drag on the waveform → audio currentTime moves; release → final position holds. Drag works in both directions.
-4. Drag of ~200 pixels moves audio by ~100 seconds (2px = 1s ratio).
-5. Pressing Play resumes audio AND begins auto-highlighting the active segment AND scrolls the transcript pane to keep the active line visible.
-6. The Play button's label changes to Pause while sync is active.
-7. Pressing Pause halts audio AND removes the active-highlight class (no segment is highlighted in pause/edit mode).
-8. Clicking on a transcript line auto-pauses (audio stops, button reverts to Play, active-highlight is cleared).
-9. Pressing Up arrow while focused inside the transcript moves focus to the previous segment's text cell, auto-pauses if needed.
-10. Pressing Down arrow moves to the next segment's text cell.
-11. Left and Right arrows still move the text caret inside a contenteditable cell (no segment navigation hijack).
-12. Clicking any speaker pill opens the Speaker modal. The dropdown shows every speaker currently in the transcript; the current segment's speaker is preselected.
-13. Typing a new label in the input + Submit (with replace-all UNCHECKED) changes only that segment's speaker. The new label now appears in the dropdown for subsequent modal opens.
-14. Selecting an existing speaker from the dropdown + Submit (with replace-all UNCHECKED) reassigns only that segment.
-15. Selecting a target speaker (existing or new) + ticking "Replace all segments currently labelled '<X>'" + Submit replaces every segment that had the original speaker. Confirm by scrolling — no occurrences of the old label remain.
-16. Typing a new label that collides with an existing speaker name → Submit shows a "Speaker already exists" toast, modal stays open. Operator can correct.
-17. The Shift-R keybinding for the old rename modal is gone (pressing Shift+R does nothing).
-18. Export TXT button triggers a browser file download.
-19. Downloaded file contains lines of the form `[SPEAKER_00] 00:00:04 …`.
-20. Export TXT respects unsaved in-memory edits (rename a speaker, click Export TXT before saving, downloaded file shows the new label).
-21. Clicking a segment's start-time timestamp seeks audio to that point AND begins playback automatically (button shows Pause, sync mode active, active-highlight follows from that segment forwards).
+1. Page loads with a waveform fully visible across the canvas (1× zoom). Amplitude variation is clearly visible (peaks during speech, troughs during silence).
+2. A vertical playhead line is visible on the waveform, anchored at the current `audio.currentTime`.
+3. Clicking anywhere on the waveform seeks audio to that position AND begins playback automatically (button shows Pause).
+4. The Zoom + button doubles the zoom level (max 32×); the visible window narrows around the current playhead.
+5. The Zoom - button halves the zoom level (min 1×); at 1× the entire file is visible.
+6. Holding Ctrl and scrolling the mouse wheel over the canvas zooms in/out; zoom centres on the cursor's time.
+7. When zoomed (e.g., 8×) and playing, the visible window auto-pans forward — when the playhead reaches ~75% of the right edge, the window jumps forward by 50%.
+8. Pressing Play resumes audio AND enables sync mode (active segment highlighted, transcript pane scrolls to keep active line visible).
+9. Pause stops audio AND clears the active-highlight (no segment is highlighted in pause/edit mode).
+10. Clicking on a transcript line (body / speaker pill / text) auto-pauses (audio stops, button reverts to Play, highlight cleared).
+11. Clicking a segment's start-time timestamp seeks audio AND auto-plays from that point.
+12. Pressing Up/Down arrow inside the transcript moves focus to the previous/next segment's text cell, auto-pausing if needed.
+13. Left/Right arrows still move the text caret inside a contenteditable cell (no segment-nav hijack).
+14. Export TXT button triggers a browser file download.
+15. Downloaded file contains lines of `[SPEAKER_00] 00:00:04 …` form. (Use whatever speaker label the current transcript actually has — check before assertion.)
+16. Export TXT respects unsaved in-memory edits (rename a speaker, click Export TXT before saving — downloaded file shows the new label).
+17. Clicking any speaker pill opens the unified Speaker modal. Dropdown shows every current speaker; current segment's speaker is preselected. Replace-all checkbox is unchecked by default and shows the current speaker's name in its label.
+18. Typing a new label + Submit (replace-all UNCHECKED) changes only that segment's speaker. The new label appears in the dropdown the next time the modal opens.
+19. Selecting an existing speaker + Submit (replace-all UNCHECKED) reassigns only that segment.
+20. Selecting a target + ticking replace-all + Submit replaces every segment with the same original speaker. Confirm by scrolling — no occurrences of the old label remain.
+21. Typing a new label that collides (case-sensitive) with an existing speaker → Submit shows a "Speaker already exists" toast; modal stays open.
+22. Typing a new label with leading/trailing whitespace → Submit trims it before applying. Whitespace alone or empty-with-empty-dropdown selection → Submit is a no-op (modal closes, no change).
+23. After the Speaker modal closes (Submit or Cancel), focus returns to the originating row's text cell — Up/Down arrow navigation still works.
+24. The Shift-R keybinding does nothing (the old global-rename modal is gone).
 
-`verify: human — operator runs items 1–21; all must pass.`
+`verify: human — operator runs items 1–24; all must pass.`
 
 ## Verification
 
-- [ ] `getByteTimeDomainData` is present in `app.js`; `getByteFrequencyData` is absent.
-      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'getByteTimeDomainData' in p and 'getByteFrequencyData' not in p"`
-- [ ] `drawWaveform` function present in `app.js`.
-      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'drawWaveform' in p"`
-- [ ] Drag-to-scrub event wiring in place.
-      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'mousedown' in p and 'mousemove' in p and 'currentTime' in p"`
-- [ ] TXT export endpoint + button tests pass (GET and POST forms; content type; `[SPEAKER]` lines).
+- [ ] No AnalyserNode, `createMediaElementSource`, or `getByteFrequencyData` in `app.js`. (Step 2)
+      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'AnalyserNode' not in p and 'createMediaElementSource' not in p and 'getByteFrequencyData' not in p"`
+- [ ] Zoom state and pan logic present in `app.js`. (Step 2)
+      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'zoomLevel' in p and 'windowStartTime' in p and 'jumpPan' in p.replace(' ','').lower() or 'pan' in p.lower()"`
+- [ ] Peak loading and waveform endpoint referenced in `app.js`. (Step 2)
+      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'peaks' in p and '/api/waveform' in p"`
+- [ ] Peaks compute function passes contract assertions. (Step 1)
+      `verify: python -c "from diarizer.webapp.peaks import compute_peaks; from pathlib import Path; import subprocess; tmp = Path('temp/_verify_peaks.opus'); tmp.parent.mkdir(parents=True, exist_ok=True); subprocess.run(['ffmpeg','-y','-f','lavfi','-i','anullsrc=r=16000:cl=mono','-t','2','-c:a','libopus','-b:a','16k',str(tmp)], check=True, capture_output=True); d = compute_peaks(tmp); assert d['bins'] == len(d['peaks']) > 0; assert d['duration_s'] >= 1.5; assert all(0.0 <= p <= 1.0 for p in d['peaks']); print('OK')"`
+- [ ] TXT export endpoint + button tests pass (GET and POST forms; content type; speaker lines). (Step 3)
       `verify: unit test in tests/diarizer/test_webapp_smoke.py`
-- [ ] Sync-mode state machine identifiers present in `app.js`.
+- [ ] Sync-mode state machine identifiers present in `app.js`. (Step 4)
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'syncMode' in p and 'enterSync' in p and 'exitSync' in p and 'dropOutOfSync' in p"`
-- [ ] Arrow-key segment navigation identifiers present in `app.js`.
+- [ ] Arrow-key segment navigation identifiers present in `app.js`. (Step 4)
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'ArrowUp' in p and 'ArrowDown' in p"`
 - [ ] Unified Speaker modal identifiers present — `openSpeakerModal` in `app.js`; `speaker-modal` in `index.html`; old `rename-modal`, `reassign-modal`, `openRenameModal`, `openReassignModal` absent. (Step 5)
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'openSpeakerModal' in p and 'openRenameModal' not in p and 'openReassignModal' not in p"`
       `verify: python -c "p = open('diarizer/webapp/static/index.html', encoding='utf-8').read(); assert 'speaker-modal' in p and 'rename-modal' not in p and 'reassign-modal' not in p"`
-- [ ] Full smoke test suite passes.
+- [ ] Focus restoration after Speaker modal present in `app.js`. (Step 5)
+      `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert '.text\\').focus()' in p or '.text\").focus()' in p or 'querySelector(' in p and '.focus()' in p"`
+- [ ] Waveform endpoint and 404-when-missing tests pass. (Step 6)
+      `verify: pytest tests/diarizer/test_webapp_smoke.py::test_waveform_endpoint_returns_peaks tests/diarizer/test_webapp_smoke.py::test_waveform_404_when_missing -q`
+- [ ] Full smoke test suite passes. (Step 6)
       `acceptance: pytest tests/diarizer/test_webapp_smoke.py -q`
-- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–21; all must pass.
-      `verify: human — operator runs items 1–21; all must pass.`
+- [ ] Manual UI walkthrough: operator runs affordance checklist items 1–24; all must pass. (Step 7)
+      `verify: human — operator runs items 1–24; all must pass.`
 
 ## Executor Notes
 
