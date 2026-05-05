@@ -12,10 +12,10 @@ due: ""
 repeatable: false
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 3
+  sufficiency_iterations: 4
   plan_safety_iterations: 0
   last_stage: sufficiency
-  last_outcome: revision_needed
+  last_outcome: success
 linked_decisions:
   - "Visualisation: server-side pre-rendered peak-amplitude waveform. Peaks computed eagerly at pipeline finalisation (or at session-bridge time) and persisted as <session-dir>/waveform_peaks.json — webapp loads it on init."
   - "Click on the waveform seeks audio AND auto-plays from that point (matches transcript-timestamp click for a single mental model). No drag affordance."
