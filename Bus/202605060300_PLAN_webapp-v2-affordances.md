@@ -28,6 +28,7 @@ linked_decisions:
   - "Export TXT format matches the existing pipeline's [SPEAKER] hh:mm:ss text format (one line per segment, hours always shown)"
   - "Clicking a segment's timestamp seeks audio to that point AND enters sync mode (auto-plays from there). Distinct from clicking the row body or speaker pill, which auto-pauses for editing."
   - "Speaker pill click opens a unified Speaker modal: pick from existing speakers OR type a new label, with a 'replace all instances of <current speaker>' checkbox for global rename. New labels typed here become first-class speakers (appear in the dropdown for future segments). The hidden Shift-R global-rename modal is removed — discoverability."
+  - "Pre-existing sessions get lazy peak generation: if waveform_peaks.json is missing on a /api/waveform request, the backend computes it from source.opus and writes it back to the session dir. No backfill CLI subcommand needed."
 linked_inputs: []
 blocked_by: ""
 depends_on_plans: []
@@ -54,7 +55,7 @@ Add five affordances to the transcript-review webapp:
 - Audio source is 16 kHz mono Opus (locked D6 in `Retired/202605060200_PLAN_transcript-review-webapp.md`). Stereo channel-split visualisation is therefore not available.
 
 **What is being changed.**
-- Visualisation swap: server-side pre-rendered peak-amplitude waveform replaces the live AnalyserNode spectrogram. Peaks are computed at pipeline finalisation, stored as `waveform_peaks.json`, loaded by the webapp on init, rendered to a canvas once (re-drawn on zoom/pan changes). No Web Audio graph needed.
+- Visualisation swap: server-side pre-rendered peak-amplitude waveform replaces the live AnalyserNode spectrogram. Peaks are computed at pipeline finalisation, stored as `waveform_peaks.json`, loaded by the webapp on init, rendered to a canvas once (re-drawn on zoom/pan changes). No Web Audio graph needed. Pre-existing sessions (without peaks files) lazily generate the file on first webapp request — no manual backfill required.
 - Click-to-seek-and-play on the waveform canvas. No drag handler.
 - Zoom controls (buttons + Ctrl+wheel) and jump-pan model for auto-panning while playing at zoom > 1×.
 - New endpoint `GET /api/transcript/export.txt` returns `text/plain` content with one line per segment in `[SPEAKER] hh:mm:ss text` format. Frontend "Export TXT" button triggers a browser download of the current in-memory edit state.
@@ -86,6 +87,8 @@ Add five affordances to the transcript-review webapp:
 
 **Library choice:** use `soundfile` (already in `requirements.txt`) to decode the Opus file. `soundfile.read(path)` returns `(samples, sample_rate)` as a numpy array. Mono so `.ndim == 1`. Compute peaks via `numpy.abs(samples).reshape(num_bins, -1).max(axis=1)` then normalise by max-abs to [0, 1].
 
+**Defensive mono squash** — D6 locks the source as mono Opus, but soundfile's behaviour on accidentally-stereo input would silently corrupt the peak array. The mean-axis-1 squash is cheap insurance. In `peaks.compute_peaks`, before reshape: `if samples.ndim > 1: samples = samples.mean(axis=1)`.
+
 **Bin count:** target 4000 bins for any duration ≤ 60 minutes (≈90ms per bin at 1 hour, ≈14ms at 5 min — fine resolution at all zoom levels up to 32×). For very short audio (< 30 s), drop to fewer bins so each bin holds at least 100 samples.
 
 **Output schema:** `waveform_peaks.json`:
@@ -108,7 +111,9 @@ Add five affordances to the transcript-review webapp:
 
 **Files touched:** `diarizer/webapp/static/{index.html,app.js,style.css}`, `diarizer/webapp/app.py`.
 
-**Backend endpoint:** `GET /api/waveform` returns the contents of `<session-dir>/waveform_peaks.json` with `Content-Type: application/json`. If the file is missing, return 404 with a clear `detail` message recommending re-run or re-bridge.
+**Backend endpoint:** `GET /api/waveform` returns the contents of `<session-dir>/waveform_peaks.json` with `Content-Type: application/json`. If the file is missing, attempt lazy generation:
+- If `source.opus` exists → call `compute_peaks(source.opus, target_bins=4000)`, write the result to `<session-dir>/waveform_peaks.json` (best-effort; tolerate write-permission failures by serving the in-memory result), then return it. Add a structured log line: `logger.info("Lazily generated waveform_peaks.json for %s", session_dir)`.
+- If `source.opus` is also missing → return 404 with `detail="source.opus missing — cannot generate waveform peaks"`.
 
 **State held in app.js:**
 - `peaks: Float32Array | null` — the peak array, length `bins`.
@@ -136,6 +141,7 @@ Add five affordances to the transcript-review webapp:
 - Zoom out: `zoomLevel = max(1, zoomLevel / 2)`. Re-centre similarly. At zoomLevel=1, `windowStartTime = 0`.
 - `Ctrl+wheel` on the canvas: deltaY < 0 → zoom in; deltaY > 0 → zoom out. Centre on the cursor's time, not the playhead.
 - Display the current zoom level as text next to the buttons (e.g., `1×`, `2×`, `4×`).
+- All `windowStartTime` mutations must clamp >= 0 (lower bound) AND <= `peaksDuration - visibleSeconds` (upper bound). Add explicit `windowStartTime = Math.max(0, windowStartTime)` after every zoom-recentre and pan calculation.
 
 **Jump-pan when playing + zoomed:**
 - Each frame, if `zoomLevel > 1` AND `audio.paused === false`:
@@ -149,17 +155,20 @@ Add five affordances to the transcript-review webapp:
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'AnalyserNode' not in p and 'createMediaElementSource' not in p and 'getByteFrequencyData' not in p"`
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'zoomLevel' in p and 'windowStartTime' in p and 'jumpPan' in p.replace(' ','').lower() or 'pan' in p.lower()"`
 `verify:` `python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert 'peaks' in p and '/api/waveform' in p"`
+`verify:` `python -c "import json, tempfile, shutil, subprocess; from pathlib import Path; from diarizer.webapp.app import create_app; from httpx import ASGITransport, AsyncClient; import asyncio; tmp = Path(tempfile.mkdtemp()); subprocess.run(['ffmpeg','-y','-f','lavfi','-i','anullsrc=r=16000:cl=mono','-t','2','-c:a','libopus','-b:a','16k', str(tmp/'source.opus')], check=True, capture_output=True); (tmp/'transcript.json').write_text('{\"segments\":[]}'); (tmp/'session.json').write_text('{\"version\":1,\"source_basename\":\"x\",\"created\":\"\",\"audio_opus\":\"source.opus\",\"audio_wav\":\"source.wav\",\"transcript_original\":\"transcript.json\",\"edits\":[]}'); app = create_app(tmp); transport = ASGITransport(app=app); async def go(): async with AsyncClient(transport=transport, base_url='http://127.0.0.1') as c: r = await c.get('/api/waveform'); return r; r = asyncio.run(go()); assert r.status_code == 200; assert (tmp/'waveform_peaks.json').exists(); print('OK lazy-gen')"`
 
 ### Step 3 — TXT export endpoint + button
 
 - File: `diarizer/webapp/app.py`. New endpoint `GET /api/transcript/export.txt?from=<filename>` (the `from` parameter is optional; default = latest edit, or original if no edits). Returns `text/plain; charset=utf-8` with `Content-Disposition: attachment; filename=<source_basename>_export_<YYYYMMDD>.txt`.
 - Format: one line per segment, `[SPEAKER] hh:mm:ss text` — hours always shown (matching existing `output.py:_format_timestamp`). Reuse the same formatter logic; do NOT call into `diarizer.output` directly to avoid coupling — copy the small `_format_timestamp` helper into `app.py`. Add a `# keep in sync with diarizer/output.py:_format_timestamp` comment.
-- Edge cases: missing speaker → omit `[<speaker>]` prefix; missing text → emit just the prefix (no trailing space). Mirror `diarizer/output.py:write_txt` — format the line as `f'{prefix} {text}'.strip()` exactly to keep the two writers aligned.
+- Edge cases: missing speaker → omit `[<speaker>]` prefix (do NOT include `[ ]` brackets — `write_txt` builds prefix from a `prefix_parts` list, so missing speaker yields just the timestamp prefix or empty prefix). Missing text → emit just the prefix (no trailing space). Mirror `diarizer/output.py:write_txt` — format the line as `f'{prefix} {text}'.strip()` exactly to keep the two writers aligned. Reference: `diarizer/output.py write_txt` lines 38-46 — emits `f"{prefix} {seg.text}".strip() if prefix else seg.text`; the webapp formatter must produce the same bytes.
+- The byte-identity test in Step 6 is the canonical enforcement of this decision — if the pipeline's `write_txt` format ever changes, this test will fail and force the webapp's formatter to be updated in lockstep.
 - File: `diarizer/webapp/static/index.html`. Add `<button id="btn-export" type="button">Export TXT</button>` next to Save.
 - File: `diarizer/webapp/static/app.js`. Wire `btn-export` to POST the current in-memory edit state as the body of a new `POST /api/transcript/export.txt` (operator may have unsaved edits — we don't want to require saving first). Backend: accept optional JSON body containing `{segments: [...]}`; if absent, fall back to the latest saved sidecar.
 - Browser-download trick: receive the response as a Blob, create an object URL, programmatic `<a href download>` click.
 
 `verify:` unit test in `tests/diarizer/test_webapp_smoke.py` exercises the endpoint with both the GET (latest-edit) form and POST (in-memory body) form, asserts `text/plain` content type and `[SPEAKER]` lines.
+`verify:` `pytest tests/diarizer/test_webapp_smoke.py::test_export_txt_matches_write_txt_byte_for_byte -q`
 
 ### Step 4 — Play/Pause as sync toggle + auto-pause-on-edit
 
@@ -226,7 +235,9 @@ Add five affordances to the transcript-review webapp:
   - `test_export_txt_post_uses_body_segments` — POST with `{segments: [{start, end, text, speaker}]}` containing a custom speaker label, asserts that label appears in the response (proves the body wins over saved files).
   - `test_export_txt_format_includes_timestamps` — assert lines match a regex `^\[.+\] \d{2}:\d{2}:\d{2} `.
   - `test_waveform_endpoint_returns_peaks` — pre-create a `waveform_peaks.json` in the stub session (small array, 100 bins, all 0.5), GET `/api/waveform`, assert 200 + JSON shape (`bins`, `duration_s`, `peaks` keys present).
-  - `test_waveform_404_when_missing` — delete the peaks file, GET `/api/waveform`, assert 404.
+  - `test_waveform_404_when_missing` — fixture session has neither `waveform_peaks.json` nor `source.opus`; GET `/api/waveform`, assert 404 with `detail` containing `"source.opus missing"`.
+  - `test_waveform_lazy_generates_when_missing` — fixture session has `source.opus` but no `waveform_peaks.json`; first `GET /api/waveform` returns 200 with peaks AND writes `waveform_peaks.json` to disk; second `GET /api/waveform` returns 200 (now from disk).
+  - `test_export_txt_matches_write_txt_byte_for_byte` — construct an in-memory `TranscriptionResult`-shaped object with 3–4 segments (mix of speakers, mix of speaker-present and speaker-empty); run `diarizer.output.write_txt(result, tmp/'a.txt', config_with_speakers_and_timestamps)` to get the pipeline's bytes; POST the same segments to the webapp's `/api/transcript/export.txt`, capture the response bytes; assert the two byte sequences are identical.
 
 `acceptance:` `pytest tests/diarizer/test_webapp_smoke.py -q`
 
@@ -282,8 +293,10 @@ Operator-visible affordance checklist for the new behaviours. Each item must be 
       `verify: python -c "p = open('diarizer/webapp/static/index.html', encoding='utf-8').read(); assert 'speaker-modal' in p and 'rename-modal' not in p and 'reassign-modal' not in p"`
 - [ ] Focus restoration after Speaker modal present in `app.js`. (Step 5)
       `verify: python -c "p = open('diarizer/webapp/static/app.js', encoding='utf-8').read(); assert '.text\\').focus()' in p or '.text\").focus()' in p or 'querySelector(' in p and '.focus()' in p"`
-- [ ] Waveform endpoint and 404-when-missing tests pass. (Step 6)
-      `verify: pytest tests/diarizer/test_webapp_smoke.py::test_waveform_endpoint_returns_peaks tests/diarizer/test_webapp_smoke.py::test_waveform_404_when_missing -q`
+- [ ] Waveform endpoint, lazy-generation, and 404-when-missing tests pass. (Step 6)
+      `verify: pytest tests/diarizer/test_webapp_smoke.py::test_waveform_endpoint_returns_peaks tests/diarizer/test_webapp_smoke.py::test_waveform_404_when_missing tests/diarizer/test_webapp_smoke.py::test_waveform_lazy_generates_when_missing -q`
+- [ ] TXT export byte-identity test passes. (Step 6)
+      `verify: pytest tests/diarizer/test_webapp_smoke.py::test_export_txt_matches_write_txt_byte_for_byte -q`
 - [ ] Full smoke test suite passes. (Step 6)
       `acceptance: pytest tests/diarizer/test_webapp_smoke.py -q`
 - [ ] Manual UI walkthrough: operator runs affordance checklist items 1–24; all must pass. (Step 7)
