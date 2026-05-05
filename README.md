@@ -54,6 +54,26 @@ python -m diarizer.cli --input speech.wav --no-diarisation
 python -m diarizer.cli --input meeting.m4a --model medium
 ```
 
+## Opt-in ASR-quality knobs (advanced)
+
+The defaults (greedy decode, no prompt, no carry-forward) are the safest baseline and are what we recommend. For meetings where proper-noun and domain-term recall matters more than reading flow, four extra knobs are available — all optional, all default-off. Empirical analysis lives in `Bus/202605060100_RESEARCH_asr-knob-panel.md`; the headline summary:
+
+| Flag | What it does | When it helps | What it costs |
+|---|---|---|---|
+| `--initial-prompt "..."` or `--initial-prompt-file PATH` | Bias the first decode pass with domain-specific vocabulary (names, jargon). | Only the first ~30 s of audio when used alone — fades after. | Effectively a no-op for long meetings unless paired with `--condition-on-previous-text`. |
+| `--condition-on-previous-text` | Carry the prior chunk's text forward into the next chunk. | Makes the prompt's bias persist across the whole meeting; recovers domain terms. | Risk of structural fragmentation in the latter half of long files; possible tail-hallucination near final silence. |
+| `--beam-size 5` | Wider beam search at decode time. | Recovers some rare proper nouns (e.g. names with non-native pronunciation). | Hurts common-jargon-with-accent (e.g. "incident" decodes as "instant" because "instant" outscores under longer-context probability). Net negative on cyber/control vocab. |
+
+For domain-specific prompts, park reusable prompt files under `prompts/` (e.g. `prompts/app-control.txt`) and select per-run:
+
+```bash
+python -m diarizer.cli --input meeting.m4a \
+    --condition-on-previous-text \
+    --initial-prompt-file prompts/app-control.txt
+```
+
+Caveat: with these knobs on, expect to skim the tail for repetition-collapse artefacts and the body for occasional short-segment fragmentation. Suitable for capture-points-matter meetings, not a default.
+
 ## Outputs
 
 - **Transcripts** → `output/` (configurable). Format: TXT, JSON, or SRT.
@@ -80,7 +100,7 @@ pytest                       # discovers tests/diarizer/ via pyproject.toml
 pytest tests/diarizer/test_gates.py -v
 ```
 
-79 tests cover config, gates, measurement, output, pipeline (mocked), and preprocessing (mocked ffmpeg). Real-model end-to-end runs are exercised manually on GPU; see `ARCHITECTURE.md`.
+85 tests cover config, gates, measurement, output, pipeline (mocked), and preprocessing (mocked ffmpeg). Real-model end-to-end runs are exercised manually on GPU; see `ARCHITECTURE.md`.
 
 ## Project status
 
