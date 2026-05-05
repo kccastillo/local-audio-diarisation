@@ -12,10 +12,10 @@ due: ""
 repeatable: false
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 0
+  sufficiency_iterations: 1
   plan_safety_iterations: 0
-  last_stage: none
-  last_outcome: none
+  last_stage: sufficiency
+  last_outcome: revision_needed
 linked_decisions:
   - "Crosstalk detection mechanism: heuristic on existing transcript timings (option (a)). Pyannote OSD model (option (b)) is deferred — heuristic works on every existing session immediately and answers the operator's actual question (where in this meeting does it get hard to follow)."
   - "Heuristic: sliding 5-second window across segments. Count speaker-changes (transitions where seg[i].speaker != seg[i-1].speaker) within window. Threshold 4+ swaps → all segments whose [start, end] intersect that window are flagged crosstalk."
