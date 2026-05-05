@@ -1,7 +1,7 @@
 ---
 title: "Webapp v2 affordances: pre-rendered waveform, TXT export, sync toggle, segment-nav, unified speaker modal"
 type: bus-plan
-status: in-progress
+status: done
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -10,7 +10,7 @@ created_month: 202605
 log_month: 202605
 due: ""
 repeatable: false
-pipeline_phase: outcome-verifying
+pipeline_phase: complete
 audit_state:
   sufficiency_iterations: 4
   plan_safety_iterations: 1
@@ -25,9 +25,10 @@ verification_state:
   state_fail: 0
   acceptance_pass: 1
   acceptance_fail: 0
-  human_pending:
-    - "Affordance checklist (Step 7, items 1-24): manual UI walkthrough in Chrome and Firefox"
-  human_verdict: pending
+  human_pending: []
+  human_verdict: all_pass
+  human_verified_on: 2026-05-06
+  human_verified_against_session: "output/app-control-meeting-28apr_20260506_065459 (real session, lazy-generated peaks)"
 linked_decisions:
   - "Visualisation: server-side pre-rendered peak-amplitude waveform. Peaks computed eagerly at pipeline finalisation (or at session-bridge time) and persisted as <session-dir>/waveform_peaks.json — webapp loads it on init."
   - "Click on the waveform seeks audio AND auto-plays from that point (matches transcript-timestamp click for a single mental model). No drag affordance."
