@@ -1,7 +1,7 @@
 ---
 title: "Crosstalk indicator: heuristic flag on segments + waveform stripe for rapid speaker swaps"
 type: bus-plan
-status: ready
+status: in-progress
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -10,11 +10,11 @@ created_month: 202605
 log_month: 202605
 due: ""
 repeatable: false
-pipeline_phase: drafted
+pipeline_phase: executing
 audit_state:
   sufficiency_iterations: 2
-  plan_safety_iterations: 0
-  last_stage: sufficiency
+  plan_safety_iterations: 1
+  last_stage: plan_safety
   last_outcome: success
 linked_decisions:
   - "Crosstalk detection mechanism: heuristic on existing transcript timings (option (a)). Pyannote OSD model (option (b)) is deferred — heuristic works on every existing session immediately and answers the operator's actual question (where in this meeting does it get hard to follow)."
