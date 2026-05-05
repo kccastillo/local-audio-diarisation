@@ -27,10 +27,10 @@ depends_on_plans: []
 rollover_count: 0
 pipeline_phase: drafted
 audit_state:
-  sufficiency_iterations: 2
+  sufficiency_iterations: 3
   plan_safety_iterations: 0
   last_stage: sufficiency
-  last_outcome: revision_needed
+  last_outcome: success
 ---
 
 ## Objective
