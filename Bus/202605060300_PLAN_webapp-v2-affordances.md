@@ -1,7 +1,7 @@
 ---
 title: "Webapp v2 affordances: pre-rendered waveform, TXT export, sync toggle, segment-nav, unified speaker modal"
 type: bus-plan
-status: ready
+status: in-progress
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -10,11 +10,11 @@ created_month: 202605
 log_month: 202605
 due: ""
 repeatable: false
-pipeline_phase: drafted
+pipeline_phase: executing
 audit_state:
   sufficiency_iterations: 4
-  plan_safety_iterations: 0
-  last_stage: sufficiency
+  plan_safety_iterations: 1
+  last_stage: plan_safety
   last_outcome: success
 linked_decisions:
   - "Visualisation: server-side pre-rendered peak-amplitude waveform. Peaks computed eagerly at pipeline finalisation (or at session-bridge time) and persisted as <session-dir>/waveform_peaks.json — webapp loads it on init."
