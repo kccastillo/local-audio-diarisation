@@ -33,7 +33,7 @@ let crosstalk = { flaggedSegments: new Set(), flaggedRanges: [] };
 // Algorithm assumes segments[].start is monotonically non-decreasing; the
 // pipeline guarantees this. If a future edit path ever re-orders segments,
 // sort by start before calling.
-function computeCrosstalkRegions(segments, windowSec = 5, threshold = 4) {
+function computeCrosstalkRegions(segments, windowSec = 10, threshold = 3) {
   if (!segments || segments.length === 0) {
     return { flaggedSegments: new Set(), flaggedRanges: [] };
   }

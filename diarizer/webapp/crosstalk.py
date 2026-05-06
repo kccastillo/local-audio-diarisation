@@ -17,8 +17,8 @@ from __future__ import annotations
 
 def compute_crosstalk_regions(
     segments: list[dict],
-    window_sec: float = 5.0,
-    threshold: int = 4,
+    window_sec: float = 10.0,
+    threshold: int = 3,
 ) -> dict:
     if not segments:
         return {"flagged_segments": [], "flagged_ranges": []}

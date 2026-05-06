@@ -29,7 +29,7 @@ def test_crosstalk_single_speaker_session_no_flags():
 
 def test_crosstalk_two_segments_below_threshold():
     segs = [_seg(0, 0.5, "A"), _seg(0.5, 1.0, "B")]
-    r = compute_crosstalk_regions(segs)
+    r = compute_crosstalk_regions(segs)  # 1 swap, below threshold 3
     assert r["flagged_segments"] == []
 
 
@@ -77,27 +77,25 @@ def test_crosstalk_long_segment_does_not_break_window_walk():
 
 
 def test_crosstalk_threshold_boundary_exactly_at_threshold():
-    """Exactly 4 swaps in a 5s window with threshold=4 → flagged (>= comparison)."""
-    segs = [
-        _seg(0.0, 0.5, "A"),
-        _seg(0.5, 1.0, "B"),
-        _seg(1.0, 1.5, "A"),
-        _seg(1.5, 2.0, "B"),
-        _seg(2.0, 2.5, "A"),  # 4 swaps so far
-    ]
-    r = compute_crosstalk_regions(segs, window_sec=5.0, threshold=4)
-    assert r["flagged_segments"] == [0, 1, 2, 3, 4]
-
-
-def test_crosstalk_just_below_threshold():
-    """3 swaps among 4 segments, threshold=4 → no flags."""
+    """Exactly 3 swaps in a 5s window with threshold=3 → flagged (>= comparison)."""
     segs = [
         _seg(0.0, 0.5, "A"),
         _seg(0.5, 1.0, "B"),
         _seg(1.0, 1.5, "A"),
         _seg(1.5, 2.0, "B"),  # 3 swaps
     ]
-    r = compute_crosstalk_regions(segs, window_sec=5.0, threshold=4)
+    r = compute_crosstalk_regions(segs, window_sec=5.0, threshold=3)
+    assert r["flagged_segments"] == [0, 1, 2, 3]
+
+
+def test_crosstalk_just_below_threshold():
+    """2 swaps among 3 segments, threshold=3 → no flags."""
+    segs = [
+        _seg(0.0, 0.5, "A"),
+        _seg(0.5, 1.0, "B"),
+        _seg(1.0, 1.5, "A"),  # 2 swaps
+    ]
+    r = compute_crosstalk_regions(segs, window_sec=5.0, threshold=3)
     assert r["flagged_segments"] == []
 
 

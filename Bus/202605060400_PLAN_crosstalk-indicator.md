@@ -1,7 +1,7 @@
 ---
 title: "Crosstalk indicator: heuristic flag on segments + waveform stripe for rapid speaker swaps"
 type: bus-plan
-status: in-progress
+status: done
 assigned_to: sonnet
 priority: medium
 created: 2026-05-06
@@ -10,15 +10,28 @@ created_month: 202605
 log_month: 202605
 due: ""
 repeatable: false
-pipeline_phase: executing
+pipeline_phase: complete
 audit_state:
   sufficiency_iterations: 2
   plan_safety_iterations: 1
   last_stage: plan_safety
   last_outcome: success
+last_executor_outcome:
+  outcome: success
+  executed: 2026-05-06
+  diagnostics_summary: "All Steps complete; 10/10 crosstalk tests + 111/111 full suite pass; calibrated to window=10s, threshold=3 (operator-approved after live review); 4 crosstalk regions flagged on real 28-apr session."
+verification_state:
+  state_pass: 5
+  state_fail: 0
+  acceptance_pass: 1
+  acceptance_fail: 0
+  human_pending: []
+  human_verdict: all_pass
+  human_verified_on: 2026-05-06
+  human_verified_against_session: "output/app-control-meeting-28apr_20260506_065459 (real session, threshold tuned during review)"
 linked_decisions:
   - "Crosstalk detection mechanism: heuristic on existing transcript timings (option (a)). Pyannote OSD model (option (b)) is deferred — heuristic works on every existing session immediately and answers the operator's actual question (where in this meeting does it get hard to follow)."
-  - "Heuristic: sliding 5-second window across segments. Count speaker-changes (transitions where seg[i].speaker != seg[i-1].speaker) within window. Threshold 4+ swaps → all segments whose [start, end] intersect that window are flagged crosstalk."
+  - "Heuristic: sliding 10-second window across segments (was 5s, widened during execution after operator review of the bridged 28-apr session). Count speaker-changes (transitions where seg[i].speaker != seg[i-1].speaker) within window. Threshold 3+ swaps → all segments whose [start, end] intersect that window are flagged crosstalk."
   - "Computed entirely on the frontend at transcript-load time. No backend endpoint, no cached state in session.json. Works instantly on existing sessions including bridged ones."
   - "Visual indicator: dual-channel — (1) a coloured dot/stripe on the right edge of every flagged segment row in the transcript pane; (2) a faint coloured stripe drawn in the waveform background covering the time spans of all flagged regions."
   - "Single warning colour for all crosstalk indicators (suggested orange #f0a000, reusing the existing --warn variable so palette stays at 4 colours)."
@@ -194,7 +207,29 @@ The human walkthrough serves as the JS-vs-Python parity gate, not as the algorit
 
 ## Executor Notes
 
-(Empty — to be populated by the executor.)
+**Executed:** 2026-05-06 by parent-session.
+
+**Outcome:** success — all 5 Steps complete; 10/10 crosstalk tests pass; full suite 111/111. Sensitivity calibrated to window=10s, threshold=3 (originally locked at 5s/4) after live review against the real 28-apr session.
+
+**What was done:**
+- Step 1 — `diarizer/webapp/crosstalk.py` written with `compute_crosstalk_regions(segments, window_sec, threshold)`. Algorithm: walk segments in start order; for each i, find maximal j with `segments[j].start - segments[i].start <= window_sec`; count speaker-swaps in [i+1, j]; if ≥ threshold, flag every segment in [i, j] and merge `[segments[i].start, segments[j].end]` into the flagged-ranges list (overlap-touch merge with last entry).
+- Step 1 JS mirror — `computeCrosstalkRegions(segments, windowSec, threshold)` added to `app.js`, byte-aligned with the Python reference. Module-scope `crosstalk` variable holds the result. `recomputeCrosstalk()` helper called from four sites: `init()`, `btn-save` success, `speaker-ok` submit, and `versions-dropdown` change.
+- Step 2 — `.segment.crosstalk { border-right: 3px solid var(--warn); }` added to `style.css`. `renderTranscript` reads `crosstalk.flaggedSegments` and applies the `crosstalk` class plus a tooltip. Orthogonal channels: diff stays on left edge, crosstalk on right edge — no specificity battle.
+- Step 3 — `drawWaveform` now paints `rgba(240, 160, 0, 0.18)` rectangles over `crosstalk.flaggedRanges` BEFORE the amplitude bars, so the stripe sits behind. Visible-window clipping via `timeToX` keeps the stripes correctly positioned at any zoom level.
+- Step 4 — 9 algorithm-correctness fixtures + 1 surface-parity grep test in `tests/diarizer/test_crosstalk.py`. Edge cases covered: empty, single-speaker, two-segment, dense-swaps, sparse-pause, long-segment, threshold boundary, just-below, overlapping-window merge.
+- Step 5 — manual UI walkthrough completed against `output/app-control-meeting-28apr_20260506_065459`. Operator confirmed the indicators look good after sensitivity tuning.
+
+**Sensitivity tuning during review:**
+- Initial defaults (window=5s, threshold=4) flagged 0 regions on the real session — too strict. The bridged TXT-only session has 1-second start-time resolution, suppressing rapid-swap counts.
+- Lowered to threshold=3 → flagged 2 regions (1106s, 1441s). Operator pointed to a region at 7:47-8:24 that should also flag.
+- Probed: that region has multi-speaker exchanges spread over ~10s windows, not the rapid swaps the 5s window catches. Widened to window=10s with threshold=3 → catches all expected regions including 7:55-8:08, 18:22, 24:01, 26:52.
+- Final defaults locked: `window_sec=10.0, threshold=3` in both Python and JS.
+
+**Files modified:**
+- New: `diarizer/webapp/crosstalk.py`, `tests/diarizer/test_crosstalk.py`.
+- Modified: `diarizer/webapp/static/{app.js,style.css}`.
+
+**Blockers:** none.
 
 ## Notes
 
