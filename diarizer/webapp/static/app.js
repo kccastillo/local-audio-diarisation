@@ -26,6 +26,45 @@ let windowStartTime = 0;     // left edge of visible window in seconds
 let syncMode = false;
 let speakerModalRow = null;  // remembered row for focus restoration
 
+// Crosstalk
+let crosstalk = { flaggedSegments: new Set(), flaggedRanges: [] };
+
+// Mirror of diarizer/webapp/crosstalk.py:compute_crosstalk_regions.
+// Algorithm assumes segments[].start is monotonically non-decreasing; the
+// pipeline guarantees this. If a future edit path ever re-orders segments,
+// sort by start before calling.
+function computeCrosstalkRegions(segments, windowSec = 5, threshold = 4) {
+  if (!segments || segments.length === 0) {
+    return { flaggedSegments: new Set(), flaggedRanges: [] };
+  }
+  const flagged = new Set();
+  const ranges = [];
+  const n = segments.length;
+  for (let i = 0; i < n; i++) {
+    let j = i;
+    while (j + 1 < n && segments[j + 1].start - segments[i].start <= windowSec) j++;
+    if (j === i) continue;
+    let swaps = 0;
+    for (let k = i + 1; k <= j; k++) {
+      if (segments[k].speaker !== segments[k - 1].speaker) swaps++;
+    }
+    if (swaps >= threshold) {
+      for (let idx = i; idx <= j; idx++) flagged.add(idx);
+      const newRange = { start: segments[i].start, end: segments[j].end };
+      if (ranges.length && newRange.start <= ranges[ranges.length - 1].end) {
+        ranges[ranges.length - 1].end = Math.max(ranges[ranges.length - 1].end, newRange.end);
+      } else {
+        ranges.push(newRange);
+      }
+    }
+  }
+  return { flaggedSegments: flagged, flaggedRanges: ranges };
+}
+
+function recomputeCrosstalk() {
+  crosstalk = computeCrosstalkRegions(segments);
+}
+
 // ---------- helpers ----------
 
 function fmtTime(s) {
@@ -73,8 +112,21 @@ function drawWaveform() {
   ctx2d.fillRect(0, 0, w, h);
   if (!peaks || peaks.length === 0) return;
 
-  const mid = h / 2;
   const vs = visibleSeconds();
+
+  // Crosstalk background stripes — drawn first, behind the amplitude bars.
+  if (crosstalk.flaggedRanges && crosstalk.flaggedRanges.length) {
+    ctx2d.fillStyle = "rgba(240, 160, 0, 0.18)";  // var(--warn) at low alpha
+    for (const r of crosstalk.flaggedRanges) {
+      const visEnd = windowStartTime + vs;
+      if (r.end < windowStartTime || r.start > visEnd) continue;
+      const x1 = Math.max(0, timeToX(r.start));
+      const x2 = Math.min(w, timeToX(r.end));
+      if (x2 > x1) ctx2d.fillRect(x1, 0, x2 - x1, h);
+    }
+  }
+
+  const mid = h / 2;
   const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent-wave").trim() || "#5fd97a";
   ctx2d.fillStyle = accent;
 
@@ -164,6 +216,10 @@ function renderTranscript() {
     const row = document.createElement("div");
     row.className = "segment";
     row.dataset.index = i;
+    if (crosstalk.flaggedSegments.has(i)) {
+      row.classList.add("crosstalk");
+      row.title = "rapid speaker-swapping in this region";
+    }
 
     const speaker = document.createElement("div");
     speaker.className = "speaker";
@@ -403,6 +459,7 @@ $("speaker-ok").addEventListener("click", (e) => {
   } else {
     segments[idx].speaker = target;
   }
+  recomputeCrosstalk();
   renderTranscript();
   restoreFocus();
 });
@@ -430,6 +487,7 @@ $("btn-save").addEventListener("click", async () => {
   if (!r.ok) { showToast("Save failed: " + r.status); return; }
   const j = await r.json();
   showToast(`Saved ${j.filename}` + (j.wrapped ? " — WRAP! overwrote _00" : ""), j.wrapped ? 8000 : 3000);
+  recomputeCrosstalk();
   await loadVersions();
 });
 
@@ -466,6 +524,7 @@ $("versions-dropdown").addEventListener("change", async (e) => {
   if (!r.ok) { showToast("Load failed"); return; }
   const j = await r.json();
   segments = j.segments || [];
+  recomputeCrosstalk();
   renderTranscript();
 });
 
@@ -511,6 +570,7 @@ async function init() {
   } else {
     segments = JSON.parse(JSON.stringify(originalSegments));
   }
+  recomputeCrosstalk();
   renderTranscript();
   await loadWaveform();
   renderLoop();
