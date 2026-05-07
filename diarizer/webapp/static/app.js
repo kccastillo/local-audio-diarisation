@@ -12,6 +12,9 @@ const ctx2d = canvas.getContext("2d");
 
 let segments = [];          // current edit state
 let originalSegments = [];
+let lastSavedSegments = []; // snapshot of segments at last save (or init/load)
+let diffBaseSegments = []; // what diff view compares CURRENT against (default: original)
+let diffBaseLabel = "original";
 let speakers = [];
 let diffMode = false;
 
@@ -28,6 +31,43 @@ let speakerModalRow = null;  // remembered row for focus restoration
 
 // Crosstalk
 let crosstalk = { flaggedSegments: new Set(), flaggedRanges: [] };
+
+// Active-speaker highlight (left-click on a speaker pill toggles)
+let selectedSpeaker = null;
+let selectedSpeakerRanges = [];
+
+function computeSpeakerRanges(speakerName) {
+  if (!speakerName) return [];
+  const ranges = [];
+  for (const s of segments) {
+    if (s.speaker === speakerName) {
+      if (ranges.length && s.start <= ranges[ranges.length - 1].end) {
+        ranges[ranges.length - 1].end = Math.max(ranges[ranges.length - 1].end, s.end);
+      } else {
+        ranges.push({ start: s.start, end: s.end });
+      }
+    }
+  }
+  return ranges;
+}
+
+function refreshSelectedSpeakerRanges() {
+  // Clear selection if the speaker no longer exists in segments (e.g. all
+  // their segments were renamed away).
+  if (selectedSpeaker && !segments.some(s => s.speaker === selectedSpeaker)) {
+    selectedSpeaker = null;
+  }
+  selectedSpeakerRanges = computeSpeakerRanges(selectedSpeaker);
+}
+
+function setSelectedSpeaker(name) {
+  selectedSpeaker = (selectedSpeaker === name) ? null : name;
+  refreshSelectedSpeakerRanges();
+  // Refresh pill highlight on transcript without rebuilding rows.
+  for (const pill of transcriptEl.querySelectorAll(".speaker")) {
+    pill.classList.toggle("speaker-active", selectedSpeaker !== null && pill.textContent === selectedSpeaker);
+  }
+}
 
 // Mirror of diarizer/webapp/crosstalk.py:compute_crosstalk_regions.
 // Algorithm assumes segments[].start is monotonically non-decreasing; the
@@ -63,6 +103,42 @@ function computeCrosstalkRegions(segments, windowSec = 10, threshold = 3) {
 
 function recomputeCrosstalk() {
   crosstalk = computeCrosstalkRegions(segments);
+}
+
+// ---------- Dirty tracking ----------
+
+function hasUnsavedChanges() {
+  if (segments.length !== lastSavedSegments.length) return true;
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i].text !== lastSavedSegments[i].text) return true;
+    if (segments[i].speaker !== lastSavedSegments[i].speaker) return true;
+  }
+  return false;
+}
+
+function snapshotSaved() {
+  lastSavedSegments = JSON.parse(JSON.stringify(segments));
+}
+
+function hasChangesVsOriginal() {
+  if (segments.length !== originalSegments.length) return true;
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i].text !== originalSegments[i].text) return true;
+    if (segments[i].speaker !== originalSegments[i].speaker) return true;
+  }
+  return false;
+}
+
+function hasAnyChanges() {
+  // Any saved edits on disk OR unsaved differences vs original.
+  const versionsSel = $("versions-dropdown");
+  const editsExist = versionsSel && versionsSel.options.length > 1;
+  return editsExist || hasChangesVsOriginal();
+}
+
+function updateDirtyButtons() {
+  $("btn-save").disabled = !hasUnsavedChanges();
+  $("btn-diff").disabled = !hasAnyChanges();
 }
 
 // ---------- helpers ----------
@@ -128,7 +204,7 @@ function drawWaveform() {
 
   const mid = h / 2;
   const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent-wave").trim() || "#5fd97a";
-  ctx2d.fillStyle = accent;
+  const highlight = getComputedStyle(document.documentElement).getPropertyValue("--accent-speaker").trim() || "#9ddfff";
 
   for (let x = 0; x < w; x++) {
     const t = windowStartTime + (x / w) * vs;
@@ -136,6 +212,13 @@ function drawWaveform() {
     const idx = Math.min(peaks.length - 1, Math.max(0, Math.floor((t / peaksDuration) * peaks.length)));
     const peak = peaks[idx];
     const half = peak * (h / 2);
+    let inSpeaker = false;
+    if (selectedSpeakerRanges.length) {
+      for (const r of selectedSpeakerRanges) {
+        if (t >= r.start && t < r.end) { inSpeaker = true; break; }
+      }
+    }
+    ctx2d.fillStyle = inSpeaker ? highlight : accent;
     ctx2d.fillRect(x, mid - half, 1, half * 2 || 1);
   }
 
@@ -224,8 +307,16 @@ function renderTranscript() {
     const speaker = document.createElement("div");
     speaker.className = "speaker";
     speaker.textContent = seg.speaker || "—";
-    speaker.title = "Click to open speaker dialog";
+    if (selectedSpeaker !== null && seg.speaker === selectedSpeaker) {
+      speaker.classList.add("speaker-active");
+    }
+    speaker.title = "Left-click: highlight this speaker on the waveform · Right-click: rename / reassign";
     speaker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (seg.speaker) setSelectedSpeaker(seg.speaker);
+    });
+    speaker.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
       e.stopPropagation();
       openSpeakerModal(i);
     });
@@ -245,15 +336,24 @@ function renderTranscript() {
     text.contentEditable = "true";
     text.spellcheck = true;
     text.textContent = seg.text || "";
-    text.addEventListener("input", () => { segments[i].text = text.textContent; });
+    text.addEventListener("input", () => {
+      segments[i].text = text.textContent;
+      updateDirtyButtons();
+    });
     text.addEventListener("focus", () => {
       // Focus came in via click or arrow nav — drop sync if currently in sync
       if (syncMode) exitSync();
     });
 
-    // Row body click (anywhere except speaker pill or ts) → drop into edit mode on this row
+    // Row body click (anywhere except speaker pill, ts, or text) → drop into edit mode on this row.
+    // Clicks INSIDE the text cell are NOT hijacked — the browser's native caret-from-click
+    // positioning is what the user wants for inline edits.
     row.addEventListener("click", (e) => {
       if (e.target === speaker || e.target === ts) return;
+      if (e.target === text || text.contains(e.target)) {
+        if (syncMode) exitSync();
+        return;
+      }
       dropOutOfSync(i);
     });
 
@@ -266,9 +366,10 @@ function renderTranscript() {
 
 function renderDiff() {
   transcriptEl.innerHTML = "";
-  const n = Math.max(segments.length, originalSegments.length);
+  const base = diffBaseSegments;
+  const n = Math.max(segments.length, base.length);
   for (let i = 0; i < n; i++) {
-    const o = originalSegments[i];
+    const o = base[i];
     const e = segments[i];
     const row = document.createElement("div");
     row.className = "segment";
@@ -436,16 +537,11 @@ $("speaker-ok").addEventListener("click", (e) => {
   const fromDropdown = $("speaker-existing").value;
   const replaceAll = $("speaker-replace-all").checked;
 
-  // Resolve target label
+  // Resolve target label.
+  // Typing an existing label is treated the same as picking it from the
+  // dropdown — silently reassigns to that speaker, no error.
   let target;
   if (newTrim) {
-    // Uniqueness check (case-sensitive)
-    const existing = uniqueSpeakers(segments);
-    if (existing.includes(newTrim) && newTrim !== currentSpeaker) {
-      e.preventDefault();
-      showToast(`Speaker "${newTrim}" already exists — pick from the dropdown`);
-      return;
-    }
     target = newTrim;
   } else if (fromDropdown) {
     target = fromDropdown;
@@ -456,11 +552,15 @@ $("speaker-ok").addEventListener("click", (e) => {
 
   if (replaceAll && currentSpeaker) {
     for (const s of segments) if (s.speaker === currentSpeaker) s.speaker = target;
+    // Follow the global rename — keep the highlight pinned to the renamed speaker.
+    if (selectedSpeaker === currentSpeaker) selectedSpeaker = target;
   } else {
     segments[idx].speaker = target;
   }
   recomputeCrosstalk();
+  refreshSelectedSpeakerRanges();
   renderTranscript();
+  updateDirtyButtons();
   restoreFocus();
 });
 
@@ -487,14 +587,18 @@ $("btn-save").addEventListener("click", async () => {
   if (!r.ok) { showToast("Save failed: " + r.status); return; }
   const j = await r.json();
   showToast(`Saved ${j.filename}` + (j.wrapped ? " — WRAP! overwrote _00" : ""), j.wrapped ? 8000 : 3000);
+  snapshotSaved();
   recomputeCrosstalk();
   await loadVersions();
+  updateDiffBaseDropdown();
+  updateDirtyButtons();
 });
 
 $("btn-diff").addEventListener("click", () => {
   diffMode = !diffMode;
   $("btn-diff").textContent = diffMode ? "Edit" : "Diff";
   renderTranscript();
+  updateDirtyButtons();
 });
 
 $("btn-export").addEventListener("click", async () => {
@@ -517,6 +621,10 @@ $("btn-export").addEventListener("click", async () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
+$("diff-base-dropdown").addEventListener("change", async (e) => {
+  await setDiffBase(e.target.value);
+});
+
 $("versions-dropdown").addEventListener("change", async (e) => {
   const fn = e.target.value;
   if (!fn) return;
@@ -524,8 +632,11 @@ $("versions-dropdown").addEventListener("change", async (e) => {
   if (!r.ok) { showToast("Load failed"); return; }
   const j = await r.json();
   segments = j.segments || [];
+  snapshotSaved();
   recomputeCrosstalk();
+  refreshSelectedSpeakerRanges();
   renderTranscript();
+  updateDirtyButtons();
 });
 
 async function loadVersions() {
@@ -533,12 +644,43 @@ async function loadVersions() {
   if (!r.ok) return;
   const j = await r.json();
   const sel = $("versions-dropdown");
-  sel.innerHTML = `<option value="">(versions: ${j.edits_on_disk.length})</option>`;
+  sel.innerHTML = `<option value="">(load version: ${j.edits_on_disk.length})</option>`;
   for (const fn of j.edits_on_disk) {
     const opt = document.createElement("option");
     opt.value = fn; opt.textContent = fn;
     sel.appendChild(opt);
   }
+}
+
+async function updateDiffBaseDropdown() {
+  const r = await fetch("/api/session");
+  if (!r.ok) return;
+  const j = await r.json();
+  const sel = $("diff-base-dropdown");
+  if (!sel) return;
+  const previous = sel.value;
+  sel.innerHTML = `<option value="__original__">vs original</option>`;
+  for (const fn of j.edits_on_disk) {
+    const opt = document.createElement("option");
+    opt.value = fn; opt.textContent = `vs ${fn}`;
+    sel.appendChild(opt);
+  }
+  // Preserve previous selection if still valid; else default to original.
+  sel.value = (previous && Array.from(sel.options).some(o => o.value === previous)) ? previous : "__original__";
+}
+
+async function setDiffBase(value) {
+  if (value === "__original__" || !value) {
+    diffBaseSegments = JSON.parse(JSON.stringify(originalSegments));
+    diffBaseLabel = "original";
+  } else {
+    const r = await fetch(`/api/transcript/edit/${encodeURIComponent(value)}`);
+    if (!r.ok) { showToast("Couldn't load version: " + r.status); return; }
+    const j = await r.json();
+    diffBaseSegments = JSON.parse(JSON.stringify(j.segments || []));
+    diffBaseLabel = value;
+  }
+  if (diffMode) renderTranscript();
 }
 
 async function loadWaveform() {
@@ -570,8 +712,13 @@ async function init() {
   } else {
     segments = JSON.parse(JSON.stringify(originalSegments));
   }
+  snapshotSaved();
+  diffBaseSegments = JSON.parse(JSON.stringify(originalSegments));
+  diffBaseLabel = "original";
   recomputeCrosstalk();
   renderTranscript();
+  updateDiffBaseDropdown();
+  updateDirtyButtons();
   await loadWaveform();
   renderLoop();
 }
