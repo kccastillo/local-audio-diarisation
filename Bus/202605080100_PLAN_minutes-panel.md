@@ -45,6 +45,18 @@ The webapp currently shows a transcript panel with synced waveform playback and 
 
 **Offline guarantee caveat:** Using the Generate function sends the full transcript to the Anthropic API. This is opt-in (button press + `ANTHROPIC_API_KEY` env var required). The webapp must not call the API unless explicitly triggered, and the README and ARCHITECTURE must document the caveat prominently.
 
+**Statement schema** (canonical shape for each statement emitted by the LLM and stored in `minutes.json`):
+
+```
+{ id, text, quote, primary_ref, secondary_refs, kind?, ref_resolution?: "exact"|"fuzzy" }
+```
+
+- `quote` — short verbatim snippet from the transcript that the statement is grounded in; emitted by the LLM, used by `resolve_refs` for post-hoc index validation.
+- `primary_ref` — integer segment index; resolved and validated by `resolve_refs`.
+- `secondary_refs` — list of integer segment indices; each resolved independently by `resolve_refs`.
+- `kind` — optional; used for the `tensions` section to distinguish tension statements.
+- `ref_resolution` — optional; present only when fuzzy-match fallback was used for `primary_ref`. Absent (or `"exact"`) when substring match succeeded.
+
 ## Design Decisions Classification
 
 **Already locked** (proposed and affirmed during ideation):
@@ -60,6 +72,9 @@ The webapp currently shows a transcript panel with synced waveform playback and 
 - Top-N (~20) high-amplitude crosstalk windows sent to LLM as `[{start_seg, end_seg, indicator_value}, ...]`
 - Split-pane with draggable vertical divider; both panels visible simultaneously
 - Synchronous generation for MVP (block UI with spinner; ~10–30 s expected)
+- **Generate confirmation:** First-use confirmation modal (per session). Modal text: "Generating minutes will send the full transcript to Anthropic, breaking the offline guarantee. Continue?" Consent remembered for the rest of the session via `sessionStorage`. (Resolved 2026-05-08)
+- **Model selector placement:** Dropdown in the minutes panel UI next to the Generate button. User picks per-run from `claude-sonnet-4-6` (default) or `claude-opus-4-7`. (Resolved 2026-05-08)
+- **`primary_ref` determination:** Hybrid validation. LLM emits both `quote` (short snippet) and `cited_index` per statement. Post-hoc validation: if the quote substring is found in `transcript[cited_index].text`, accept the index. Otherwise fuzzy-match the quote against all segments and use the best match; record `ref_resolution: "fuzzy"` on the statement when fallback fired. Drop statement entirely (omit from minutes) only if no segment scores above a similarity threshold. Same logic applies to `secondary_refs`. (Resolved 2026-05-08)
 
 **Mechanically forced** (downstream consequences of locked decisions):
 
@@ -73,18 +88,17 @@ The webapp currently shows a transcript panel with synced waveform playback and 
 
 **Real judgement calls** (for Human design-review checkpoint before execution):
 
-- Whether Generate requires a confirmation dialog warning that transcript content will be sent to Anthropic (privacy friction vs friction cost)
-- Whether the model selector is a UI dropdown or config-only setting
-- Whether `primary_ref` is determined by the LLM emitting segment indices directly vs LLM emitting quoted snippets that are post-hoc matched to segment indices
+All resolved at design-review checkpoint 2026-05-08.
 
 ## Steps
 
 1. **Add `anthropic` dependency and config defaults.** Update `pyproject.toml` to add `anthropic` to the dependency list. Extend `config/config.yaml` with a `minutes:` block containing: `default_model`, `opus_model`, `top_n_amplitude_windows`, `generation_enabled`.
 
 2. **Build `diarizer/minutes.py`.** Implement:
-   - `build_prompt(transcript, attendees, crosstalk_summary) -> messages` — constructs the messages list for the Anthropic API call. Transcript is formatted as `[{index, speaker, text, start, end}, ...]`; crosstalk_summary is the top-N amplitude windows.
+   - `build_prompt(transcript, attendees, crosstalk_summary) -> messages` — constructs the messages list for the Anthropic API call. Transcript is formatted as `[{index, speaker, text, start, end}, ...]`; crosstalk_summary is the top-N amplitude windows. The prompt instructs the LLM to emit both a `quote` (short verbatim snippet) and a `cited_index` (segment index) for every statement, plus `secondary_refs` as a list of `{quote, cited_index}` objects.
    - `extract_top_n_crosstalk(crosstalk_data, n) -> list` — selects and returns the N highest-amplitude windows from the session crosstalk data.
-   - `generate(transcript, attendees, model) -> minutes_dict` — calls the Anthropic API, parses the JSON response, and validates the schema (all required sections present; each statement has `id`, `text`, `primary_ref`; all refs are valid segment indices). Raises typed exceptions on missing API key, schema violation, and API error.
+   - `generate(transcript, attendees, model) -> minutes_dict` — calls the Anthropic API, parses the JSON response, calls `resolve_refs` to validate and normalise all references, and validates the schema (all required sections present; each statement has `id`, `text`, `primary_ref`; all refs are valid segment indices). Raises typed exceptions on missing API key, schema violation, and API error.
+   - `resolve_refs(statements, transcript) -> statements` — post-hoc reference validation. For each statement's `cited_index`: if `quote` is a substring of `transcript[cited_index].text`, accept the index (exact match). Otherwise, fuzzy-match `quote` against all segments using `difflib.SequenceMatcher`; use the best-matching segment index and set `ref_resolution: "fuzzy"` on the statement. Drop the statement entirely (exclude from output) if the best ratio is below the similarity threshold (0.6). Apply the same exact-then-fuzzy logic to each entry in `secondary_refs`; drop individual secondary refs that fall below threshold rather than dropping the whole statement.
 
 3. **Wire backend endpoints in `app.py`.** Add four routes:
    - `POST /api/minutes/generate` — body `{attendees: [...], model: "..."}`. Reads current session transcript + crosstalk data, calls `diarizer.minutes.generate`, returns the generated minutes object. Does NOT persist — the UI save step is explicit. Returns 4xx with a clear error message if `ANTHROPIC_API_KEY` is not set.
@@ -95,9 +109,10 @@ The webapp currently shows a transcript panel with synced waveform playback and 
 4. **Implement split-pane layout in `index.html` and `style.css`.** Refactor the existing single-panel layout to a horizontal split pane. The transcript panel occupies the left side; the minutes panel occupies the right. A draggable vertical divider separates them. Divider position is persisted in `localStorage`. The minutes panel is visible by default (not hidden behind a toggle) so that click-to-sync is immediately usable when minutes are loaded.
 
 5. **Build the minutes panel UI in `app.js`.** Implement:
-   - Empty state: attendee editor (chip or textarea, pre-filled from `distinctSpeakers()`), model dropdown (`claude-sonnet-4-6` default, `claude-opus-4-7` option), Generate button.
-   - On Generate: disable button, show spinner, call `POST /api/minutes/generate`. On success, render result. On error (including missing API key), show an inline error message.
-   - Render: each section rendered as a labelled collapsible block. Each statement rendered as a clickable line. The `tensions` section uses amber accent styling. Statement click handler: call the existing waveform highlight API for `primary_ref` (full region highlight) and add small tick marks for each `secondary_ref`; scroll the transcript panel to the segment at `primary_ref`.
+   - Empty state: attendee editor (chip or textarea, pre-filled from `distinctSpeakers()`), model selector dropdown (`claude-sonnet-4-6` default, `claude-opus-4-7` option) placed next to the Generate button, Generate button.
+   - First-use confirmation modal: on the first Generate click each session (checked via `sessionStorage` flag), show a modal with the text "Generating minutes will send the full transcript to Anthropic, breaking the offline guarantee. Continue?" If the user confirms, set the `sessionStorage` flag so the modal is not shown again for the rest of the session. If the user cancels, abort the Generate call.
+   - On Generate (after confirmation): disable button, show spinner, call `POST /api/minutes/generate` with the selected model. On success, render result. On error (including missing API key), show an inline error message.
+   - Render: each section rendered as a labelled collapsible block. Each statement rendered as a clickable line. The `tensions` section uses amber accent styling. Statements where `ref_resolution` is `"fuzzy"` are flagged with a visual indicator (e.g. a small warning icon or muted tooltip) to communicate that the anchor was resolved by fuzzy match. Statement click handler: call the existing waveform highlight API for `primary_ref` (full region highlight) and add small tick marks for each `secondary_ref`; scroll the transcript panel to the segment at `primary_ref`.
    - Save button: call `POST /api/minutes/save` with the current in-memory minutes object. Show the returned snapshot filename as a success indicator.
    - Session load: on page load, call `GET /api/minutes`; if a response arrives (200), render the existing minutes and skip the empty state.
 
