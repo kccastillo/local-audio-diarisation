@@ -30,6 +30,15 @@ output:
   include_timestamps: true
   include_speakers: true
 
+minutes:
+  # Optional meeting-minutes generation via the Anthropic API.
+  # Sending transcript content to Anthropic breaks the offline guarantee — feature
+  # is opt-in (Generate button + ANTHROPIC_API_KEY env var).
+  default_model: claude-sonnet-4-6
+  opus_model: claude-opus-4-7
+  top_n_emotive_segments: 15
+  generation_enabled: true
+
 auth:
   # Hugging Face token. Resolution order at runtime:
   #   1. CLI flag --auth-token
