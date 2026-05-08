@@ -1,7 +1,7 @@
 ---
 title: "Meeting-minutes side panel: generate, display, and anchor-sync minutes in the diarizer webapp"
 type: bus-plan
-status: ready
+status: in-progress
 assigned_to: "haiku"
 priority: medium
 created: 2026-05-08
@@ -32,7 +32,7 @@ tag_after: ""
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: ""
-pipeline_phase: "checked"
+pipeline_phase: "executing"
 audit_state:
   sufficiency_iterations: 2
   plan_safety_iterations: 1
