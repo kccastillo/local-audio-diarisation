@@ -45,23 +45,6 @@ python -m diarizer.cli serve "output/meeting_20260506_120000"
 # → opens http://127.0.0.1:8765/ in your browser
 ```
 
-## Generating meeting minutes (online, opt-in)
-
-The webapp includes an optional minutes panel that drafts standard meeting minutes (Agenda, Discussion, Decisions, Action items, Next steps, plus a Tensions / statements-of-interest section) from the transcript. Each minute is anchored to a transcript segment, so clicking a minute highlights the corresponding waveform region and scrolls the transcript to that point.
-
-**This feature is opt-in and breaks the project's offline guarantee.** Clicking *Generate* sends the full transcript text to the [Anthropic API](https://docs.anthropic.com/). The first Generate of each session shows a confirmation modal; if you decline, no data leaves your machine.
-
-To enable it, set an Anthropic API key (obtained from <https://console.anthropic.com/settings/keys>) before launching the webapp:
-
-```powershell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
-python -m diarizer.cli serve "output/meeting_20260506_120000"
-```
-
-Without `ANTHROPIC_API_KEY` set, the rest of the webapp continues to work normally; the *Generate* button returns a clear error and no API call is made. Saved minutes are written to the session directory as `minutes.json` plus per-day numbered snapshots (`minutes_edit_YYYYMMDD_NN.json`), mirroring the transcript edit-snapshot convention.
-
-Model and tuning defaults are in `config/config.yaml` under the `minutes:` block (default model is `claude-sonnet-4-6`; `claude-opus-4-7` is selectable per-run from the panel dropdown).
-
 ### Original syntax (also supported)
 
 ```bash

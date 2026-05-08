@@ -28,42 +28,7 @@
     <canvas id="waveform" width="1600" height="120"></canvas>
   </section>
 
-  <div id="split">
-    <main id="transcript"></main>
-    <div id="pane-divider" title="Drag to resize"></div>
-    <aside id="minutes-panel">
-      <div id="minutes-toolbar">
-        <strong>Meeting minutes</strong>
-        <span class="spacer"></span>
-        <select id="minutes-model">
-          <option value="claude-sonnet-4-6">Sonnet 4.6 (default)</option>
-          <option value="claude-opus-4-7">Opus 4.7</option>
-        </select>
-        <button id="btn-minutes-generate" type="button">Generate</button>
-        <button id="btn-minutes-save" type="button" disabled>Save</button>
-      </div>
-      <div id="minutes-attendees-row">
-        <label>Attendees
-          <input id="minutes-attendees" type="text" placeholder="comma-separated names">
-        </label>
-      </div>
-      <div id="minutes-status" class="hidden"></div>
-      <div id="minutes-body">
-        <div id="minutes-empty" class="muted">No minutes yet — click Generate to create them from the transcript. (Sends transcript content to Anthropic; opt-in.)</div>
-      </div>
-    </aside>
-  </div>
-
-  <dialog id="minutes-confirm-modal">
-    <form method="dialog">
-      <h3>Generate minutes</h3>
-      <p>Generating minutes will send the full transcript to Anthropic, breaking the offline guarantee. Continue?</p>
-      <menu>
-        <button value="cancel">Cancel</button>
-        <button id="minutes-confirm-ok" value="ok">Continue</button>
-      </menu>
-    </form>
-  </dialog>
+  <main id="transcript"></main>
 
   <div id="toast" class="hidden"></div>
 

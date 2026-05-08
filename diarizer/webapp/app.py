@@ -21,7 +21,6 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from diarizer.session import append_edit, load_manifest
-from diarizer import minutes as minutes_mod
 
 
 def _sanitise_json(obj):
@@ -174,9 +173,54 @@ def create_app(session_dir: Path | str) -> FastAPI:
     @app.post("/api/transcript/save")
     async def save_transcript(payload: dict):
         d = _resolve_session_dir(app)
-        candidate, wrapped = _save_numbered_snapshot(d, "transcript_edit_", payload)
-        append_edit(d, candidate.name)
-        return {"filename": candidate.name, "wrapped": wrapped}
+        today = datetime.now().strftime("%Y%m%d")
+        # Find the highest existing NN today
+        existing = sorted(d.glob(f"transcript_edit_{today}_*.json"))
+        existing_nns = []
+        for p in existing:
+            tail = p.stem.rsplit("_", 1)[-1]
+            if tail.isdigit() and len(tail) == 2:
+                existing_nns.append(int(tail))
+        next_nn = (max(existing_nns) + 1) if existing_nns else 0
+        wrapped = False
+        if next_nn > 99:
+            next_nn = 0
+            wrapped = True
+        # O_EXCL atomic create with retry on collision
+        attempts = 0
+        while attempts < 100:
+            candidate = d / f"transcript_edit_{today}_{next_nn:02d}.json"
+            try:
+                fd = os.open(
+                    str(candidate),
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                    0o644,
+                )
+            except FileExistsError:
+                # On wrap, deliberately overwrite per locked D5
+                if wrapped:
+                    candidate.unlink()
+                    fd = os.open(
+                        str(candidate),
+                        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                        0o644,
+                    )
+                else:
+                    next_nn += 1
+                    if next_nn > 99:
+                        next_nn = 0
+                        wrapped = True
+                    attempts += 1
+                    continue
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, indent=2, ensure_ascii=False)
+            except Exception:
+                candidate.unlink(missing_ok=True)
+                raise
+            append_edit(d, candidate.name)
+            return {"filename": candidate.name, "wrapped": wrapped}
+        raise HTTPException(status_code=507, detail="exhausted save retries")
 
     @app.get("/api/waveform")
     async def get_waveform():
@@ -252,135 +296,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         edited = json.loads(edit_path.read_text(encoding="utf-8"))
         return {"segments": _diff_segments(original.get("segments", []), edited.get("segments", []))}
 
-    @app.get("/api/minutes")
-    async def get_minutes():
-        d = _resolve_session_dir(app)
-        p = d / "minutes.json"
-        if not p.exists():
-            raise HTTPException(status_code=404, detail="minutes.json missing")
-        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
-
-    @app.get("/api/minutes/edit/{filename}")
-    async def get_minutes_edit(filename: str):
-        if "/" in filename or "\\" in filename or ".." in filename:
-            raise HTTPException(status_code=400, detail="invalid filename")
-        d = _resolve_session_dir(app)
-        p = d / filename
-        if not p.exists() or not filename.startswith("minutes_edit_"):
-            raise HTTPException(status_code=404, detail="minutes edit not found")
-        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
-
-    @app.post("/api/minutes/generate")
-    async def generate_minutes(payload: dict):
-        d = _resolve_session_dir(app)
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "ANTHROPIC_API_KEY is not set. Minutes generation is opt-in "
-                    "and requires a key from console.anthropic.com."
-                ),
-            )
-        transcript_path = d / "transcript.json"
-        if not transcript_path.exists():
-            raise HTTPException(status_code=404, detail="transcript.json missing")
-        transcript = json.loads(transcript_path.read_text(encoding="utf-8")).get("segments", [])
-
-        peaks_path = d / "waveform_peaks.json"
-        peaks = (
-            json.loads(peaks_path.read_text(encoding="utf-8"))
-            if peaks_path.exists()
-            else {"bins": 0, "duration_s": 0, "peaks": []}
-        )
-
-        attendees = payload.get("attendees") or []
-        model = payload.get("model") or "claude-sonnet-4-6"
-        top_n = int(payload.get("top_n_emotive") or 15)
-
-        try:
-            result = minutes_mod.generate(
-                transcript, attendees, model, peaks, top_n_emotive=top_n
-            )
-        except minutes_mod.MissingAPIKeyError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except minutes_mod.SchemaError as e:
-            raise HTTPException(status_code=502, detail=f"LLM response invalid: {e}")
-        except minutes_mod.APIError as e:
-            raise HTTPException(status_code=502, detail=f"Anthropic API error: {e}")
-
-        result["generated_at"] = datetime.now().isoformat(timespec="seconds")
-        return JSONResponse(_sanitise_json(result))
-
-    @app.post("/api/minutes/save")
-    async def save_minutes(payload: dict):
-        d = _resolve_session_dir(app)
-        candidate, wrapped = _save_numbered_snapshot(d, "minutes_edit_", payload)
-        # Mirror canonical minutes.json to the latest save.
-        canonical = d / "minutes.json"
-        try:
-            canonical.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
-        except OSError:
-            pass
-        return {"filename": candidate.name, "wrapped": wrapped}
-
     return app
-
-
-def _save_numbered_snapshot(d: Path, prefix: str, payload: dict) -> tuple[Path, bool]:
-    """Write `payload` as JSON to the next-numbered snapshot file under `d`.
-
-    Naming: `<prefix><YYYYMMDD>_<NN>.json` with NN per-day, zero-padded to 2 digits.
-    O_EXCL atomic create with retry on collision; wraps to _00 on overflow above
-    99 with deliberate overwrite (matches transcript-edit naming convention).
-
-    Returns (file_path, wrapped). Raises HTTPException(507) if retries exhaust.
-    """
-    today = datetime.now().strftime("%Y%m%d")
-    existing = sorted(d.glob(f"{prefix}{today}_*.json"))
-    existing_nns: list[int] = []
-    for p in existing:
-        tail = p.stem.rsplit("_", 1)[-1]
-        if tail.isdigit() and len(tail) == 2:
-            existing_nns.append(int(tail))
-    next_nn = (max(existing_nns) + 1) if existing_nns else 0
-    wrapped = False
-    if next_nn > 99:
-        next_nn = 0
-        wrapped = True
-    attempts = 0
-    while attempts < 100:
-        candidate = d / f"{prefix}{today}_{next_nn:02d}.json"
-        try:
-            fd = os.open(
-                str(candidate),
-                os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-                0o644,
-            )
-        except FileExistsError:
-            if wrapped:
-                candidate.unlink()
-                fd = os.open(
-                    str(candidate),
-                    os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-                    0o644,
-                )
-            else:
-                next_nn += 1
-                if next_nn > 99:
-                    next_nn = 0
-                    wrapped = True
-                attempts += 1
-                continue
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2, ensure_ascii=False)
-        except Exception:
-            candidate.unlink(missing_ok=True)
-            raise
-        return candidate, wrapped
-    raise HTTPException(status_code=507, detail="exhausted save retries")
 
 
 def _diff_segments(orig: list[dict], edit: list[dict]) -> list[dict]:

@@ -14,8 +14,6 @@ Offline speaker-diarisation and transcription pipeline. A single `Pipeline` clas
 
 The pipeline is designed for the operator's primary use case: cybersecurity meeting transcription on consumer-grade GPUs (8 GB VRAM). Recovery point: the previous five-stage processor architecture is preserved at `git checkout v1-final`.
 
-The transcript-review webapp also exposes an optional, opt-in meeting-minutes panel that calls the Anthropic API; this is the **only** code path that contacts an external service. See *Generating meeting minutes (online, opt-in)* in [README.md](README.md) — using it sends transcript content to Anthropic and breaks the offline guarantee.
-
 ---
 
 ## Pipeline shape

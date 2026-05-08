@@ -32,12 +32,7 @@ tag_after: ""
 closes_thread: ""
 advances_thread: ""
 parent_plan_of_plans: ""
-pipeline_phase: "outcome-verifying"
-last_executor_outcome:
-  outcome: success
-  outcome_subtype: done
-  executed: 2026-05-08
-  diagnostics_summary: "All six steps applied; five shell-runnable verifications pass. Five human-acceptance items pending."
+pipeline_phase: "executing"
 audit_state:
   sufficiency_iterations: 2
   plan_safety_iterations: 1
@@ -162,34 +157,10 @@ All resolved at design-review checkpoint 2026-05-08.
 
 ## Executor Notes
 
-**Executed:** 2026-05-08 (parent-session execution; `plan-executor` subagent unavailable in this Claude Code session — agent files exist on disk but were not registered as `subagent_type` options at session start).
-**Outcome:** success — all six Steps applied; five shell-runnable verifications pass.
+*Populated after execution via `execute-plan`. Leave blank.*
+
+**Executed:**
+**Outcome:**
 **What was done:**
-- Step 1: added `anthropic>=0.40` to `pyproject.toml` and a `minutes:` block to `config/config.yaml` (`default_model`, `opus_model`, `top_n_emotive_segments`, `generation_enabled`).
-- Step 2: created `diarizer/minutes.py` with `extract_emotive_segments`, `build_prompt`, `resolve_refs`, `generate`, plus typed exceptions (`MissingAPIKeyError`, `SchemaError`, `APIError`). Fuzzy threshold = 0.6 via `difflib.SequenceMatcher`. Code-fence stripping handles markdown-wrapped LLM responses.
-- Step 3: factored `_save_numbered_snapshot(d, prefix, payload)` helper at module scope; refactored `save_transcript` to use it; added four routes (`POST /api/minutes/generate`, `GET /api/minutes`, `POST /api/minutes/save`, `GET /api/minutes/edit/{filename}`). Generate returns 400 with explanatory detail when `ANTHROPIC_API_KEY` is unset; `save_minutes` mirrors canonical `minutes.json` to the latest save in addition to writing the numbered snapshot.
-- Step 4: refactored `index.html` to wrap the transcript in a `#split` flex container with `#pane-divider` and a new `#minutes-panel`. Added a `<dialog id="minutes-confirm-modal">`. CSS adds split-pane layout, draggable divider, minutes section/statement styling, tensions accent, and fuzzy-flag indicator.
-- Step 5: extended `app.js` with minutes state (`minutes`, `minutesDirty`, `minutesHighlight`), section/statement render, click-to-anchor (waveform region overlay + secondary tick marks + transcript scroll + auto-pan when zoomed), pre-filled attendees from `uniqueSpeakers`, model dropdown, first-use confirmation modal with `sessionStorage` consent, Generate/Save flows, draggable pane divider with `localStorage`-persisted width, and minutes load on init.
-- Step 6: README now has a "Generating meeting minutes (online, opt-in)" subsection with the offline-guarantee caveat and key-setup instructions; ARCHITECTURE.md adds a one-sentence pointer.
-
-**Verifications run (all pass):**
-- `import anthropic` → 0.100.0
-- `from diarizer.minutes import generate, build_prompt, extract_emotive_segments, resolve_refs` → OK
-- `create_app(<airlock-session>)` → OK (no port binding)
-- 4xx-on-missing-API-key acceptance via TestClient → 400 with detail "ANTHROPIC_API_KEY is not set..."
-- `resolve_refs` fuzzy-match acceptance → returns `primary_ref=1`, `ref_resolution="fuzzy"`
-
-**Server restart:** killed the prior `serve` process (which was running stale code from before this PLAN executed) and restarted on the same airlock session at <http://127.0.0.1:8765/>. The new minutes panel is live for human-acceptance testing.
-
-**Blockers (if any):** none. The `plan-executor` agent unavailability was worked around by parent-session execution; not a blocker for this PLAN's deliverables but worth recording for the harness-level discussion.
-
+**Blockers (if any):**
 **Files modified:**
-- `pyproject.toml`
-- `config/config.yaml`
-- `diarizer/minutes.py` (new)
-- `diarizer/webapp/app.py`
-- `diarizer/webapp/static/index.html`
-- `diarizer/webapp/static/style.css`
-- `diarizer/webapp/static/app.js`
-- `README.md`
-- `ARCHITECTURE.md`
