@@ -13,33 +13,12 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Optional
 
-import math
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from diarizer.session import append_edit, load_manifest
-
-
-def _sanitise_json(obj):
-    """Replace non-finite floats with None so Starlette's strict encoder accepts them.
-
-    Pipeline measurements occasionally produce -Infinity (e.g. noise_floor_dbfs on
-    digital silence). The pipeline writes them as JSON 'Infinity' tokens, which
-    Python's json.loads reads back as Python `float('inf')` — but Starlette's
-    JSONResponse uses strict mode (allow_nan=False) and rejects them on serialise.
-    """
-    if isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
-            return None
-        return obj
-    if isinstance(obj, dict):
-        return {k: _sanitise_json(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_sanitise_json(v) for v in obj]
-    return obj
 
 
 # Keep in sync with diarizer/output.py:_format_timestamp (and the formatting loop
@@ -158,7 +137,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         p = d / "transcript.json"
         if not p.exists():
             raise HTTPException(status_code=404, detail="transcript.json missing")
-        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
+        return JSONResponse(json.loads(p.read_text(encoding="utf-8")))
 
     @app.get("/api/transcript/edit/{filename}")
     async def get_edit(filename: str):
@@ -168,7 +147,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         p = d / filename
         if not p.exists() or not filename.startswith("transcript_edit_"):
             raise HTTPException(status_code=404, detail="edit not found")
-        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
+        return JSONResponse(json.loads(p.read_text(encoding="utf-8")))
 
     @app.post("/api/transcript/save")
     async def save_transcript(payload: dict):

@@ -1,7 +1,7 @@
 ---
 title: "Meeting-minutes side panel: generate, display, and anchor-sync minutes in the diarizer webapp"
 type: bus-plan
-status: in-progress
+status: cancelled
 assigned_to: "haiku"
 priority: medium
 created: 2026-05-08
@@ -39,6 +39,10 @@ audit_state:
   last_stage: plan_safety
   last_outcome: success
 ---
+
+## Cancellation note (2026-05-08)
+
+Implementation completed and verified, then reverted at the Human's request. The Anthropic API key requirement (separate from the Human's existing Claude.ai subscription) was the deciding factor — the Human chose not to ship the feature rather than maintain a second billing relationship for occasional use. Implementation is preserved in git history (commit `2a0a7d3`, reverted by `dc630ce`) and can be reinstated by reverting the revert if the cost question changes. PLAN retained for the audit trail.
 
 ## Objective
 
