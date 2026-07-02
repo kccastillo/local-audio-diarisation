@@ -1,62 +1,57 @@
 ---
 schema_version: 2
-title: "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop launcher, test count)"
+title: Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop
+  launcher, test count)
 type: plan
 status: ready
 assigned_to: sonnet
 priority: low
 created: 2026-07-02
-created_by: "Claude (Opus 4.8)"
+created_by: Claude (Opus 4.8)
 created_month: 202607
 log_month: 202607
-due: ""
+due: ''
 repeatable: false
-repeat_cadence: ""
+repeat_cadence: ''
 linked_decisions: []
 linked_inputs: []
-blocked_by: ""
+blocked_by: ''
 rollover_count: 0
 triggers_plans: []
-closes_thread: ""
-advances_thread: ""
-parent_plan_of_plans: ""
+closes_thread: ''
+advances_thread: ''
+parent_plan_of_plans: ''
 pipeline_phase: drafted
-
-# Ideate cadence fields (orchestrator-managed — set by ideate skill; never human-edited directly)
-ideate_phase: ""
+ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
   self_critique: 0
   spec_refine: 0
-ideate_reconcile_outcome: ""
-
-# Orthogonal classification (author-populated)
-tags: [docs, architecture, freshness]
-files_touched: [ARCHITECTURE.md]
-substrate_files: [ARCHITECTURE.md, README.md, diarizer/cli.py, diarizer/session.py]
-
-# Human-authority fields (HUMAN-EDITED ONLY — orchestrator never auto-modifies these)
+ideate_reconcile_outcome: ''
+tags:
+- docs
+- architecture
+- freshness
+files_touched:
+- ARCHITECTURE.md
+substrate_files:
+- ARCHITECTURE.md
+- README.md
+- diarizer/cli.py
+- diarizer/session.py
 audit_acknowledgements: []
-
 audit_disputes: []
-
 audit_overrides: []
-
 audit_extracted: null
-
 pipeline_overrides: []
-
 halt_log: []
-
-# Orchestrator-managed fields (do not hand-edit; orchestrator writes these)
 audit_state:
-  sufficiency_iterations: 0
+  sufficiency_iterations: 1
   plan_safety_iterations: 0
-  last_stage: none
-  last_outcome: none
-  last_audit_commit: ""
-  preferred_model_override: ""
-
+  last_stage: sufficiency
+  last_outcome: revision_needed
+  last_audit_commit: ''
+  preferred_model_override: ''
 verification_state:
   state_pass: 0
   state_fail: 0
@@ -64,7 +59,7 @@ verification_state:
   acceptance_fail: 0
   human_pending: []
   human_verdict: pending
-  human_diagnostics: ""
+  human_diagnostics: ''
   human_acknowledged_failures: []
   failure_logs: {}
   human_passed: false

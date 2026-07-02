@@ -1,0 +1,18 @@
+{
+  "outcome": "revision_needed",
+  "payload": {
+    "blockers_count": 2,
+    "review_text": "Sufficiency audit of PLAN-AA1 (documentation-only ARCHITECTURE.md refresh). 2 blockers, both targeting Objective requirement (3) test-count reconciliation. BLOCKER 1 (S001/S002): the requirement-3 acceptance counts collected tests via len([l for l in stdout if '::' in l]); under installed pytest 9.0.3, --collect-only -q emits a TREE format (<Module>/<Function>/<Coroutine>) with ZERO '::' lines, so c==0 trips assert c>0 and the acceptance can never pass. Fix: count <Function/<Coroutine node lines or parse the 'N tests collected' summary; validate against installed pytest. BLOCKER 2 (S201/S402): Step 3 enumerates a fixed SIX-file breakdown but live collection is 111 tests across EIGHT files (adds test_crosstalk.py, test_webapp_smoke.py); the breakdown cannot sum to 111 by editing only the six named files. Fix: derive the current file set from live per-file collection, add the new files, rebuild the 'covering' narrative. Requirements (1) config-default and (2) launcher/skip/--force are sufficient. ADVISORY (H4, warn): Context does not enumerate the pytest collect-output format the acceptance parses (root cause of Blocker 1). Nits: README '85 tests' stays stale (out of scope); ARCHITECTURE frontmatter last_updated not bumped; '{c} tests' substring-matches inside '{c} unit tests'. PSZ001 not triggered (3 steps). Both blockers mechanically forced.",
+    "triaged_human_items": [
+      {"class": "mechanically_forced", "item": "Corrected pytest-collection predicate: match installed pytest 9.0.3 tree output (count <Function/<Coroutine lines or 'N tests collected' summary) rather than filtering '::'."},
+      {"class": "mechanically_forced", "item": "Rebuild per-file breakdown from live per-file --collect-only (eight files, 111 total) rather than adjusting a fixed six-file list."},
+      {"class": "already_locked", "item": "Keep ARCHITECTURE.md (not retire); documentation-only; three-doc no-duplication split preserved."}
+    ],
+    "findings": [
+      {"code": "S002", "level": "error", "category": "assumptions", "location": "Verification line 110 (requirement-3 acceptance)", "message": "Acceptance counts '::' lines; pytest 9.0.3 --collect-only -q emits tree format with zero '::' lines, so c==0 and assert c>0 fails unconditionally. Acceptance can never pass.", "suggested_fix": "Count <Function/<Coroutine node lines or parse the terminal 'N tests collected' summary; validate against installed pytest."},
+      {"code": "S402", "level": "error", "category": "validation-path", "location": "Step 3", "message": "Fixed six-file per-file breakdown cannot sum to the live total of 111 tests across eight files (adds test_crosstalk.py, test_webapp_smoke.py). Executor would be instructed to author an internally contradictory breakdown.", "suggested_fix": "Derive current file set from live per-file --collect-only; add the two new files; rebuild the 'covering' narrative and counts so they sum to the collected total."},
+      {"code": "S999", "level": "warning", "category": "OTHER", "location": "Context / Step 3", "message": "H4 calling-convention: Context does not enumerate the pytest --collect-only output format the acceptance parses. Root cause of Blocker 1.", "suggested_fix": "Note in Context the installed pytest's collect output format and the counting method used."}
+    ]
+  },
+  "diagnostics": {}
+}
