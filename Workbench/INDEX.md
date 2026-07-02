@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:00:35Z by build_index.py v1_
+_Generated: 2026-07-02T14:04:46Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -118,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `c39a162` | 2026-07-03 | plan-pipeline: audit-revised PLAN-AA1_architecture-freshness-refresh.md (suff... |
+| `dc36e36` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `1fa3362` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 | `fb7b882` | 2026-07-03 | plan-pipeline: audit_state update - sufficiency:revision_needed |
 | `a5e2950` | 2026-07-02 | plan-pipeline: update-workbench-index |
@@ -126,8 +128,6 @@ _No dependencies defined._
 | `3d6f302` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `4f4dab1` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `5f28166` | 2026-07-02 | plan-pipeline: retired PLAN-AA0_just-run-packaging.md |
-| `4866584` | 2026-07-02 | plan-pipeline: complete PLAN-AA0_just-run-packaging.md |
-| `3f4c9e0` | 2026-07-02 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 
