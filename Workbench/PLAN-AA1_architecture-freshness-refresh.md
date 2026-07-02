@@ -3,7 +3,7 @@ schema_version: 2
 title: Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop
   launcher, test count)
 type: plan
-status: in-progress
+status: done
 assigned_to: sonnet
 priority: low
 created: 2026-07-02
@@ -21,7 +21,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: outcome-verifying
+pipeline_phase: complete
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
