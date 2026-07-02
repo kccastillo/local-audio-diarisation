@@ -56,11 +56,12 @@ audit_state:
   last_audit_commit: 3ad4f578
   preferred_model_override: ''
 verification_state:
-  state_pass: 0
+  state_pass: 5
   state_fail: 0
-  acceptance_pass: 0
+  acceptance_pass: 2
   acceptance_fail: 0
-  human_pending: []
+  human_pending:
+  - 'drag a real .m4a onto Transcribe.cmd: it runs end-to-end and the transcript carries speaker labels (diarisation ran); dragging an already-processed file prints the skip message and exits without reprocessing; dragging the same already-processed file with --force reprocesses it end-to-end. # platform: windows'
   human_verdict: pending
   human_diagnostics: ''
   human_acknowledged_failures: []
