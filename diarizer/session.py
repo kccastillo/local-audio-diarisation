@@ -9,6 +9,7 @@ transcript, and any later edit sidecars. The webapp reads all of these via
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -44,6 +45,48 @@ def create_session_dir(base_output_dir: Path | str, source_path: Path | str) -> 
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
     return session_dir
+
+
+def find_completed_session(base_output_dir: Path | str, stem: str) -> Path | None:
+    """Return the lexicographically-newest completed session directory for *stem*, or None.
+
+    A session directory is considered complete when it contains ALL of:
+    ``session.json``, ``transcript.json``, and ``source.opus``.
+
+    Notes:
+    - A partial or crashed session (missing any of the three artefacts) does NOT
+      count as complete; a subsequent run can safely overwrite it.
+    - Matching is stem-based and extension-insensitive: ``foo.wav`` and ``foo.m4a``
+      both have stem ``foo`` and will match the same set of session directories.
+    - Returns ``None`` when ``base_output_dir`` does not exist or contains no
+      qualifying directories.
+    """
+    base = Path(base_output_dir)
+    if not base.exists():
+        return None
+
+    _TIMESTAMP_SUFFIX = re.compile(r"^\d{8}_\d{6}$")
+    required_artefacts = {"session.json", "transcript.json", "source.opus"}
+
+    candidates: list[Path] = []
+    for entry in base.iterdir():
+        if not entry.is_dir():
+            continue
+        # Name must be exactly "<stem>_<timestamp>" where timestamp = YYYYMMDD_HHMMSS
+        name = entry.name
+        prefix = f"{stem}_"
+        if not name.startswith(prefix):
+            continue
+        suffix = name[len(prefix):]
+        if not _TIMESTAMP_SUFFIX.match(suffix):
+            continue
+        # All three artefacts must be present.
+        if all((entry / artefact).exists() for artefact in required_artefacts):
+            candidates.append(entry)
+
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.name)
 
 
 def load_manifest(session_dir: Path | str) -> dict:

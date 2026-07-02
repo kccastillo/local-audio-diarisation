@@ -20,7 +20,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: executing
+pipeline_phase: outcome-verifying
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
@@ -66,6 +66,19 @@ verification_state:
   human_acknowledged_failures: []
   failure_logs: {}
   human_passed: false
+last_executor_outcome:
+  outcome: success
+  outcome_subtype: done
+  executed: 2026-07-02
+  diagnostics_summary: >
+    All 7 steps completed. DEFAULT_CONFIG constant added to cli.py; config guard
+    added to _run; find_completed_session added to session.py (with re import);
+    --force flag and skip logic wired into cli.py; Transcribe.cmd created at
+    project root; README.md updated with drag-and-drop section; CLAUDE.md Diarizer
+    CLI bullet updated. One post-execution note for the orchestrator/operator: the
+    auto-memory file feedback_diarizer_config_flag.md (~/.claude/projects/) is now
+    stale — it is outside the repo and was not edited by this executor. Flag for
+    manual update or retirement.
 ---
 
 ## Objective
@@ -142,10 +155,31 @@ Platform note: the launcher (`Transcribe.cmd`) and the drag-drop gesture are Win
       `verify: human # platform: windows`
 
 ## Executor Notes
-*Populated after execution via `execute-plan`. Leave blank.*
 
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-07-02
+**Outcome:** done
+
 **What was done:**
-**Blockers (if any):**
+
+Step 1 — `diarizer/cli.py`: Added `DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "config" / "config.yaml"` as a module-level constant. Changed `--config` default from `None` to `DEFAULT_CONFIG` and updated its help text. Also extended the `from diarizer.session import` line to include `find_completed_session` (needed for Step 4).
+
+Step 2 — `diarizer/cli.py`: Added `if not args.config.exists(): print(..., file=sys.stderr); return 2` immediately after the `if not args.input.exists()` block in `_run`.
+
+Step 3 — `diarizer/session.py`: Added `import re` to the module imports (was not previously present — auditor advisory honoured). Added `find_completed_session(base_output_dir, stem)` function with full docstring covering the three-artefact completeness requirement, stem-based matching, and extension-insensitivity. Uses `re.compile(r"^\d{8}_\d{6}$")` to match the `%Y%m%d_%H%M%S` timestamp suffix.
+
+Step 4 — `diarizer/cli.py`: Added `--force` argument to `_add_run_args`. In `_run`, after `_apply_overrides`, added the explicit-assign pattern per auditor advisory: `existing = find_completed_session(...)` then `if existing: print(...); return 0`. Skip block sits between `_apply_overrides` and `pipeline = Pipeline(config)`.
+
+Step 5 — Created `Transcribe.cmd` at the project root. `@echo off`; `cd /d "%~dp0"`; empty-arg usage message + pause; multi-arg note (`Note: only the first dropped file is processed.`) per auditor advisory; invokes `"%~dp0venv\Scripts\python.exe" -m diarizer.cli run --input "%~1"`; terminates with `pause`.
+
+Step 6 — `README.md`: Added `## Just run (drag-and-drop)` section before the existing `## Run the pipeline` section, covering `Transcribe.cmd`, the no-`--config` default, and the skip/`--force` behaviour.
+
+Step 7 — `CLAUDE.md`: Replaced the stale "**Diarizer CLI:**" bullet (above the `plan-foundry:init-plan-foundry:start` sentinel) with the updated text noting that `config/config.yaml` is now the built-in default, `--config` is override-only, and the footgun is closed as of PLAN-AA0. The sentinel block and everything below it was not touched.
+
+**Blockers (if any):** None. One item flagged for orchestrator/operator: `~/.claude/projects/.../feedback_diarizer_config_flag.md` is now stale (out-of-repo, not an executor edit).
+
 **Files modified:**
+- `D:\projects\diarizer\diarizer\cli.py`
+- `D:\projects\diarizer\diarizer\session.py`
+- `D:\projects\diarizer\Transcribe.cmd` (created)
+- `D:\projects\diarizer\README.md`
+- `D:\projects\diarizer\CLAUDE.md`

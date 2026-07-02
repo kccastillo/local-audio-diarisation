@@ -31,6 +31,10 @@ pip install -r requirements.txt
 
 FFmpeg must be available on `PATH`. The pyannote diarisation models require a Hugging Face access token (see *Configuration* below).
 
+## Just run (drag-and-drop)
+
+Drag an audio file onto `Transcribe.cmd` at the project root. The launcher invokes the venv Python directly, so no terminal or flags are needed. `config/config.yaml` is the built-in default — `--config` is no longer required. If the dropped file has already been processed, the run is skipped with a message; pass `--force` on the command line to reprocess it.
+
 ## Run the pipeline
 
 The CLI uses two subcommands: `run` (the pipeline) and `serve` (the transcript-review webapp). Legacy `--input` invocations are auto-routed to `run` for back-compat.

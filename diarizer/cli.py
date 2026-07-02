@@ -19,15 +19,17 @@ from pathlib import Path
 from diarizer.config import Config, load_config
 from diarizer.output import write_opus, write_output
 from diarizer.pipeline import Pipeline
-from diarizer.session import create_session_dir
+from diarizer.session import create_session_dir, find_completed_session
 
 
 SUBCOMMANDS = {"run", "serve"}
 
+DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
+
 
 def _add_run_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--input", "-i", type=Path, required=True, help="Path to input audio or video file.")
-    p.add_argument("--config", "-c", type=Path, default=None, help="Path to YAML config (default: baked-in defaults).")
+    p.add_argument("--config", "-c", type=Path, default=DEFAULT_CONFIG, help="Path to YAML config (default: <repo>/config/config.yaml).")
     p.add_argument("--output", "-o", type=Path, default=None, help="Output path (default: <output_dir>/<input-stem>.<format>).")
     p.add_argument("--format", "-f", choices=["txt", "json", "srt"], default=None, help="Output format override.")
     p.add_argument("--model", default=None, help="Whisper model name override (e.g. large-v3-turbo, medium).")
@@ -43,6 +45,8 @@ def _add_run_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--initial-prompt-file", type=Path, default=None, help="File with initial prompt.")
     p.add_argument("--no-session-dir", action="store_true",
                    help="Skip session-dir creation (legacy single-file output only).")
+    p.add_argument("--force", action="store_true",
+                   help="Reprocess even if a completed session for this file already exists.")
     p.add_argument("--verbose", "-v", action="store_true", help="Enable debug logging.")
 
 
@@ -111,8 +115,19 @@ def _run(args: argparse.Namespace) -> int:
         print(f"Input not found: {args.input}", file=sys.stderr)
         return 2
 
+    if not args.config.exists():
+        print(f"Config not found: {args.config}", file=sys.stderr)
+        return 2
+
     config = load_config(args.config)
     config = _apply_overrides(config, args)
+
+    if not args.force:
+        existing = find_completed_session(Path(config.paths.output_dir), args.input.stem)
+        if existing:
+            print(f"Already processed: {existing}. Use --force to reprocess.")
+            return 0
+
     output_path = _resolve_output_path(args, config)
 
     pipeline = Pipeline(config)

@@ -23,7 +23,7 @@ Offline speaker-diarisation + transcription pipeline (faster-whisper + pyannote.
 
 ## Project operating rules
 
-- **Diarizer CLI:** always pass `--config config/config.yaml` to `diarizer.cli run` — otherwise the HF token (`auth.token_path`) does not resolve and diarisation silently skips with no speaker attribution.
+- **Diarizer CLI:** `config/config.yaml` is now the built-in default; `--config` is an optional override only. The HF token (`auth.token_path`) resolves without any flag — the old always-pass-`--config` footgun is closed as of PLAN-AA0.
 - **Bash:** single-operation calls only — no `&&` / `;` / pipes chaining distinct operations. See `.claude/CONSTITUTION.md` § Bash compounds.
 - **Delegate** read-heavy searches (>5 files or >1500 lines) to a subagent.
 - Cross-session state lives in `memory/MEMORY.md`.
