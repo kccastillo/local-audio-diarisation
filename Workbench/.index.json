@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T10:38:44Z",
+  "generated_at": "2026-07-02T10:48:41Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
     "total_plans": 1,
     "by_phase": {
-      "drafted": 1
+      "checked": 1
     },
     "by_status": {
       "ready": 1
@@ -38,7 +38,7 @@
       "status": "ready",
       "assigned_to": "sonnet",
       "priority": "medium",
-      "pipeline_phase": "drafted",
+      "pipeline_phase": "checked",
       "schema_version": "2",
       "created": "2026-07-02",
       "due": null,
@@ -50,8 +50,8 @@
       "files_touched": [],
       "audit_history": {
         "sufficiency_iterations": 2,
-        "plan_safety_iterations": 0,
-        "last_stage": "sufficiency",
+        "plan_safety_iterations": 1,
+        "last_stage": "plan_safety",
         "last_outcome": "success"
       },
       "ideate_phase": ""
@@ -60,6 +60,26 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "81b60d8",
+      "date": "2026-07-02 20:48:41 +1000",
+      "message": "plan-pipeline: checked PLAN-AA0_just-run-packaging.md"
+    },
+    {
+      "sha": "01ab4cc",
+      "date": "2026-07-02 20:48:19 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
+    },
+    {
+      "sha": "3ad4f57",
+      "date": "2026-07-02 20:48:19 +1000",
+      "message": "plan-pipeline: audit_state update - plan_safety:success"
+    },
+    {
+      "sha": "bede011",
+      "date": "2026-07-02 20:38:45 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "4ec48b6",
       "date": "2026-07-02 20:38:35 +1000",
@@ -89,26 +109,6 @@
       "sha": "583bee9",
       "date": "2026-07-02 20:29:01 +1000",
       "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
-    },
-    {
-      "sha": "171a06b",
-      "date": "2026-07-02 20:29:01 +1000",
-      "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
-    },
-    {
-      "sha": "2cf7438",
-      "date": "2026-05-08 13:39:34 +1000",
-      "message": "plan-pipeline: executing Bus/202605080100_PLAN_minutes-panel.md"
-    },
-    {
-      "sha": "941ed91",
-      "date": "2026-05-08 11:54:57 +1000",
-      "message": "plan-pipeline: plan_safety:success \u00e2\u2020\u2019 checked Bus/202605080100_PLAN_minutes-panel.md"
-    },
-    {
-      "sha": "f3f68f8",
-      "date": "2026-05-08 11:53:28 +1000",
-      "message": "plan-pipeline: audit_state update \u00e2\u20ac\u201d sufficiency:success"
     }
   ]
 }
