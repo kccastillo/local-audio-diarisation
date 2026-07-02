@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import json
 import os
+import unicodedata
 from datetime import datetime
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Optional
+
+import math
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
@@ -19,6 +22,25 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from diarizer.session import append_edit, load_manifest
+
+
+def _sanitise_json(obj):
+    """Replace non-finite floats with None so Starlette's strict encoder accepts them.
+
+    Pipeline measurements occasionally produce -Infinity (e.g. noise_floor_dbfs on
+    digital silence). The pipeline writes them as JSON 'Infinity' tokens, which
+    Python's json.loads reads back as Python `float('inf')` — but Starlette's
+    JSONResponse uses strict mode (allow_nan=False) and rejects them on serialise.
+    """
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _sanitise_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitise_json(v) for v in obj]
+    return obj
 
 
 # Keep in sync with diarizer/output.py:_format_timestamp (and the formatting loop
@@ -72,6 +94,12 @@ def _resolve_session_dir(app: FastAPI) -> Path:
     if not isinstance(d, Path):
         d = Path(d)
     return d
+
+
+def _header_safe_filename(name: str) -> str:
+    """Replace Unicode space variants with ASCII space, then strip any remaining non-latin-1 chars."""
+    normalized = "".join(" " if unicodedata.category(c) == "Zs" else c for c in name)
+    return normalized.encode("latin-1", errors="replace").decode("latin-1")
 
 
 def create_app(session_dir: Path | str) -> FastAPI:
@@ -137,7 +165,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         p = d / "transcript.json"
         if not p.exists():
             raise HTTPException(status_code=404, detail="transcript.json missing")
-        return JSONResponse(json.loads(p.read_text(encoding="utf-8")))
+        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
 
     @app.get("/api/transcript/edit/{filename}")
     async def get_edit(filename: str):
@@ -147,7 +175,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         p = d / filename
         if not p.exists() or not filename.startswith("transcript_edit_"):
             raise HTTPException(status_code=404, detail="edit not found")
-        return JSONResponse(json.loads(p.read_text(encoding="utf-8")))
+        return JSONResponse(_sanitise_json(json.loads(p.read_text(encoding="utf-8"))))
 
     @app.post("/api/transcript/save")
     async def save_transcript(payload: dict):
@@ -242,7 +270,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         payload = json.loads(src.read_text(encoding="utf-8"))
         body = _format_segments_as_txt(payload.get("segments", []))
         manifest = load_manifest(d)
-        filename = f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt"
+        filename = _header_safe_filename(f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt")
         return PlainTextResponse(
             body,
             media_type="text/plain; charset=utf-8",
@@ -254,7 +282,7 @@ def create_app(session_dir: Path | str) -> FastAPI:
         d = _resolve_session_dir(app)
         body = _format_segments_as_txt(payload.get("segments", []))
         manifest = load_manifest(d)
-        filename = f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt"
+        filename = _header_safe_filename(f"{manifest.get('source_basename', 'export')}_export_{datetime.now().strftime('%Y%m%d')}.txt")
         return PlainTextResponse(
             body,
             media_type="text/plain; charset=utf-8",

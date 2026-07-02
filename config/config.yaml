@@ -38,4 +38,4 @@ auth:
   #   4. env HF_TOKEN
   #   5. env HUGGING_FACE_HUB_TOKEN
   hf_token: null
-  token_path: null   # e.g. "D:/Projects/Tokens/kc_diariser.txt"
+  token_path: "D:/Projects/Tokens/kc_diariser.txt"
