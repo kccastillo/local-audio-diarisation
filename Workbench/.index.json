@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:11:20Z",
+  "generated_at": "2026-07-02T14:13:13Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -61,6 +61,16 @@
   "dependencies": [],
   "recent_transitions": [
     {
+      "sha": "097fabb",
+      "date": "2026-07-03 00:13:12 +1000",
+      "message": "plan-pipeline: audit-revised PLAN-AA1 (plan-safety H302 Step3 no-shell + H999 portable verifies, pre re-audit)"
+    },
+    {
+      "sha": "bccee56",
+      "date": "2026-07-03 00:11:20 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
+    {
       "sha": "5a100d7",
       "date": "2026-07-03 00:11:10 +1000",
       "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
@@ -99,16 +109,6 @@
       "sha": "dc36e36",
       "date": "2026-07-03 00:00:35 +1000",
       "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "1fa3362",
-      "date": "2026-07-03 00:00:24 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
-    },
-    {
-      "sha": "fb7b882",
-      "date": "2026-07-03 00:00:24 +1000",
-      "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
     }
   ]
 }
