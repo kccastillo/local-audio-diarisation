@@ -94,24 +94,24 @@ Three drifts were identified (2026-07-02):
 
 2. **Document the drag-drop launcher and skip/`--force` behaviour (`ARCHITECTURE.md`).** In the "## Module layout" section, add a repo-root entry for `Transcribe.cmd` — a Windows drag-drop launcher that runs one dropped file through `diarizer.cli run`. Add a concise note (one to two sentences, matching the doc's voice) — placed near the `cli.py` entry or adjacent to the session-directory description in the webapp section — stating that the CLI skips a source file whose stem already has a completed session directory (containing all three of `session.json`, `transcript.json`, `source.opus`) and that `--force` reprocesses; name `find_completed_session` in `diarizer/session.py` as the implementing check.
 
-3. **Reconcile the unit-test count (`ARCHITECTURE.md`).** Before editing, run `python -m pytest tests/diarizer --collect-only -q` and read the live total from the `N tests collected` summary line in its output. Also derive each test file's count from the per-`<Module>` groupings in the same output (or by running per-file collection separately). Use these live numbers — do NOT hardcode the numbers from this PLAN. Then:
+3. **Reconcile the unit-test count (`ARCHITECTURE.md`).** Using the verified ground-truth numbers recorded in the Context 'Test count' bullet — total 111 tests across 8 files: test_config.py (14), test_crosstalk.py (10), test_gates.py (29), test_measurement.py (8), test_output.py (9), test_pipeline.py (16), test_preprocessing.py (9), test_webapp_smoke.py (16) — edit ARCHITECTURE.md with Read/Edit only. Do NOT run pytest or any shell command; you have no shell. These numbers were verified live by the orchestrator on 2026-07-03, and the acceptance: items in the Verification section re-derive the live count in the orchestrator's parent context to catch any drift.
 
-   (a) Update BOTH stated totals in ARCHITECTURE.md to the live collected total: the "## Module layout" tree line (currently "79 unit tests") and the "## Testing" lead-in (currently "79 tests covering").
+   (a) Update BOTH stated totals to 111: the "## Module layout" tree line ("79 unit tests" -> "111 unit tests") and the "## Testing" lead-in ("79 tests covering" -> "111 tests covering").
 
-   (b) REBUILD the entire per-file breakdown list under "## Testing" to enumerate ALL current test files. As of 2026-07-02, ground truth is 8 files — test_config.py (14), test_crosstalk.py (10), test_gates.py (29), test_measurement.py (8), test_output.py (9), test_pipeline.py (16), test_preprocessing.py (9), test_webapp_smoke.py (16) — summing to 111. The executor must re-derive these counts live; the totals here are the expected result but live collection is authoritative. The rebuilt breakdown must include all files present in the live collection output, with each file's live count, so the per-file counts sum exactly to the stated total. For any new files not described in the prior breakdown (currently test_crosstalk.py = cross-talk/overlap handling; test_webapp_smoke.py = webapp smoke tests), glance at each file's contents to confirm an accurate short parenthetical description.
+   (b) Rebuild the per-file breakdown under "## Testing" to enumerate all eight files with the counts above — this means adding the two currently-absent files (test_crosstalk.py, test_webapp_smoke.py) and correcting the stale counts (test_config.py 9->14, test_gates.py 28->29) — so the per-file counts sum exactly to 111. For each of the two added files, write a short accurate parenthetical description by reading that test file's contents (test_crosstalk.py: cross-talk / speaker-overlap handling; test_webapp_smoke.py: webapp smoke tests) — reading source/test files is allowed; only editing them is forbidden.
 
-   (c) Do NOT modify any test file or source file — this Step edits only ARCHITECTURE.md.
+   (c) Do NOT modify any test file or source file — this Step edits ARCHITECTURE.md only.
 
 ## Verification
 
 - [ ] Config-default correction present.
-      `verify: grep -q "built-in default" ARCHITECTURE.md`
+      `verify: python -c "import pathlib; assert 'built-in default' in pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); print('OK')"`
 - [ ] Launcher documented.
-      `verify: grep -q "Transcribe.cmd" ARCHITECTURE.md`
+      `verify: python -c "import pathlib; assert 'Transcribe.cmd' in pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); print('OK')"`
 - [ ] Skip / --force behaviour documented.
-      `verify: grep -q -- "--force" ARCHITECTURE.md`
+      `verify: python -c "import pathlib; assert '--force' in pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); print('OK')"`
 - [ ] Skip-detection helper referenced.
-      `verify: grep -q "find_completed_session" ARCHITECTURE.md`
+      `verify: python -c "import pathlib; assert 'find_completed_session' in pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); print('OK')"`
 - [ ] Acceptance — config-default phrasing corrected and the stale "is the example." sentence removed (requirement 1).
       `acceptance: python -c "import pathlib; t=pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); assert 'built-in default' in t, 'missing built-in default'; assert 'is the example. All sections' not in t, 'stale sentence remains'; print('OK')"`
 - [ ] Acceptance — stated total equals live collected count, in both the layout line and the Testing lead-in (requirement 3).
