@@ -140,3 +140,11 @@ secrets.*
 .Trashes
 ehthumbs.db
 Thumbs.db
+Workbench/.heartbeat/
+.plan-foundry-tmp/
+.claude/skills/
+.claude/agents/
+.claude/commands/
+.claude/hooks/
+.claude/.plan-foundry-bundle-version
+.claude/_foundry_log.jsonl

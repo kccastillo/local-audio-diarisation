@@ -7,7 +7,7 @@ author: Claude (pre-plan_foundry-install session)
 
 # Handoff — diarizer webapp/packaging work + project-context preservation
 
-*plan_foundry has just been (or is about to be) installed over a bespoke `Bus/`-based harness; this file carries forward (a) four work requests to turn into PLANs, (b) the project-only parts of the old `CLAUDE.md`, and (c) project memories/conventions — all of which the harness swap may otherwise lose.*
+*plan_foundry has been installed over a bespoke `Bus/`-based (older-plan_foundry) harness and the swap is COMPLETE (bundle sha 03dd46a2). This file carries forward (a) four work requests to turn into PLANs, (b) the project-only parts of the old `CLAUDE.md`, and (c) project memories/conventions. If you are reading this post-restart via `rehydrate-handoff`: the harness is ready — proceed to author the PLANs in Next steps.*
 
 ## Next steps
 
@@ -45,6 +45,12 @@ Author one PLAN per request below via plan_foundry's `write-plan` / `plan-pipeli
 - **Requirement before solution** — no mechanism design until requirement and process are agreed (directly gates item A).
 - **Single-operation Bash only** — no `&&` / `;` / pipes / redirects chaining distinct ops; they trip permission prompts. (from project memory `feedback_compound_bash`)
 - **Reviews follow the fixed five-element shape** — verification preamble → one-line verdict → priority-ordered punch list → "Not blockers" subgroup → net verdict.
+
+### Post-swap reconciliation flags (from the install session)
+- **Old harness was NOT in git** (`.claude/` is gitignored). The 8 superseded old skills + `maintenance-agent.md` were **moved aside, not deleted**, to `.claude/_retired_old_harness/` — reversible on disk. Delete that folder once you're satisfied nothing is missed.
+- **Kept active on purpose:** `decide-and-proceed` skill and `.claude/CONSTITUTION.md` (your working-style substrate; referenced by CLAUDE.md). CONSTITUTION's Plan-lifecycle / Skill-registry sections are now stale — plan_foundry owns those.
+- **`Bus/` is git-tracked and left intact** — old PLAN history. plan_foundry uses `Workbench/`. Decide later whether to migrate/retire `Bus/`; do not bulk-delete (it's the project's audit trail).
+- **New PLANs go to `Workbench/`** via `write-plan` / `plan-pipeline`, not `Bus/`.
 
 ## Where things live
 
