@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T11:04:44Z",
+  "generated_at": "2026-07-02T11:05:09Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -14,20 +14,7 @@
     "stuck_audits": [],
     "long_blocked": [],
     "recurring_blockers": [],
-    "orphaned_audit_files": [
-      {
-        "plan_id": "PLAN-AA0",
-        "detail": "Audit file PLAN-AA0-plan_safety-1.json has no corresponding PLAN in Workbench/."
-      },
-      {
-        "plan_id": "PLAN-AA0",
-        "detail": "Audit file PLAN-AA0-sufficiency-1.json has no corresponding PLAN in Workbench/."
-      },
-      {
-        "plan_id": "PLAN-AA0",
-        "detail": "Audit file PLAN-AA0-sufficiency-2.json has no corresponding PLAN in Workbench/."
-      }
-    ],
+    "orphaned_audit_files": [],
     "circular_dependencies": [],
     "verification_pending_too_long": [],
     "orphaned_threads": [],
@@ -40,6 +27,11 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "4f4dab1",
+      "date": "2026-07-02 21:04:45 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "5f28166",
       "date": "2026-07-02 21:04:20 +1000",
@@ -84,11 +76,6 @@
       "sha": "81b60d8",
       "date": "2026-07-02 20:48:41 +1000",
       "message": "plan-pipeline: checked PLAN-AA0_just-run-packaging.md"
-    },
-    {
-      "sha": "01ab4cc",
-      "date": "2026-07-02 20:48:19 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T11:04:44Z by build_index.py v1_
+_Generated: 2026-07-02T11:05:09Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -58,7 +58,7 @@ _No terminal PLANs._
 
 ## Alerts
 
-_3 alert(s) detected._
+_No active alerts._
 
 ### Stuck Audits (0)
 
@@ -72,11 +72,9 @@ _None._
 
 _None._
 
-### Orphaned Audit Files (3)
+### Orphaned Audit Files (0)
 
-- **PLAN-AA0**: Audit file PLAN-AA0-plan_safety-1.json has no corresponding PLAN in Workbench/.
-- **PLAN-AA0**: Audit file PLAN-AA0-sufficiency-1.json has no corresponding PLAN in Workbench/.
-- **PLAN-AA0**: Audit file PLAN-AA0-sufficiency-2.json has no corresponding PLAN in Workbench/.
+_None._
 
 ### Circular Dependencies (0)
 
@@ -118,6 +116,7 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `4f4dab1` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `5f28166` | 2026-07-02 | plan-pipeline: retired PLAN-AA0_just-run-packaging.md |
 | `4866584` | 2026-07-02 | plan-pipeline: complete PLAN-AA0_just-run-packaging.md |
 | `3f4c9e0` | 2026-07-02 | plan-pipeline: update-workbench-index |
@@ -127,7 +126,6 @@ _No dependencies defined._
 | `99b061e` | 2026-07-02 | plan-pipeline: executing PLAN-AA0_just-run-packaging.md |
 | `d1347a4` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `81b60d8` | 2026-07-02 | plan-pipeline: checked PLAN-AA0_just-run-packaging.md |
-| `01ab4cc` | 2026-07-02 | plan-pipeline: record last_audit_commit for PLAN-AA0 |
 
 ## Recently Retired
 
