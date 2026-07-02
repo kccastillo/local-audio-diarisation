@@ -11,12 +11,18 @@ author: Claude (pre-plan_foundry-install session)
 
 ## Next steps
 
-Author one PLAN per request below via plan_foundry's `write-plan` / `plan-pipeline`. Items B, C, D are well-scoped and code-grounded. Item A needs a requirement conversation with the human BEFORE any mechanism design (see Blocking decisions).
+**Workflow (locked 2026-07-02):** Ken runs **one conversation per PLAN**. This handoff is the **living ledger** — its status markers are updated incrementally as each PLAN is authored / executed, so every new conversation opens with an accurate what's-done / what's-left picture. Do NOT retire this handoff until the whole slate is complete.
 
-1. **[A — needs scope first] Package the pipeline to "just run" against source audio.**
+**Status legend:** `scoped` = requirement agreed · `PLAN authored` = written to Workbench/, awaiting its execution conversation · `executing` · `complete`.
+
+Slate: A, B, C, D (webapp/packaging), then E (orphans tie-off — runs last, per Ken "after all of this"). Author each via plan_foundry's `write-plan` / `plan-pipeline`.
+
+1. **[A — scoped ✅ · PLAN authored → `Workbench/PLAN-AA0_just-run-packaging.md`] Package the pipeline to "just run" against source audio.**
    - Human's intent: "packaged to 'just run' and be aimed at some kind of source audio", output to the usual project folders in the current project.
    - Current reality: one file at a time — `python -m diarizer.cli run --input <file> --config config/config.yaml`. During this session, batching two `./input/*.m4a` files was fully manual (one background run each), and Windows console encoding choked on ` ` (narrow no-break space) in filenames.
-   - Open requirement: what does "just run" mean concretely — batch everything in `./input/`? a watch-folder? a single double-clickable entry point? default `--config` so the flag is no longer required? Do NOT design until the human confirms. See Blocking decisions.
+   - **Requirement agreed with Ken (2026-07-02):** (a) drag an audio file onto a launcher → processes that **one** file (not batch); (b) `config/config.yaml` becomes the **built-in default** so `--config` is never required (closes the silent-no-diarisation footgun); (c) if the file already has completed output, **skip it** — `--force` reprocesses.
+   - **Mechanism (in PLAN-AA0):** `DEFAULT_CONFIG` resolved from `__file__` in `diarizer/cli.py`; `find_completed_session` skip-helper in `diarizer/session.py`; `--force` flag; new `Transcribe.cmd` drag-drop launcher at project root; README note.
+   - **Next:** open a dedicated conversation, run `plan-pipeline` against PLAN-AA0 (review → execute → verify). Human-verify item needs a real `.m4a` dragged on Windows. Item A's earlier Blocking-decision (the "just run" scope) is now RESOLVED.
 
 2. **[B — scoped] Right-click speaker reassignment on the name tag.**
    - Human's words: the central name-change dialog is in the middle while name tags are on the left, so fixing mis-attributions one-by-one is tedious. Wants: right-click on the name → change the speaker for THAT line, offering a dropdown of all existing names PLUS an option that launches the primary central dialog.
@@ -30,9 +36,19 @@ Author one PLAN per request below via plan_foundry's `write-plan` / `plan-pipeli
    - Human's words: when selecting a dialogue line and clicking at specific words, the active cursor sometimes jumps to the final character of the line on input — very annoying.
    - Code grounding: `dropOutOfSync` deliberately places the caret at the END via `range.collapse(false)` (app.js:465-472); it's meant to fire only for row-body / arrow-nav entry, NOT for direct clicks inside the text (see the guard + comment at app.js:351-356). The bug is that clicking specific words still lands the caret at end — investigate whether the row/focus handlers are stealing the native click caret, or whether an `input`-triggered re-render is resetting selection. Reproduce first; do not guess the fix.
 
+5. **[E — to scope · runs LAST, per Ken "after all of this"] Tie off the harness-swap orphans.**
+   - Leftovers from the plan_foundry swap that still need a decision + cleanup, gathered here so nothing is lost:
+     - **`.claude/_retired_old_harness/`** — 8 superseded old skills + `maintenance-agent.md`, moved aside (not deleted) during the swap. Delete once confirmed nothing is missed.
+     - **`Bus/`** — git-tracked old PLAN history (the pre-plan_foundry audit trail). Decide: migrate anything still useful into `Workbench/`, then retire — do NOT bulk-delete.
+     - **`.claude/CONSTITUTION.md`** — its Plan-lifecycle / Skill-registry sections are now stale (plan_foundry owns those); prune them but KEEP the working-style substrate (Discussion-vs-work-order, Review shape, Bash compounds, Decision autonomy) that CLAUDE.md still references.
+     - **`plan_foundry/` clone at project root** — the source bundle used for install; likely removable now the bundle lives under `.claude/`. Confirm the installer isn't referenced anywhere live, then retire.
+     - **This handoff's Appendices 1 & 2** — now redundant (folded into the current `CLAUDE.md` + auto-memory); trim when the slate is done.
+     - **This handoff file itself** — retire via `rehydrate-handoff` once A–E are all complete.
+   - **Next:** its own conversation — scope which orphans to delete vs migrate vs keep (a `decide-and-proceed` pass), then author the cleanup PLAN. Requirement-before-solution: agree the disposition of each item before touching it.
+
 ## Blocking decisions
 
-- **[A] "Just run" scope** — human-only call. Batch `./input/` vs watch-folder vs single entry point vs just defaulting `--config`. Gates all of item A. Requirement-before-solution applies: agree the requirement and process before designing the mechanism.
+- **[A] "Just run" scope** — ✅ RESOLVED 2026-07-02. Agreed: drag-drop single-file launcher + default `--config` + skip-already-done. Captured in PLAN-AA0. (Was: batch vs watch-folder vs entry point vs default-config.)
 - **Harness swap confirmation** — confirm plan_foundry install completed AND the old bespoke `Bus/`-harness leftovers were reconciled (see Constraints). If the old harness was only partially removed, dangling references may remain in `.claude/CONSTITUTION.md` and the old `CLAUDE.md`.
 
 ## Constraints & do-nots

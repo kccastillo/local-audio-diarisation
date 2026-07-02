@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-02T10:20:40Z",
+  "generated_by": "build_index.py v1",
+  "workbench_root": "Workbench",
+  "summary": {
+    "total_plans": 1,
+    "by_phase": {
+      "drafted": 1
+    },
+    "by_status": {
+      "ready": 1
+    },
+    "by_assigned_to": {
+      "sonnet": 1
+    },
+    "by_priority": {
+      "medium": 1
+    }
+  },
+  "alerts": {
+    "stuck_audits": [],
+    "long_blocked": [],
+    "recurring_blockers": [],
+    "orphaned_audit_files": [],
+    "circular_dependencies": [],
+    "verification_pending_too_long": [],
+    "orphaned_threads": [],
+    "malformed_frontmatter": [],
+    "executor_hung": [],
+    "orphan_heartbeat": [],
+    "stuck_ideation": []
+  },
+  "plans": [
+    {
+      "plan_id": "PLAN-AA0_just-run-packaging",
+      "title": "Package the pipeline to 'just run' \u2014 drag-drop launcher, default config, skip-already-done",
+      "status": "ready",
+      "assigned_to": "sonnet",
+      "priority": "medium",
+      "pipeline_phase": "drafted",
+      "schema_version": "2",
+      "created": "2026-07-02",
+      "due": null,
+      "blocked_by": null,
+      "closes_thread": null,
+      "advances_thread": null,
+      "triggers_plans": [],
+      "tags": [
+        "packaging",
+        "cli",
+        "dx"
+      ],
+      "files_touched": [
+        "diarizer/cli.py",
+        "diarizer/session.py",
+        "Transcribe.cmd",
+        "README.md"
+      ],
+      "audit_history": {
+        "sufficiency_iterations": 0,
+        "plan_safety_iterations": 0,
+        "last_stage": "none",
+        "last_outcome": "none"
+      },
+      "ideate_phase": ""
+    }
+  ],
+  "threads": [],
+  "dependencies": [],
+  "recent_transitions": [
+    {
+      "sha": "2cf7438",
+      "date": "2026-05-08 13:39:34 +1000",
+      "message": "plan-pipeline: executing Bus/202605080100_PLAN_minutes-panel.md"
+    },
+    {
+      "sha": "941ed91",
+      "date": "2026-05-08 11:54:57 +1000",
+      "message": "plan-pipeline: plan_safety:success \u00e2\u2020\u2019 checked Bus/202605080100_PLAN_minutes-panel.md"
+    },
+    {
+      "sha": "f3f68f8",
+      "date": "2026-05-08 11:53:28 +1000",
+      "message": "plan-pipeline: audit_state update \u00e2\u20ac\u201d sufficiency:success"
+    },
+    {
+      "sha": "3cda926",
+      "date": "2026-05-08 11:51:43 +1000",
+      "message": "plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md (audit-1 revisions)"
+    },
+    {
+      "sha": "cabbf61",
+      "date": "2026-05-08 09:58:22 +1000",
+      "message": "plan-pipeline: audit_state update \u00e2\u20ac\u201d sufficiency:revision_needed"
+    },
+    {
+      "sha": "aa292ca",
+      "date": "2026-05-08 09:55:41 +1000",
+      "message": "plan-pipeline: drafted Bus/202605080100_PLAN_minutes-panel.md"
+    },
+    {
+      "sha": "89bf175",
+      "date": "2026-05-08 09:55:22 +1000",
+      "message": "plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md (resolutions folded)"
+    },
+    {
+      "sha": "2ef5bf0",
+      "date": "2026-05-08 08:25:22 +1000",
+      "message": "plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md"
+    },
+    {
+      "sha": "1c90f0b",
+      "date": "2026-05-06 14:09:22 +1000",
+      "message": "plan-pipeline: retired Bus/202605060400_PLAN_crosstalk-indicator.md"
+    },
+    {
+      "sha": "3e90753",
+      "date": "2026-05-06 09:38:17 +1000",
+      "message": "plan-pipeline: plan_safety:success \u00e2\u2020\u2019 checked \u00e2\u2020\u2019 executing 202605060400_PLAN_crosstalk-indicator.md"
+    }
+  ]
+}
