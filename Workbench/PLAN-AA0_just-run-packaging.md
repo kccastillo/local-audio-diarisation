@@ -1,61 +1,59 @@
 ---
 schema_version: 2
-title: "Package the pipeline to 'just run' — drag-drop launcher, default config, skip-already-done"
+title: Package the pipeline to 'just run' — drag-drop launcher, default config, skip-already-done
 type: plan
 status: ready
 assigned_to: sonnet
 priority: medium
 created: 2026-07-02
-created_by: "Claude (Opus 4.8)"
+created_by: Claude (Opus 4.8)
 created_month: 202607
 log_month: 202607
-due: ""
+due: ''
 repeatable: false
-repeat_cadence: ""
+repeat_cadence: ''
 linked_decisions: []
 linked_inputs: []
-blocked_by: ""
+blocked_by: ''
 rollover_count: 0
 triggers_plans: []
-closes_thread: ""
-advances_thread: ""
-parent_plan_of_plans: ""
+closes_thread: ''
+advances_thread: ''
+parent_plan_of_plans: ''
 pipeline_phase: drafted
-
-ideate_phase: ""
+ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
   self_critique: 0
   spec_refine: 0
-ideate_reconcile_outcome: ""
-
-tags: [packaging, cli, dx]
+ideate_reconcile_outcome: ''
+tags:
+- packaging
+- cli
+- dx
 files_touched:
-  - diarizer/cli.py
-  - diarizer/session.py
-  - Transcribe.cmd
-  - README.md
+- diarizer/cli.py
+- diarizer/session.py
+- Transcribe.cmd
+- README.md
 substrate_files:
-  - diarizer/cli.py
-  - diarizer/config.py
-  - diarizer/session.py
-  - config/config.yaml
-
+- diarizer/cli.py
+- diarizer/config.py
+- diarizer/session.py
+- config/config.yaml
 audit_acknowledgements: []
 audit_disputes: []
 audit_overrides: []
 audit_extracted: null
 pipeline_overrides: []
 halt_log: []
-
 audit_state:
-  sufficiency_iterations: 0
+  sufficiency_iterations: 1
   plan_safety_iterations: 0
-  last_stage: none
-  last_outcome: none
-  last_audit_commit: ""
-  preferred_model_override: ""
-
+  last_stage: sufficiency
+  last_outcome: revision_needed
+  last_audit_commit: ''
+  preferred_model_override: ''
 verification_state:
   state_pass: 0
   state_fail: 0
@@ -63,7 +61,7 @@ verification_state:
   acceptance_fail: 0
   human_pending: []
   human_verdict: pending
-  human_diagnostics: ""
+  human_diagnostics: ''
   human_acknowledged_failures: []
   failure_logs: {}
   human_passed: false
