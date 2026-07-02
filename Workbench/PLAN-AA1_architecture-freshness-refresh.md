@@ -47,9 +47,9 @@ pipeline_overrides: []
 halt_log: []
 audit_state:
   sufficiency_iterations: 2
-  plan_safety_iterations: 1
+  plan_safety_iterations: 2
   last_stage: plan_safety
-  last_outcome: revision_needed
+  last_outcome: success
   last_audit_commit: 9cdaa873
   preferred_model_override: ''
 verification_state:
