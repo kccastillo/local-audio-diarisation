@@ -2,7 +2,7 @@
 schema_version: 2
 title: Package the pipeline to 'just run' — drag-drop launcher, default config, skip-already-done
 type: plan
-status: in-progress
+status: done
 assigned_to: sonnet
 priority: medium
 created: 2026-07-02
@@ -20,7 +20,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: outcome-verifying
+pipeline_phase: complete
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
@@ -62,11 +62,11 @@ verification_state:
   acceptance_fail: 0
   human_pending:
   - 'drag a real .m4a onto Transcribe.cmd: it runs end-to-end and the transcript carries speaker labels (diarisation ran); dragging an already-processed file prints the skip message and exits without reprocessing; dragging the same already-processed file with --force reprocesses it end-to-end. # platform: windows'
-  human_verdict: pending
-  human_diagnostics: ''
+  human_verdict: all_pass
+  human_diagnostics: 'Operator ran the drag-drop test end-to-end against "Dr. Nick Bashir - Blood work - 25 May at 8-42 am (1).m4a"; transcript carried speaker labels (diarisation ran under default config), skip message on re-drag, --force reprocess confirmed.'
   human_acknowledged_failures: []
   failure_logs: {}
-  human_passed: false
+  human_passed: true
 last_executor_outcome:
   outcome: success
   outcome_subtype: done
