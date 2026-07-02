@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T10:48:41Z",
+  "generated_at": "2026-07-02T10:48:58Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
     "total_plans": 1,
     "by_phase": {
-      "checked": 1
+      "executing": 1
     },
     "by_status": {
-      "ready": 1
+      "in-progress": 1
     },
     "by_assigned_to": {
       "sonnet": 1
@@ -35,10 +35,10 @@
     {
       "plan_id": "PLAN-AA0_just-run-packaging",
       "title": "Package the pipeline to 'just run' \u2014 drag-drop launcher, default config, skip-already-done",
-      "status": "ready",
+      "status": "in-progress",
       "assigned_to": "sonnet",
       "priority": "medium",
-      "pipeline_phase": "checked",
+      "pipeline_phase": "executing",
       "schema_version": "2",
       "created": "2026-07-02",
       "due": null,
@@ -60,6 +60,16 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "99b061e",
+      "date": "2026-07-02 20:48:58 +1000",
+      "message": "plan-pipeline: executing PLAN-AA0_just-run-packaging.md"
+    },
+    {
+      "sha": "d1347a4",
+      "date": "2026-07-02 20:48:41 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "81b60d8",
       "date": "2026-07-02 20:48:41 +1000",
@@ -99,16 +109,6 @@
       "sha": "846134b",
       "date": "2026-07-02 20:33:40 +1000",
       "message": "plan-pipeline: audit-revised PLAN-AA0_just-run-packaging.md (sufficiency S403/S999/S204 addressed, pre re-audit)"
-    },
-    {
-      "sha": "f5a3240",
-      "date": "2026-07-02 20:29:43 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "583bee9",
-      "date": "2026-07-02 20:29:01 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
     }
   ]
 }

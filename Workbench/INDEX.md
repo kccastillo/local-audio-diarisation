@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T10:48:41Z by build_index.py v1_
+_Generated: 2026-07-02T10:48:58Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -30,15 +30,15 @@ _No PLANs in this phase._
 
 _No PLANs in this phase._
 
-### Checked (1)
+### Checked (0)
+
+_No PLANs in this phase._
+
+### Executing (1)
 
 | Plan ID | Title | Status | Priority | Assigned |
 |---|---|---|---|---|
-| PLAN-AA0_just-run-packaging | Package the pipeline to 'just run' — drag-drop launcher, ... | ready | medium | sonnet |
-
-### Executing (0)
-
-_No PLANs in this phase._
+| PLAN-AA0_just-run-packaging | Package the pipeline to 'just run' — drag-drop launcher, ... | in-progress | medium | sonnet |
 
 ### Outcome-Verifying (0)
 
@@ -118,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `99b061e` | 2026-07-02 | plan-pipeline: executing PLAN-AA0_just-run-packaging.md |
+| `d1347a4` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `81b60d8` | 2026-07-02 | plan-pipeline: checked PLAN-AA0_just-run-packaging.md |
 | `01ab4cc` | 2026-07-02 | plan-pipeline: record last_audit_commit for PLAN-AA0 |
 | `3ad4f57` | 2026-07-02 | plan-pipeline: audit_state update - plan_safety:success |
@@ -126,8 +128,6 @@ _No dependencies defined._
 | `0feab64` | 2026-07-02 | plan-pipeline: audit_state update - sufficiency:success |
 | `25e7f33` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `846134b` | 2026-07-02 | plan-pipeline: audit-revised PLAN-AA0_just-run-packaging.md (sufficiency S403... |
-| `f5a3240` | 2026-07-02 | plan-pipeline: update-workbench-index |
-| `583bee9` | 2026-07-02 | plan-pipeline: record last_audit_commit for PLAN-AA0 |
 
 ## Recently Retired
 
