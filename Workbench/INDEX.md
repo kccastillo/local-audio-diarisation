@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:13:13Z by build_index.py v1_
+_Generated: 2026-07-02T14:15:42Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -26,15 +26,15 @@ _No PLANs currently being ideated._
 
 _No PLANs in this phase._
 
-### Drafted (1)
+### Drafted (0)
+
+_No PLANs in this phase._
+
+### Checked (1)
 
 | Plan ID | Title | Status | Priority | Assigned |
 |---|---|---|---|---|
 | PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | ready | low | sonnet |
-
-### Checked (0)
-
-_No PLANs in this phase._
 
 ### Executing (0)
 
@@ -118,16 +118,16 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `e6c133c` | 2026-07-03 | plan-pipeline: checked PLAN-AA1_architecture-freshness-refresh.md |
+| `7b30916` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
+| `ca250d1` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:success |
+| `4969269` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `097fabb` | 2026-07-03 | plan-pipeline: audit-revised PLAN-AA1 (plan-safety H302 Step3 no-shell + H999... |
 | `bccee56` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `5a100d7` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 | `9cdaa87` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:revision_needed |
 | `2df4806` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `19b6282` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
-| `1321be8` | 2026-07-03 | plan-pipeline: audit_state update - sufficiency:success |
-| `e2a1a7f` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `c39a162` | 2026-07-03 | plan-pipeline: audit-revised PLAN-AA1_architecture-freshness-refresh.md (suff... |
-| `dc36e36` | 2026-07-03 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 
