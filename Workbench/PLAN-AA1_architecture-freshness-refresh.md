@@ -122,7 +122,7 @@ Three drifts were identified (2026-07-02):
 - [ ] Acceptance — stated total equals live collected count, in both the layout line and the Testing lead-in (requirement 3).
       `acceptance: python -c "import subprocess,re,pathlib; r=subprocess.run(['python','-m','pytest','tests/diarizer','--collect-only','-q'],capture_output=True,text=True); m=re.search(r'(\d+) tests? collected', r.stdout); assert m, (r.stdout[-300:]+r.stderr[-300:]); c=int(m.group(1)); t=pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); assert re.search(rf'{c} unit tests', t), f'no {c} unit tests'; assert re.search(rf'{c} tests covering', t), f'no {c} tests covering'; print('OK', c)"`
 - [ ] Acceptance — per-file breakdown sums to the live collected total (requirement 3).
-      `acceptance: python -c "import subprocess,re,pathlib; r=subprocess.run(['python','-m','pytest','tests/diarizer','--collect-only','-q'],capture_output=True,text=True); c=int(re.search(r'(\d+) tests? collected', r.stdout).group(1)); t=pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); per=[int(n) for n in re.findall(r'test_\w+\.py \((\d+)\)', t)]; assert per, 'no per-file counts'; assert sum(per)==c, f'breakdown {sum(per)} != collected {c}'; print('OK', sum(per))"`
+      `acceptance: python -c "import subprocess,re,pathlib; r=subprocess.run(['python','-m','pytest','tests/diarizer','--collect-only','-q'],capture_output=True,text=True); c=int(re.search(r'(\d+) tests? collected', r.stdout).group(1)); t=pathlib.Path('ARCHITECTURE.md').read_text(encoding='utf-8'); per=[int(n) for n in re.findall(r'test_\w+\.py\W{0,3}\((\d+)\)', t)]; assert per, 'no per-file counts'; assert sum(per)==c, f'breakdown {sum(per)} != collected {c}'; print('OK', sum(per))"`
 
 ## Executor Notes
 
