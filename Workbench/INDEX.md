@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T11:05:09Z by build_index.py v1_
+_Generated: 2026-07-02T11:07:57Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -116,6 +116,7 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `3d6f302` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `4f4dab1` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `5f28166` | 2026-07-02 | plan-pipeline: retired PLAN-AA0_just-run-packaging.md |
 | `4866584` | 2026-07-02 | plan-pipeline: complete PLAN-AA0_just-run-packaging.md |
@@ -125,7 +126,6 @@ _No dependencies defined._
 | `f46d9c2` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `99b061e` | 2026-07-02 | plan-pipeline: executing PLAN-AA0_just-run-packaging.md |
 | `d1347a4` | 2026-07-02 | plan-pipeline: update-workbench-index |
-| `81b60d8` | 2026-07-02 | plan-pipeline: checked PLAN-AA0_just-run-packaging.md |
 
 ## Recently Retired
 
