@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T10:20:40Z",
+  "generated_at": "2026-07-02T10:29:40Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -46,22 +46,13 @@
       "closes_thread": null,
       "advances_thread": null,
       "triggers_plans": [],
-      "tags": [
-        "packaging",
-        "cli",
-        "dx"
-      ],
-      "files_touched": [
-        "diarizer/cli.py",
-        "diarizer/session.py",
-        "Transcribe.cmd",
-        "README.md"
-      ],
+      "tags": [],
+      "files_touched": [],
       "audit_history": {
-        "sufficiency_iterations": 0,
+        "sufficiency_iterations": 1,
         "plan_safety_iterations": 0,
-        "last_stage": "none",
-        "last_outcome": "none"
+        "last_stage": "sufficiency",
+        "last_outcome": "revision_needed"
       },
       "ideate_phase": ""
     }
@@ -69,6 +60,16 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "583bee9",
+      "date": "2026-07-02 20:29:01 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
+    },
+    {
+      "sha": "171a06b",
+      "date": "2026-07-02 20:29:01 +1000",
+      "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
+    },
     {
       "sha": "2cf7438",
       "date": "2026-05-08 13:39:34 +1000",
@@ -108,16 +109,6 @@
       "sha": "2ef5bf0",
       "date": "2026-05-08 08:25:22 +1000",
       "message": "plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md"
-    },
-    {
-      "sha": "1c90f0b",
-      "date": "2026-05-06 14:09:22 +1000",
-      "message": "plan-pipeline: retired Bus/202605060400_PLAN_crosstalk-indicator.md"
-    },
-    {
-      "sha": "3e90753",
-      "date": "2026-05-06 09:38:17 +1000",
-      "message": "plan-pipeline: plan_safety:success \u00e2\u2020\u2019 checked \u00e2\u2020\u2019 executing 202605060400_PLAN_crosstalk-indicator.md"
     }
   ]
 }
