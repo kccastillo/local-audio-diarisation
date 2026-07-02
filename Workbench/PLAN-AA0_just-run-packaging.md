@@ -20,7 +20,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: drafted
+pipeline_phase: checked
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
