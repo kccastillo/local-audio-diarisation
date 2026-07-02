@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:04:46Z",
+  "generated_at": "2026-07-02T14:07:29Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -49,10 +49,10 @@
       "tags": [],
       "files_touched": [],
       "audit_history": {
-        "sufficiency_iterations": 1,
+        "sufficiency_iterations": 2,
         "plan_safety_iterations": 0,
         "last_stage": "sufficiency",
-        "last_outcome": "revision_needed"
+        "last_outcome": "success"
       },
       "ideate_phase": ""
     }
@@ -60,6 +60,21 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "19b6282",
+      "date": "2026-07-03 00:07:18 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
+    },
+    {
+      "sha": "1321be8",
+      "date": "2026-07-03 00:07:17 +1000",
+      "message": "plan-pipeline: audit_state update - sufficiency:success"
+    },
+    {
+      "sha": "e2a1a7f",
+      "date": "2026-07-03 00:04:46 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "c39a162",
       "date": "2026-07-03 00:04:46 +1000",
@@ -94,21 +109,6 @@
       "sha": "2704abb",
       "date": "2026-07-02 21:07:58 +1000",
       "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "3d6f302",
-      "date": "2026-07-02 21:05:09 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "4f4dab1",
-      "date": "2026-07-02 21:04:45 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "5f28166",
-      "date": "2026-07-02 21:04:20 +1000",
-      "message": "plan-pipeline: retired PLAN-AA0_just-run-packaging.md"
     }
   ]
 }
