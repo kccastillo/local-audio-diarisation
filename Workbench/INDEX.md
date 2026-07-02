@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T10:29:40Z by build_index.py v1_
+_Generated: 2026-07-02T10:33:50Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -118,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `846134b` | 2026-07-02 | plan-pipeline: audit-revised PLAN-AA0_just-run-packaging.md (sufficiency S403... |
+| `f5a3240` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `583bee9` | 2026-07-02 | plan-pipeline: record last_audit_commit for PLAN-AA0 |
 | `171a06b` | 2026-07-02 | plan-pipeline: audit_state update - sufficiency:revision_needed |
 | `2cf7438` | 2026-05-08 | plan-pipeline: executing Bus/202605080100_PLAN_minutes-panel.md |
@@ -126,8 +128,6 @@ _No dependencies defined._
 | `3cda926` | 2026-05-08 | plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md (au... |
 | `cabbf61` | 2026-05-08 | plan-pipeline: audit_state update â€” sufficiency:revision_needed |
 | `aa292ca` | 2026-05-08 | plan-pipeline: drafted Bus/202605080100_PLAN_minutes-panel.md |
-| `89bf175` | 2026-05-08 | plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md (re... |
-| `2ef5bf0` | 2026-05-08 | plan-pipeline: drafting checkpoint Bus/202605080100_PLAN_minutes-panel.md |
 
 ## Recently Retired
 
