@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:07:29Z",
+  "generated_at": "2026-07-02T14:11:20Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -50,9 +50,9 @@
       "files_touched": [],
       "audit_history": {
         "sufficiency_iterations": 2,
-        "plan_safety_iterations": 0,
-        "last_stage": "sufficiency",
-        "last_outcome": "success"
+        "plan_safety_iterations": 1,
+        "last_stage": "plan_safety",
+        "last_outcome": "revision_needed"
       },
       "ideate_phase": ""
     }
@@ -60,6 +60,21 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "5a100d7",
+      "date": "2026-07-03 00:11:10 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
+    },
+    {
+      "sha": "9cdaa87",
+      "date": "2026-07-03 00:11:09 +1000",
+      "message": "plan-pipeline: audit_state update - plan_safety:revision_needed"
+    },
+    {
+      "sha": "2df4806",
+      "date": "2026-07-03 00:07:30 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "19b6282",
       "date": "2026-07-03 00:07:18 +1000",
@@ -94,21 +109,6 @@
       "sha": "fb7b882",
       "date": "2026-07-03 00:00:24 +1000",
       "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
-    },
-    {
-      "sha": "a5e2950",
-      "date": "2026-07-02 23:55:56 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "c5d2d86",
-      "date": "2026-07-02 23:55:55 +1000",
-      "message": "plan-pipeline: drafted PLAN-AA1_architecture-freshness-refresh.md"
-    },
-    {
-      "sha": "2704abb",
-      "date": "2026-07-02 21:07:58 +1000",
-      "message": "plan-pipeline: update-workbench-index"
     }
   ]
 }
