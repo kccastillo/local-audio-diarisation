@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T13:55:56Z by build_index.py v1_
+_Generated: 2026-07-02T14:00:35Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -118,6 +118,9 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `1fa3362` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
+| `fb7b882` | 2026-07-03 | plan-pipeline: audit_state update - sufficiency:revision_needed |
+| `a5e2950` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `c5d2d86` | 2026-07-02 | plan-pipeline: drafted PLAN-AA1_architecture-freshness-refresh.md |
 | `2704abb` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `3d6f302` | 2026-07-02 | plan-pipeline: update-workbench-index |
@@ -125,9 +128,6 @@ _No dependencies defined._
 | `5f28166` | 2026-07-02 | plan-pipeline: retired PLAN-AA0_just-run-packaging.md |
 | `4866584` | 2026-07-02 | plan-pipeline: complete PLAN-AA0_just-run-packaging.md |
 | `3f4c9e0` | 2026-07-02 | plan-pipeline: update-workbench-index |
-| `ea4f94b` | 2026-07-02 | plan-pipeline: outcome-verification ran for PLAN-AA0_just-run-packaging.md |
-| `9982bf7` | 2026-07-02 | plan-pipeline: outcome-verifying PLAN-AA0_just-run-packaging.md |
-| `f46d9c2` | 2026-07-02 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 

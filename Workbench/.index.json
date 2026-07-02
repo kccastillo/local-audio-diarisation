@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T13:55:56Z",
+  "generated_at": "2026-07-02T14:00:35Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -34,7 +34,7 @@
   "plans": [
     {
       "plan_id": "PLAN-AA1_architecture-freshness-refresh",
-      "title": "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop launcher, test count)",
+      "title": "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop",
       "status": "ready",
       "assigned_to": "sonnet",
       "priority": "low",
@@ -46,19 +46,13 @@
       "closes_thread": null,
       "advances_thread": null,
       "triggers_plans": [],
-      "tags": [
-        "docs",
-        "architecture",
-        "freshness"
-      ],
-      "files_touched": [
-        "ARCHITECTURE.md"
-      ],
+      "tags": [],
+      "files_touched": [],
       "audit_history": {
-        "sufficiency_iterations": 0,
+        "sufficiency_iterations": 1,
         "plan_safety_iterations": 0,
-        "last_stage": "none",
-        "last_outcome": "none"
+        "last_stage": "sufficiency",
+        "last_outcome": "revision_needed"
       },
       "ideate_phase": ""
     }
@@ -66,6 +60,21 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "1fa3362",
+      "date": "2026-07-03 00:00:24 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
+    },
+    {
+      "sha": "fb7b882",
+      "date": "2026-07-03 00:00:24 +1000",
+      "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
+    },
+    {
+      "sha": "a5e2950",
+      "date": "2026-07-02 23:55:56 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "c5d2d86",
       "date": "2026-07-02 23:55:55 +1000",
@@ -99,21 +108,6 @@
     {
       "sha": "3f4c9e0",
       "date": "2026-07-02 20:55:11 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "ea4f94b",
-      "date": "2026-07-02 20:55:10 +1000",
-      "message": "plan-pipeline: outcome-verification ran for PLAN-AA0_just-run-packaging.md"
-    },
-    {
-      "sha": "9982bf7",
-      "date": "2026-07-02 20:54:05 +1000",
-      "message": "plan-pipeline: outcome-verifying PLAN-AA0_just-run-packaging.md"
-    },
-    {
-      "sha": "f46d9c2",
-      "date": "2026-07-02 20:48:59 +1000",
       "message": "plan-pipeline: update-workbench-index"
     }
   ]
