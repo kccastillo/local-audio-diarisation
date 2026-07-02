@@ -1,7 +1,7 @@
 ---
 title: Diarizer architecture
 type: design-reference
-last_updated: 2026-05-04
+last_updated: 2026-07-03
 related:
   - README.md
   - CLAUDE.md
@@ -101,6 +101,8 @@ Each gate returns a `GateResult` carrying name / passed / severity / message / m
 ## Module layout
 
 ```
+Transcribe.cmd           — Windows drag-drop launcher; runs one dropped file through `diarizer.cli run`
+
 diarizer/
 ├── __init__.py          — exports Config, load_config, Pipeline, TranscriptionResult
 ├── config.py            — dataclass Config + load_config(path); no singleton
@@ -111,9 +113,9 @@ diarizer/
 └── cli.py               — argparse entrypoint, `python -m diarizer.cli`
 
 config/
-└── config.yaml          — example config
+└── config.yaml          — built-in default config (loaded when `--config` omitted); also serves as the example
 
-tests/diarizer/          — 79 unit tests (config, gates, measurement, output, pipeline-mocked, preprocessing-mocked)
+tests/diarizer/          — 111 unit tests (config, crosstalk, gates, measurement, output, pipeline-mocked, preprocessing-mocked, webapp-smoke)
 scripts/
 ├── inspect_audio.py     — audio characterisation helper
 ├── extract_docx.py      — Teams transcript extractor (used during quality benchmarking)
@@ -124,7 +126,7 @@ scripts/
 
 ## Configuration
 
-`config/config.yaml` is the example. All sections are optional; absent sections fall back to the dataclass defaults baked into `Config`. Sections:
+`config/config.yaml` is the built-in default config, loaded automatically when `--config` is omitted (as of PLAN-AA0); it also serves as the example. All sections are optional; absent sections fall back to the dataclass defaults baked into `Config`. Sections:
 
 - **paths** — recordings_dir, output_dir, temp_dir, logs_dir.
 - **model** — name (default `large-v3-turbo`), compute_type (default `float16`), device (default `cuda`), cpu_fallback, language.
@@ -160,14 +162,16 @@ The writers are model-agnostic — any future ASR/diariser swap that returns a c
 
 ## Testing
 
-`pytest` (configured via `pyproject.toml`) discovers `tests/diarizer/` automatically. 79 tests covering:
+`pytest` (configured via `pyproject.toml`) discovers `tests/diarizer/` automatically. 111 tests covering:
 
-- `test_config.py` (9) — defaults, YAML override, partial override, env-token resolution.
-- `test_gates.py` (28) — pure-function tests per gate (pass / fail / edge cases).
+- `test_config.py` (14) — defaults, YAML override, partial override, env-token resolution.
+- `test_crosstalk.py` (10) — algorithm-correctness tests for the crosstalk heuristic (speaker-overlap detection, window/threshold boundary cases, JS surface-parity check).
+- `test_gates.py` (29) — pure-function tests per gate (pass / fail / edge cases).
 - `test_measurement.py` (8) — synthetic WAV fixtures (silence, pure tone, stereo, sparse pulses).
 - `test_output.py` (9) — TXT / JSON / SRT writers on synthetic results.
 - `test_pipeline.py` (16) — orchestration, with `faster_whisper` and `pyannote.audio` mocked via `sys.modules` injection. Covers full pipeline, no-diarisation, no-preprocess, missing-token, blocking gate failures, OOM retry, attribution math.
 - `test_preprocessing.py` (9) — FFmpeg shell tests with `subprocess.run` mocked.
+- `test_webapp_smoke.py` (16) — webapp API smoke tests (session manifest, transcript, audio range, host-header rejection, versioned save, O_EXCL counter, waveform lazy-gen, TXT export).
 
 Real-model end-to-end runs require GPU + HF token and are exercised manually (smoke evidence: `Retired/202605040250_RESEARCH_v2-smoke-run.md`).
 
@@ -184,6 +188,8 @@ Real-model end-to-end runs require GPU + HF token and are exercised manually (sm
 - `session.json` — manifest pointing to the artefacts above.
 
 Edit scope in v1: speaker labels (global rename + per-segment reassign) and transcript text. Segment boundaries and audio zoom are deferred. Undo/redo within a session is deferred — versioned saves provide coarse undo via the Versions dropdown.
+
+The CLI skips a source file whose stem already has a completed session directory (one containing all three of `session.json`, `transcript.json`, `source.opus`); pass `--force` to reprocess. The check is `find_completed_session` in `diarizer/session.py`.
 
 ## Recovery
 

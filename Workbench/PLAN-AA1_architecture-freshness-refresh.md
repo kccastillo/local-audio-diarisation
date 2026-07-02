@@ -21,7 +21,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: executing
+pipeline_phase: outcome-verifying
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
@@ -45,6 +45,11 @@ audit_overrides: []
 audit_extracted: null
 pipeline_overrides: []
 halt_log: []
+last_executor_outcome:
+  outcome: success
+  outcome_subtype: done
+  executed: 2026-07-03
+  diagnostics_summary: All three steps completed. ARCHITECTURE.md last_updated bumped to 2026-07-03. Config-default wording corrected in tree and Configuration section. Transcribe.cmd documented in module layout tree. Skip/--force/find_completed_session note added in webapp section. Test count updated 79->111 in both locations; per-file breakdown rebuilt to 8 files summing to 111 (added test_crosstalk.py (10) and test_webapp_smoke.py (16); corrected test_config.py 9->14 and test_gates.py 28->29). ARCHITECTURE.md is the sole file edited.
 audit_state:
   sufficiency_iterations: 2
   plan_safety_iterations: 2
@@ -121,10 +126,14 @@ Three drifts were identified (2026-07-02):
 
 ## Executor Notes
 
-*Populated after execution via `execute-plan`. Leave blank.*
-
-**Executed:**
-**Outcome:** done | partially-complete | blocked | needs-revision
+**Executed:** 2026-07-03
+**Outcome:** done
 **What was done:**
-**Blockers (if any):**
-**Files modified:**
+Step 1 — Bumped `last_updated` in ARCHITECTURE.md frontmatter from `2026-05-04` to `2026-07-03`. Updated the `config/` tree comment from "example config" to "built-in default config (loaded when `--config` omitted); also serves as the example". Updated the Configuration section lead sentence from "`config/config.yaml` is the example." to "`config/config.yaml` is the built-in default config, loaded automatically when `--config` is omitted (as of PLAN-AA0); it also serves as the example."
+
+Step 2 — Added `Transcribe.cmd` as a repo-root entry at the top of the Module layout tree ("Windows drag-drop launcher; runs one dropped file through `diarizer.cli run`"). Added a two-sentence skip/`--force` note at the end of the webapp section (before Recovery) naming `find_completed_session` in `diarizer/session.py` as the implementing check.
+
+Step 3 — Updated both stated totals from 79 to 111 (tree line and Testing lead-in). Rebuilt the per-file breakdown to 8 files: test_config.py (14), test_crosstalk.py (10), test_gates.py (29), test_measurement.py (8), test_output.py (9), test_pipeline.py (16), test_preprocessing.py (9), test_webapp_smoke.py (16) — sum 111. Descriptions for test_crosstalk.py and test_webapp_smoke.py written from reading the source files directly. No test or source files were modified.
+
+**Blockers (if any):** None.
+**Files modified:** ARCHITECTURE.md
