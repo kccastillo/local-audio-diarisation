@@ -50,7 +50,7 @@ audit_state:
   plan_safety_iterations: 0
   last_stage: sufficiency
   last_outcome: success
-  last_audit_commit: fb7b8829
+  last_audit_commit: 1321be8f
   preferred_model_override: ''
 verification_state:
   state_pass: 0
