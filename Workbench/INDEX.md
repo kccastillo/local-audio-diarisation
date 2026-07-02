@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:22:34Z by build_index.py v1_
+_Generated: 2026-07-02T14:23:37Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -8,8 +8,8 @@ This document is a deterministic projection of all PLAN files in `Workbench/`. R
 
 | Metric | Count |
 |---|---|
-| Total PLANs | 1 |
-| Active (non-terminal) | 1 |
+| Total PLANs | 0 |
+| Active (non-terminal) | 0 |
 | Terminal (done/cancelled/etc.) | 0 |
 
 ## Kanban
@@ -38,11 +38,9 @@ _No PLANs in this phase._
 
 _No PLANs in this phase._
 
-### Outcome-Verifying (1)
+### Outcome-Verifying (0)
 
-| Plan ID | Title | Status | Priority | Assigned |
-|---|---|---|---|---|
-| PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | in-progress | low | sonnet |
+_No PLANs in this phase._
 
 ### Complete (0)
 
@@ -60,7 +58,7 @@ _No terminal PLANs._
 
 ## Alerts
 
-_1 alert(s) detected._
+_No active alerts._
 
 ### Stuck Audits (0)
 
@@ -98,9 +96,9 @@ _None._
 
 _None._
 
-### Orphan Heartbeat (1)
+### Orphan Heartbeat (0)
 
-- **PLAN-AA1**: Heartbeat file PLAN-AA1.json has no corresponding PLAN in Workbench/. File deleted.
+_None._
 
 ### Stuck Ideation (0)
 
@@ -118,6 +116,9 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `f025b83` | 2026-07-03 | plan-pipeline: retired PLAN-AA1_architecture-freshness-refresh.md (+ clean it... |
+| `d114865` | 2026-07-03 | plan-pipeline: complete PLAN-AA1_architecture-freshness-refresh.md |
+| `e867f94` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `824a947` | 2026-07-03 | plan-pipeline: outcome-verification ran for PLAN-AA1_architecture-freshness-r... |
 | `242c314` | 2026-07-03 | plan-pipeline: fix acceptance-3 regex false-negative (backticked filenames) f... |
 | `1ee7a69` | 2026-07-03 | plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md |
@@ -125,14 +126,12 @@ _No dependencies defined._
 | `75bb420` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `9f71dd7` | 2026-07-03 | plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md |
 | `d7b7f78` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `e6c133c` | 2026-07-03 | plan-pipeline: checked PLAN-AA1_architecture-freshness-refresh.md |
-| `7b30916` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
-| `ca250d1` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:success |
 
 ## Recently Retired
 
 | Commit | Date | Retired PLAN |
 |---|---|---|
+| `f025b83` | 2026-07-03 | PLAN-AA1_architecture-freshness-refresh |
 | `5f28166` | 2026-07-02 | PLAN-AA0_just-run-packaging |
 | `1c90f0b` | 2026-05-06 | (unknown) |
 | `11e988d` | 2026-05-06 | (unknown) |

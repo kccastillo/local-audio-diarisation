@@ -1,22 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:22:34Z",
+  "generated_at": "2026-07-02T14:23:37Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
-    "total_plans": 1,
-    "by_phase": {
-      "outcome-verifying": 1
-    },
-    "by_status": {
-      "in-progress": 1
-    },
-    "by_assigned_to": {
-      "sonnet": 1
-    },
-    "by_priority": {
-      "low": 1
-    }
+    "total_plans": 0,
+    "by_phase": {},
+    "by_status": {},
+    "by_assigned_to": {},
+    "by_priority": {}
   },
   "alerts": {
     "stuck_audits": [],
@@ -28,43 +20,28 @@
     "orphaned_threads": [],
     "malformed_frontmatter": [],
     "executor_hung": [],
-    "orphan_heartbeat": [
-      {
-        "plan_id": "PLAN-AA1",
-        "detail": "Heartbeat file PLAN-AA1.json has no corresponding PLAN in Workbench/. File deleted."
-      }
-    ],
+    "orphan_heartbeat": [],
     "stuck_ideation": []
   },
-  "plans": [
-    {
-      "plan_id": "PLAN-AA1_architecture-freshness-refresh",
-      "title": "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop",
-      "status": "in-progress",
-      "assigned_to": "sonnet",
-      "priority": "low",
-      "pipeline_phase": "outcome-verifying",
-      "schema_version": "2",
-      "created": "2026-07-02",
-      "due": null,
-      "blocked_by": null,
-      "closes_thread": null,
-      "advances_thread": null,
-      "triggers_plans": [],
-      "tags": [],
-      "files_touched": [],
-      "audit_history": {
-        "sufficiency_iterations": 2,
-        "plan_safety_iterations": 2,
-        "last_stage": "plan_safety",
-        "last_outcome": "success"
-      },
-      "ideate_phase": ""
-    }
-  ],
+  "plans": [],
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "f025b83",
+      "date": "2026-07-03 00:23:30 +1000",
+      "message": "plan-pipeline: retired PLAN-AA1_architecture-freshness-refresh.md (+ clean its audit snapshots)"
+    },
+    {
+      "sha": "d114865",
+      "date": "2026-07-03 00:22:49 +1000",
+      "message": "plan-pipeline: complete PLAN-AA1_architecture-freshness-refresh.md"
+    },
+    {
+      "sha": "e867f94",
+      "date": "2026-07-03 00:22:34 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "824a947",
       "date": "2026-07-03 00:22:33 +1000",
@@ -99,21 +76,6 @@
       "sha": "d7b7f78",
       "date": "2026-07-03 00:15:43 +1000",
       "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "e6c133c",
-      "date": "2026-07-03 00:15:42 +1000",
-      "message": "plan-pipeline: checked PLAN-AA1_architecture-freshness-refresh.md"
-    },
-    {
-      "sha": "7b30916",
-      "date": "2026-07-03 00:15:19 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
-    },
-    {
-      "sha": "ca250d1",
-      "date": "2026-07-03 00:15:19 +1000",
-      "message": "plan-pipeline: audit_state update - plan_safety:success"
     }
   ]
 }
