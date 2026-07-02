@@ -58,12 +58,12 @@ audit_state:
   last_audit_commit: ca250d1f
   preferred_model_override: ''
 verification_state:
-  state_pass: 0
+  state_pass: 4
   state_fail: 0
-  acceptance_pass: 0
+  acceptance_pass: 3
   acceptance_fail: 0
   human_pending: []
-  human_verdict: pending
+  human_verdict: all_pass
   human_diagnostics: ''
   human_acknowledged_failures: []
   failure_logs: {}
