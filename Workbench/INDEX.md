@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T11:07:57Z by build_index.py v1_
+_Generated: 2026-07-02T13:55:56Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -8,8 +8,8 @@ This document is a deterministic projection of all PLAN files in `Workbench/`. R
 
 | Metric | Count |
 |---|---|
-| Total PLANs | 0 |
-| Active (non-terminal) | 0 |
+| Total PLANs | 1 |
+| Active (non-terminal) | 1 |
 | Terminal (done/cancelled/etc.) | 0 |
 
 ## Kanban
@@ -26,9 +26,11 @@ _No PLANs currently being ideated._
 
 _No PLANs in this phase._
 
-### Drafted (0)
+### Drafted (1)
 
-_No PLANs in this phase._
+| Plan ID | Title | Status | Priority | Assigned |
+|---|---|---|---|---|
+| PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | ready | low | sonnet |
 
 ### Checked (0)
 
@@ -116,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `c5d2d86` | 2026-07-02 | plan-pipeline: drafted PLAN-AA1_architecture-freshness-refresh.md |
+| `2704abb` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `3d6f302` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `4f4dab1` | 2026-07-02 | plan-pipeline: update-workbench-index |
 | `5f28166` | 2026-07-02 | plan-pipeline: retired PLAN-AA0_just-run-packaging.md |
@@ -124,8 +128,6 @@ _No dependencies defined._
 | `ea4f94b` | 2026-07-02 | plan-pipeline: outcome-verification ran for PLAN-AA0_just-run-packaging.md |
 | `9982bf7` | 2026-07-02 | plan-pipeline: outcome-verifying PLAN-AA0_just-run-packaging.md |
 | `f46d9c2` | 2026-07-02 | plan-pipeline: update-workbench-index |
-| `99b061e` | 2026-07-02 | plan-pipeline: executing PLAN-AA0_just-run-packaging.md |
-| `d1347a4` | 2026-07-02 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 

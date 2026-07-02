@@ -1,14 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T11:07:57Z",
+  "generated_at": "2026-07-02T13:55:56Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
-    "total_plans": 0,
-    "by_phase": {},
-    "by_status": {},
-    "by_assigned_to": {},
-    "by_priority": {}
+    "total_plans": 1,
+    "by_phase": {
+      "drafted": 1
+    },
+    "by_status": {
+      "ready": 1
+    },
+    "by_assigned_to": {
+      "sonnet": 1
+    },
+    "by_priority": {
+      "low": 1
+    }
   },
   "alerts": {
     "stuck_audits": [],
@@ -23,10 +31,51 @@
     "orphan_heartbeat": [],
     "stuck_ideation": []
   },
-  "plans": [],
+  "plans": [
+    {
+      "plan_id": "PLAN-AA1_architecture-freshness-refresh",
+      "title": "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop launcher, test count)",
+      "status": "ready",
+      "assigned_to": "sonnet",
+      "priority": "low",
+      "pipeline_phase": "drafted",
+      "schema_version": "2",
+      "created": "2026-07-02",
+      "due": null,
+      "blocked_by": null,
+      "closes_thread": null,
+      "advances_thread": null,
+      "triggers_plans": [],
+      "tags": [
+        "docs",
+        "architecture",
+        "freshness"
+      ],
+      "files_touched": [
+        "ARCHITECTURE.md"
+      ],
+      "audit_history": {
+        "sufficiency_iterations": 0,
+        "plan_safety_iterations": 0,
+        "last_stage": "none",
+        "last_outcome": "none"
+      },
+      "ideate_phase": ""
+    }
+  ],
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "c5d2d86",
+      "date": "2026-07-02 23:55:55 +1000",
+      "message": "plan-pipeline: drafted PLAN-AA1_architecture-freshness-refresh.md"
+    },
+    {
+      "sha": "2704abb",
+      "date": "2026-07-02 21:07:58 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "3d6f302",
       "date": "2026-07-02 21:05:09 +1000",
@@ -65,16 +114,6 @@
     {
       "sha": "f46d9c2",
       "date": "2026-07-02 20:48:59 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "99b061e",
-      "date": "2026-07-02 20:48:58 +1000",
-      "message": "plan-pipeline: executing PLAN-AA0_just-run-packaging.md"
-    },
-    {
-      "sha": "d1347a4",
-      "date": "2026-07-02 20:48:41 +1000",
       "message": "plan-pipeline: update-workbench-index"
     }
   ]
