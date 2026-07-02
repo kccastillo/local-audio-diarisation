@@ -117,7 +117,7 @@ pytest                       # discovers tests/diarizer/ via pyproject.toml
 pytest tests/diarizer/test_gates.py -v
 ```
 
-85 tests cover config, gates, measurement, output, pipeline (mocked), and preprocessing (mocked ffmpeg). Real-model end-to-end runs are exercised manually on GPU; see `ARCHITECTURE.md`.
+111 tests cover config, crosstalk, gates, measurement, output, pipeline (mocked), preprocessing (mocked ffmpeg), and webapp smoke. Real-model end-to-end runs are exercised manually on GPU; see `ARCHITECTURE.md`.
 
 ## Project status
 
