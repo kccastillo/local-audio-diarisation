@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:15:42Z",
+  "generated_at": "2026-07-02T14:15:57Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
     "total_plans": 1,
     "by_phase": {
-      "checked": 1
+      "executing": 1
     },
     "by_status": {
-      "ready": 1
+      "in-progress": 1
     },
     "by_assigned_to": {
       "sonnet": 1
@@ -35,10 +35,10 @@
     {
       "plan_id": "PLAN-AA1_architecture-freshness-refresh",
       "title": "Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (config default, drag-drop",
-      "status": "ready",
+      "status": "in-progress",
       "assigned_to": "sonnet",
       "priority": "low",
-      "pipeline_phase": "checked",
+      "pipeline_phase": "executing",
       "schema_version": "2",
       "created": "2026-07-02",
       "due": null,
@@ -60,6 +60,16 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "9f71dd7",
+      "date": "2026-07-03 00:15:57 +1000",
+      "message": "plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md"
+    },
+    {
+      "sha": "d7b7f78",
+      "date": "2026-07-03 00:15:43 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "e6c133c",
       "date": "2026-07-03 00:15:42 +1000",
@@ -99,16 +109,6 @@
       "sha": "9cdaa87",
       "date": "2026-07-03 00:11:09 +1000",
       "message": "plan-pipeline: audit_state update - plan_safety:revision_needed"
-    },
-    {
-      "sha": "2df4806",
-      "date": "2026-07-03 00:07:30 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "19b6282",
-      "date": "2026-07-03 00:07:18 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:15:42Z by build_index.py v1_
+_Generated: 2026-07-02T14:15:57Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -30,15 +30,15 @@ _No PLANs in this phase._
 
 _No PLANs in this phase._
 
-### Checked (1)
+### Checked (0)
+
+_No PLANs in this phase._
+
+### Executing (1)
 
 | Plan ID | Title | Status | Priority | Assigned |
 |---|---|---|---|---|
-| PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | ready | low | sonnet |
-
-### Executing (0)
-
-_No PLANs in this phase._
+| PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | in-progress | low | sonnet |
 
 ### Outcome-Verifying (0)
 
@@ -118,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `9f71dd7` | 2026-07-03 | plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md |
+| `d7b7f78` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `e6c133c` | 2026-07-03 | plan-pipeline: checked PLAN-AA1_architecture-freshness-refresh.md |
 | `7b30916` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 | `ca250d1` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:success |
@@ -126,8 +128,6 @@ _No dependencies defined._
 | `bccee56` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `5a100d7` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 | `9cdaa87` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:revision_needed |
-| `2df4806` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `19b6282` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 
 ## Recently Retired
 
