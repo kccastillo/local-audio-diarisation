@@ -1,28 +1,33 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T10:55:10Z",
+  "generated_at": "2026-07-02T11:04:44Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
-    "total_plans": 1,
-    "by_phase": {
-      "outcome-verifying": 1
-    },
-    "by_status": {
-      "in-progress": 1
-    },
-    "by_assigned_to": {
-      "sonnet": 1
-    },
-    "by_priority": {
-      "medium": 1
-    }
+    "total_plans": 0,
+    "by_phase": {},
+    "by_status": {},
+    "by_assigned_to": {},
+    "by_priority": {}
   },
   "alerts": {
     "stuck_audits": [],
     "long_blocked": [],
     "recurring_blockers": [],
-    "orphaned_audit_files": [],
+    "orphaned_audit_files": [
+      {
+        "plan_id": "PLAN-AA0",
+        "detail": "Audit file PLAN-AA0-plan_safety-1.json has no corresponding PLAN in Workbench/."
+      },
+      {
+        "plan_id": "PLAN-AA0",
+        "detail": "Audit file PLAN-AA0-sufficiency-1.json has no corresponding PLAN in Workbench/."
+      },
+      {
+        "plan_id": "PLAN-AA0",
+        "detail": "Audit file PLAN-AA0-sufficiency-2.json has no corresponding PLAN in Workbench/."
+      }
+    ],
     "circular_dependencies": [],
     "verification_pending_too_long": [],
     "orphaned_threads": [],
@@ -31,35 +36,25 @@
     "orphan_heartbeat": [],
     "stuck_ideation": []
   },
-  "plans": [
-    {
-      "plan_id": "PLAN-AA0_just-run-packaging",
-      "title": "Package the pipeline to 'just run' \u2014 drag-drop launcher, default config, skip-already-done",
-      "status": "in-progress",
-      "assigned_to": "sonnet",
-      "priority": "medium",
-      "pipeline_phase": "outcome-verifying",
-      "schema_version": "2",
-      "created": "2026-07-02",
-      "due": null,
-      "blocked_by": null,
-      "closes_thread": null,
-      "advances_thread": null,
-      "triggers_plans": [],
-      "tags": [],
-      "files_touched": [],
-      "audit_history": {
-        "sufficiency_iterations": 2,
-        "plan_safety_iterations": 1,
-        "last_stage": "plan_safety",
-        "last_outcome": "success"
-      },
-      "ideate_phase": ""
-    }
-  ],
+  "plans": [],
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "5f28166",
+      "date": "2026-07-02 21:04:20 +1000",
+      "message": "plan-pipeline: retired PLAN-AA0_just-run-packaging.md"
+    },
+    {
+      "sha": "4866584",
+      "date": "2026-07-02 21:02:52 +1000",
+      "message": "plan-pipeline: complete PLAN-AA0_just-run-packaging.md"
+    },
+    {
+      "sha": "3f4c9e0",
+      "date": "2026-07-02 20:55:11 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "ea4f94b",
       "date": "2026-07-02 20:55:10 +1000",
@@ -93,21 +88,6 @@
     {
       "sha": "01ab4cc",
       "date": "2026-07-02 20:48:19 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
-    },
-    {
-      "sha": "3ad4f57",
-      "date": "2026-07-02 20:48:19 +1000",
-      "message": "plan-pipeline: audit_state update - plan_safety:success"
-    },
-    {
-      "sha": "bede011",
-      "date": "2026-07-02 20:38:45 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "4ec48b6",
-      "date": "2026-07-02 20:38:35 +1000",
       "message": "plan-pipeline: record last_audit_commit for PLAN-AA0"
     }
   ]
