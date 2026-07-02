@@ -2,7 +2,7 @@
 schema_version: 2
 title: Package the pipeline to 'just run' — drag-drop launcher, default config, skip-already-done
 type: plan
-status: ready
+status: in-progress
 assigned_to: sonnet
 priority: medium
 created: 2026-07-02
@@ -20,7 +20,7 @@ triggers_plans: []
 closes_thread: ''
 advances_thread: ''
 parent_plan_of_plans: ''
-pipeline_phase: checked
+pipeline_phase: executing
 ideate_phase: ''
 ideate_critique_addressed: []
 ideate_iteration_count:
