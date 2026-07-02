@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:15:57Z",
+  "generated_at": "2026-07-02T14:22:34Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
     "total_plans": 1,
     "by_phase": {
-      "executing": 1
+      "outcome-verifying": 1
     },
     "by_status": {
       "in-progress": 1
@@ -28,7 +28,12 @@
     "orphaned_threads": [],
     "malformed_frontmatter": [],
     "executor_hung": [],
-    "orphan_heartbeat": [],
+    "orphan_heartbeat": [
+      {
+        "plan_id": "PLAN-AA1",
+        "detail": "Heartbeat file PLAN-AA1.json has no corresponding PLAN in Workbench/. File deleted."
+      }
+    ],
     "stuck_ideation": []
   },
   "plans": [
@@ -38,7 +43,7 @@
       "status": "in-progress",
       "assigned_to": "sonnet",
       "priority": "low",
-      "pipeline_phase": "executing",
+      "pipeline_phase": "outcome-verifying",
       "schema_version": "2",
       "created": "2026-07-02",
       "due": null,
@@ -60,6 +65,31 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "824a947",
+      "date": "2026-07-03 00:22:33 +1000",
+      "message": "plan-pipeline: outcome-verification ran for PLAN-AA1_architecture-freshness-refresh.md (4 verify + 3 acceptance pass)"
+    },
+    {
+      "sha": "242c314",
+      "date": "2026-07-03 00:22:16 +1000",
+      "message": "plan-pipeline: fix acceptance-3 regex false-negative (backticked filenames) for PLAN-AA1 \u00e2\u20ac\u201d deliverable independently verified correct (breakdown sums to 111)"
+    },
+    {
+      "sha": "1ee7a69",
+      "date": "2026-07-03 00:20:06 +1000",
+      "message": "plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md"
+    },
+    {
+      "sha": "597d753",
+      "date": "2026-07-03 00:20:06 +1000",
+      "message": "plan-pipeline: clean orphaned PLAN-AA0 audit snapshots (AA0 retired)"
+    },
+    {
+      "sha": "75bb420",
+      "date": "2026-07-03 00:15:58 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "9f71dd7",
       "date": "2026-07-03 00:15:57 +1000",
@@ -84,31 +114,6 @@
       "sha": "ca250d1",
       "date": "2026-07-03 00:15:19 +1000",
       "message": "plan-pipeline: audit_state update - plan_safety:success"
-    },
-    {
-      "sha": "4969269",
-      "date": "2026-07-03 00:13:13 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "097fabb",
-      "date": "2026-07-03 00:13:12 +1000",
-      "message": "plan-pipeline: audit-revised PLAN-AA1 (plan-safety H302 Step3 no-shell + H999 portable verifies, pre re-audit)"
-    },
-    {
-      "sha": "bccee56",
-      "date": "2026-07-03 00:11:20 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "5a100d7",
-      "date": "2026-07-03 00:11:10 +1000",
-      "message": "plan-pipeline: record last_audit_commit for PLAN-AA1"
-    },
-    {
-      "sha": "9cdaa87",
-      "date": "2026-07-03 00:11:09 +1000",
-      "message": "plan-pipeline: audit_state update - plan_safety:revision_needed"
     }
   ]
 }

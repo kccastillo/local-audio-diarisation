@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:15:57Z by build_index.py v1_
+_Generated: 2026-07-02T14:22:34Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -34,15 +34,15 @@ _No PLANs in this phase._
 
 _No PLANs in this phase._
 
-### Executing (1)
+### Executing (0)
+
+_No PLANs in this phase._
+
+### Outcome-Verifying (1)
 
 | Plan ID | Title | Status | Priority | Assigned |
 |---|---|---|---|---|
 | PLAN-AA1_architecture-freshness-refresh | Refresh ARCHITECTURE.md for post-PLAN-AA0 freshness (conf... | in-progress | low | sonnet |
-
-### Outcome-Verifying (0)
-
-_No PLANs in this phase._
 
 ### Complete (0)
 
@@ -60,7 +60,7 @@ _No terminal PLANs._
 
 ## Alerts
 
-_No active alerts._
+_1 alert(s) detected._
 
 ### Stuck Audits (0)
 
@@ -98,9 +98,9 @@ _None._
 
 _None._
 
-### Orphan Heartbeat (0)
+### Orphan Heartbeat (1)
 
-_None._
+- **PLAN-AA1**: Heartbeat file PLAN-AA1.json has no corresponding PLAN in Workbench/. File deleted.
 
 ### Stuck Ideation (0)
 
@@ -118,16 +118,16 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `824a947` | 2026-07-03 | plan-pipeline: outcome-verification ran for PLAN-AA1_architecture-freshness-r... |
+| `242c314` | 2026-07-03 | plan-pipeline: fix acceptance-3 regex false-negative (backticked filenames) f... |
+| `1ee7a69` | 2026-07-03 | plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md |
+| `597d753` | 2026-07-03 | plan-pipeline: clean orphaned PLAN-AA0 audit snapshots (AA0 retired) |
+| `75bb420` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `9f71dd7` | 2026-07-03 | plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md |
 | `d7b7f78` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `e6c133c` | 2026-07-03 | plan-pipeline: checked PLAN-AA1_architecture-freshness-refresh.md |
 | `7b30916` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
 | `ca250d1` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:success |
-| `4969269` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `097fabb` | 2026-07-03 | plan-pipeline: audit-revised PLAN-AA1 (plan-safety H302 Step3 no-shell + H999... |
-| `bccee56` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `5a100d7` | 2026-07-03 | plan-pipeline: record last_audit_commit for PLAN-AA1 |
-| `9cdaa87` | 2026-07-03 | plan-pipeline: audit_state update - plan_safety:revision_needed |
 
 ## Recently Retired
 
