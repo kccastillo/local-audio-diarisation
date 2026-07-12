@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-12T00:39:26Z by build_index.py v1_
+_Generated: 2026-07-12T04:05:00Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -118,6 +118,9 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `257c11c` | 2026-07-12 | plan-pipeline: record last_audit_commit for PLAN-AA2 |
+| `9cae249` | 2026-07-12 | plan-pipeline: audit_state update - sufficiency:revision_needed |
+| `49cb72e` | 2026-07-12 | plan-pipeline: update-workbench-index |
 | `4998691` | 2026-07-12 | plan-pipeline: drafted PLAN-AA2_viewer-speaker-ux-improvements.md |
 | `c9a525f` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `f025b83` | 2026-07-03 | plan-pipeline: retired PLAN-AA1_architecture-freshness-refresh.md (+ clean it... |
@@ -125,9 +128,6 @@ _No dependencies defined._
 | `e867f94` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `824a947` | 2026-07-03 | plan-pipeline: outcome-verification ran for PLAN-AA1_architecture-freshness-r... |
 | `242c314` | 2026-07-03 | plan-pipeline: fix acceptance-3 regex false-negative (backticked filenames) f... |
-| `1ee7a69` | 2026-07-03 | plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md |
-| `597d753` | 2026-07-03 | plan-pipeline: clean orphaned PLAN-AA0 audit snapshots (AA0 retired) |
-| `75bb420` | 2026-07-03 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 

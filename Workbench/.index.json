@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-12T00:39:26Z",
+  "generated_at": "2026-07-12T04:05:00Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
@@ -34,7 +34,7 @@
   "plans": [
     {
       "plan_id": "PLAN-AA2_viewer-speaker-ux-improvements",
-      "title": "Viewer speaker UX improvements \u2014 checkbox selection, popover, anchored dialogue, empty-row fix",
+      "title": "Viewer speaker UX improvements \u2014 checkbox selection, popover, anchored dialogue,",
       "status": "ready",
       "assigned_to": "sonnet",
       "priority": "medium",
@@ -46,23 +46,13 @@
       "closes_thread": null,
       "advances_thread": null,
       "triggers_plans": [],
-      "tags": [
-        "webapp",
-        "viewer",
-        "ui",
-        "ux",
-        "speaker-editing"
-      ],
-      "files_touched": [
-        "diarizer/webapp/static/app.js",
-        "diarizer/webapp/static/index.html",
-        "diarizer/webapp/static/style.css"
-      ],
+      "tags": [],
+      "files_touched": [],
       "audit_history": {
-        "sufficiency_iterations": 0,
+        "sufficiency_iterations": 1,
         "plan_safety_iterations": 0,
-        "last_stage": "none",
-        "last_outcome": "none"
+        "last_stage": "sufficiency",
+        "last_outcome": "revision_needed"
       },
       "ideate_phase": "complete"
     }
@@ -70,6 +60,21 @@
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "257c11c",
+      "date": "2026-07-12 14:04:46 +1000",
+      "message": "plan-pipeline: record last_audit_commit for PLAN-AA2"
+    },
+    {
+      "sha": "9cae249",
+      "date": "2026-07-12 14:04:38 +1000",
+      "message": "plan-pipeline: audit_state update - sufficiency:revision_needed"
+    },
+    {
+      "sha": "49cb72e",
+      "date": "2026-07-12 10:39:57 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "4998691",
       "date": "2026-07-12 10:39:15 +1000",
@@ -104,21 +109,6 @@
       "sha": "242c314",
       "date": "2026-07-03 00:22:16 +1000",
       "message": "plan-pipeline: fix acceptance-3 regex false-negative (backticked filenames) for PLAN-AA1 \u00e2\u20ac\u201d deliverable independently verified correct (breakdown sums to 111)"
-    },
-    {
-      "sha": "1ee7a69",
-      "date": "2026-07-03 00:20:06 +1000",
-      "message": "plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md"
-    },
-    {
-      "sha": "597d753",
-      "date": "2026-07-03 00:20:06 +1000",
-      "message": "plan-pipeline: clean orphaned PLAN-AA0 audit snapshots (AA0 retired)"
-    },
-    {
-      "sha": "75bb420",
-      "date": "2026-07-03 00:15:58 +1000",
-      "message": "plan-pipeline: update-workbench-index"
     }
   ]
 }
