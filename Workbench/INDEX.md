@@ -1,6 +1,6 @@
 # Workbench INDEX
 
-_Generated: 2026-07-02T14:23:37Z by build_index.py v1_
+_Generated: 2026-07-12T00:39:26Z by build_index.py v1_
 
 This document is a deterministic projection of all PLAN files in `Workbench/`. Regenerated automatically after every phase transition. Do not edit manually — changes will be overwritten.
 
@@ -8,8 +8,8 @@ This document is a deterministic projection of all PLAN files in `Workbench/`. R
 
 | Metric | Count |
 |---|---|
-| Total PLANs | 0 |
-| Active (non-terminal) | 0 |
+| Total PLANs | 1 |
+| Active (non-terminal) | 1 |
 | Terminal (done/cancelled/etc.) | 0 |
 
 ## Kanban
@@ -26,9 +26,11 @@ _No PLANs currently being ideated._
 
 _No PLANs in this phase._
 
-### Drafted (0)
+### Drafted (1)
 
-_No PLANs in this phase._
+| Plan ID | Title | Status | Priority | Assigned |
+|---|---|---|---|---|
+| PLAN-AA2_viewer-speaker-ux-improvements | Viewer speaker UX improvements — checkbox selection, popo... | ready | medium | sonnet |
 
 ### Checked (0)
 
@@ -116,6 +118,8 @@ _No dependencies defined._
 
 | SHA | Date | Commit Message |
 |---|---|---|
+| `4998691` | 2026-07-12 | plan-pipeline: drafted PLAN-AA2_viewer-speaker-ux-improvements.md |
+| `c9a525f` | 2026-07-03 | plan-pipeline: update-workbench-index |
 | `f025b83` | 2026-07-03 | plan-pipeline: retired PLAN-AA1_architecture-freshness-refresh.md (+ clean it... |
 | `d114865` | 2026-07-03 | plan-pipeline: complete PLAN-AA1_architecture-freshness-refresh.md |
 | `e867f94` | 2026-07-03 | plan-pipeline: update-workbench-index |
@@ -124,8 +128,6 @@ _No dependencies defined._
 | `1ee7a69` | 2026-07-03 | plan-pipeline: outcome-verifying PLAN-AA1_architecture-freshness-refresh.md |
 | `597d753` | 2026-07-03 | plan-pipeline: clean orphaned PLAN-AA0 audit snapshots (AA0 retired) |
 | `75bb420` | 2026-07-03 | plan-pipeline: update-workbench-index |
-| `9f71dd7` | 2026-07-03 | plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md |
-| `d7b7f78` | 2026-07-03 | plan-pipeline: update-workbench-index |
 
 ## Recently Retired
 

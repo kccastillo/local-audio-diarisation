@@ -1,14 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-02T14:23:37Z",
+  "generated_at": "2026-07-12T00:39:26Z",
   "generated_by": "build_index.py v1",
   "workbench_root": "Workbench",
   "summary": {
-    "total_plans": 0,
-    "by_phase": {},
-    "by_status": {},
-    "by_assigned_to": {},
-    "by_priority": {}
+    "total_plans": 1,
+    "by_phase": {
+      "drafted": 1
+    },
+    "by_status": {
+      "ready": 1
+    },
+    "by_assigned_to": {
+      "sonnet": 1
+    },
+    "by_priority": {
+      "medium": 1
+    }
   },
   "alerts": {
     "stuck_audits": [],
@@ -23,10 +31,55 @@
     "orphan_heartbeat": [],
     "stuck_ideation": []
   },
-  "plans": [],
+  "plans": [
+    {
+      "plan_id": "PLAN-AA2_viewer-speaker-ux-improvements",
+      "title": "Viewer speaker UX improvements \u2014 checkbox selection, popover, anchored dialogue, empty-row fix",
+      "status": "ready",
+      "assigned_to": "sonnet",
+      "priority": "medium",
+      "pipeline_phase": "drafted",
+      "schema_version": "2",
+      "created": "2026-07-12",
+      "due": null,
+      "blocked_by": null,
+      "closes_thread": null,
+      "advances_thread": null,
+      "triggers_plans": [],
+      "tags": [
+        "webapp",
+        "viewer",
+        "ui",
+        "ux",
+        "speaker-editing"
+      ],
+      "files_touched": [
+        "diarizer/webapp/static/app.js",
+        "diarizer/webapp/static/index.html",
+        "diarizer/webapp/static/style.css"
+      ],
+      "audit_history": {
+        "sufficiency_iterations": 0,
+        "plan_safety_iterations": 0,
+        "last_stage": "none",
+        "last_outcome": "none"
+      },
+      "ideate_phase": "complete"
+    }
+  ],
   "threads": [],
   "dependencies": [],
   "recent_transitions": [
+    {
+      "sha": "4998691",
+      "date": "2026-07-12 10:39:15 +1000",
+      "message": "plan-pipeline: drafted PLAN-AA2_viewer-speaker-ux-improvements.md"
+    },
+    {
+      "sha": "c9a525f",
+      "date": "2026-07-03 00:23:37 +1000",
+      "message": "plan-pipeline: update-workbench-index"
+    },
     {
       "sha": "f025b83",
       "date": "2026-07-03 00:23:30 +1000",
@@ -65,16 +118,6 @@
     {
       "sha": "75bb420",
       "date": "2026-07-03 00:15:58 +1000",
-      "message": "plan-pipeline: update-workbench-index"
-    },
-    {
-      "sha": "9f71dd7",
-      "date": "2026-07-03 00:15:57 +1000",
-      "message": "plan-pipeline: executing PLAN-AA1_architecture-freshness-refresh.md"
-    },
-    {
-      "sha": "d7b7f78",
-      "date": "2026-07-03 00:15:43 +1000",
       "message": "plan-pipeline: update-workbench-index"
     }
   ]
